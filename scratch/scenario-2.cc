@@ -51,7 +51,7 @@ main (int argc, char *argv[])
 
 	//The available channel scenarios are 'RMa', 'UMa', 'UMi-StreetCanyon', 'InH-OfficeMixed', 'InH-OfficeOpen', 'InH-ShoppingMall'
 	std::string scenario = "UMa";
-	std::string condition = "l"; // n = NLOS, l = LOS
+	std::string condition = "n"; // n = NLOS, l = LOS
 	Config::SetDefault ("ns3::MmWave3gppPropagationLossModel::ChannelCondition", StringValue(condition));
 	Config::SetDefault ("ns3::MmWave3gppPropagationLossModel::Scenario", StringValue(scenario));
 	Config::SetDefault ("ns3::MmWave3gppPropagationLossModel::OptionalNlos", BooleanValue(false));
@@ -155,28 +155,33 @@ main (int argc, char *argv[])
 
  // Install and start applications on UEs and remote host
  AsciiTraceHelper asciiTraceHelper;
- Ptr<OutputStreamWrapper> dlStream = asciiTraceHelper.CreateFileStream (filePath + "PacketSinkDlRx.txt");
+ Ptr<OutputStreamWrapper> dlStream = asciiTraceHelper.CreateFileStream (filePath + "PacketSinkDlBearer3Rx.txt");
+ Ptr<OutputStreamWrapper> dlStream1 = asciiTraceHelper.CreateFileStream (filePath + "PacketSinkDlBearer4Rx.txt");
  Ptr<OutputStreamWrapper> ulStream = asciiTraceHelper.CreateFileStream (filePath + "PacketSinkUlRx.txt");
 
  uint16_t dlPort = 1234; 	// port for DRB 3
  uint16_t dlPort1 = 1235; // port for DRB 4
- uint16_t ulPort = 2000; // port for DRB 4
+ //uint16_t ulPort = 2000; // port for DRB 4
 
- SimulationConfig::SetupUdpPacketSink (remoteHost, ulPort, 0.1, simTime, ulStream);
+ // Packet Sink - Bearer 3 DL
  SimulationConfig::SetupUdpPacketSink (ueNodes.Get (0), // node
  																			 dlPort, 					// port
 																			 0.01, 						// start time
 																			 simTime, 				// stop time
 																			 dlStream); 			// trace file
 
+ // Packet Sink - Bearer 4 DL
  SimulationConfig::SetupUdpPacketSink (ueNodes.Get (0), // node
  																			 dlPort1, 				// port
 																			 0.01, 						// start time
 																			 simTime, 				// stop time
-																			 dlStream);				// trace file
+																			 dlStream1);				// trace file
+
+ // Packet Sink - Bearer 3 UL
+ //SimulationConfig::SetupUdpPacketSink (remoteHost, ulPort, 0.1, simTime, ulStream);
 
  uint16_t interPacketInterval = 1;
- // Bearer 3 DL
+ // App - Bearer 3 DL
  SimulationConfig::SetupUdpApplication (remoteHost, 							// node
 	 																			ueIpIface.GetAddress (0), // destination address
 																				dlPort, 									// destination port
@@ -184,12 +189,12 @@ main (int argc, char *argv[])
 																				0.3, 											// start time
 																				simTime);									// stop time
 
- // Bearer 4 DL
+ // App - Bearer 4 DL
  SimulationConfig::SetupUdpApplication (remoteHost, 							// node
 	 																			ueIpIface.GetAddress (0), // destination address
 																				dlPort1, 									// destination port
 																				interPacketInterval, 			// interpacket interval
-																				0.3, 										// start time
+																				0.3, 											// start time
 																				simTime);									// stop time
 
  // Bearer 3 UL
