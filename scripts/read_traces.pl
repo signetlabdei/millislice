@@ -35,6 +35,7 @@ my $inputFilePath = "";
 my $saveSampledTrace = 1;
 my $samplingTime = 0.005; # sampling time
 my $numOfActiveCc = 1; # number of active CCs
+my $bearerId = 0; # consider only this bearer (0 means all the bearers)
 
 # read the arguments
 for(my $i=0; $i<scalar(@ARGV); $i++)
@@ -85,6 +86,10 @@ for(my $i=0; $i<scalar(@ARGV); $i++)
   {
     $saveSampledTrace = 0;
   }
+  elsif ($arg eq "-bearerId")
+  {
+    $bearerId = $ARGV[++$i];
+  }
   elsif ($arg eq "-inputFilePath")
   {
     $inputFilePath = $ARGV[++$i];
@@ -101,6 +106,7 @@ for(my $i=0; $i<scalar(@ARGV); $i++)
     print "-noSaveSampledTrace : do not save the sampled traces\n";
     print "-inputFilePath : where are the traces to read? (With / at the end)\n";
     print "-numOfCc : number of active CCs\n";
+    print "-bearerId : consider only  the specified bearer (0 means all)\n";
     print "\n\n\n";
     die "unknown argument";
   }
@@ -316,8 +322,8 @@ if ($sampleTrace[2]) # 1. DlPdcpStats: packets sent by the eNB and received by t
     chomp $row; # this removes the EOL character
     ($mode, $time, $cellId, $rnti, $lcid, $size, $delay) = split(' ',$row); # this splits the arguments
   }
-  while($row && !($mode eq 'Rx' && $lcid>2)); # exit if mode=Rx and it is a data packet
-                                              # or if there are no more packets
+  while($row && !($mode eq 'Rx' && (($bearerId>0 && $lcid==$bearerId) || ($bearerId==0 && $lcid>2)))); # exit if mode=Rx and it is a data packet
+                                                                                                       # or if there are no more packets
 
   my $numOfRxpackets=0; # this counts the total number of packets
 
@@ -354,8 +360,8 @@ if ($sampleTrace[2]) # 1. DlPdcpStats: packets sent by the eNB and received by t
                                                                                        # undef value
           }
         }
-        while($row && !($mode eq 'Rx' && $lcid>2)); # exit if mode=Rx and it is a data packet
-                                                    # or if there are no more packets
+        while($row && !($mode eq 'Rx' && (($bearerId>0 && $lcid==$bearerId) || ($bearerId==0 && $lcid>2)))); # exit if mode=Rx and it is a data packet
+                                                                                                             # or if there are no more packets
       }
   }
   close $fh;
@@ -414,8 +420,8 @@ if ($sampleTrace[3]) # 2. UlPdcpStats: packets sent by the UE and received by th
     chomp $row; # this removes the EOL character
     ($mode, $time, $cellId, $rnti, $lcid, $size, $delay) = split(' ',$row); # this splits the arguments
   }
-  while($row && !($mode eq 'Rx' && $lcid>2)); # exit if mode=Rx and it is a data packet
-                                              # or if there are no more packets
+  while($row && !($mode eq 'Rx' && (($bearerId>0 && $lcid==$bearerId) || ($bearerId==0 && $lcid>2)))); # exit if mode=Rx and it is a data packet
+                                                                                                       # or if there are no more packets
 
   my $numOfRxpackets=0; # this counts the total number of packets
 
@@ -452,8 +458,8 @@ if ($sampleTrace[3]) # 2. UlPdcpStats: packets sent by the UE and received by th
                                                                                        # undef value
           }
         }
-        while($row && !($mode eq 'Rx' && $lcid>2)); # exit if mode=Rx and it is a data packet
-                                                    # or if there are no more packets
+        while($row && !($mode eq 'Rx' && (($bearerId>0 && $lcid==$bearerId) || ($bearerId==0 && $lcid>2)))); # exit if mode=Rx and it is a data packet
+                                                                                                             # or if there are no more packets
       }
   }
   close $fh;
@@ -777,8 +783,8 @@ if ($sampleTrace[6]) # 1. DlRlcStats: packets sent by the eNB and received by th
     chomp $row; # this removes the EOL character
     ($mode, $time, $cellId, $rnti, $lcid, $size, $delay) = split(' ',$row); # this splits the arguments
   }
-  while($row && !($mode eq 'Rx' && $lcid>2)); # exit if mode=Rx and it is a data packet
-                                              # or if there are no more packets
+  while($row && !($mode eq 'Rx' && (($bearerId>0 && $lcid==$bearerId) || ($bearerId==0 && $lcid>2)))); # exit if mode=Rx and it is a data packet
+                                                                                                       # or if there are no more packets
 
   my $numOfRxpackets=0; # this counts the total number of packets
 
@@ -815,8 +821,8 @@ if ($sampleTrace[6]) # 1. DlRlcStats: packets sent by the eNB and received by th
                                                                                        # undef value
           }
         }
-        while($row && !($mode eq 'Rx' && $lcid>2)); # exit if mode=Rx and it is a data packet
-                                                    # or if there are no more packets
+        while($row && !($mode eq 'Rx' && (($bearerId>0 && $lcid==$bearerId) || ($bearerId==0 && $lcid>2)))); # exit if mode=Rx and it is a data packet
+                                                                                                             # or if there are no more packets
       }
   }
   close $fh;
@@ -875,8 +881,8 @@ if ($sampleTrace[7]) # 2. UlRlcStats: packets sent by the UE and received by the
     chomp $row; # this removes the EOL character
     ($mode, $time, $cellId, $rnti, $lcid, $size, $delay) = split(' ',$row); # this splits the arguments
   }
-  while($row && !($mode eq 'Rx' && $lcid>2)); # exit if mode=Rx and it is a data packet
-                                              # or if there are no more packets
+  while($row && !($mode eq 'Rx' && (($bearerId>0 && $lcid==$bearerId) || ($bearerId==0 && $lcid>2)))); # exit if mode=Rx and it is a data packet
+                                                                                                       # or if there are no more packets
 
   my $numOfRxpackets=0; # this counts the total number of packets
 
@@ -913,8 +919,8 @@ if ($sampleTrace[7]) # 2. UlRlcStats: packets sent by the UE and received by the
                                                                                        # undef value
           }
         }
-        while($row && !($mode eq 'Rx' && $lcid>2)); # exit if mode=Rx and it is a data packet
-                                                    # or if there are no more packets
+        while($row && !($mode eq 'Rx' && (($bearerId>0 && $lcid==$bearerId) || ($bearerId==0 && $lcid>2)))); # exit if mode=Rx and it is a data packet
+                                                                                                             # or if there are no more packets
       }
   }
   close $fh;
