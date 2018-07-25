@@ -153,7 +153,7 @@ namespace ns3{
   {
     ApplicationContainer app;
     UdpClientHelper client (address, port);
-    client.SetAttribute ("Interval", TimeValue (MilliSeconds(interPacketInterval)));
+    client.SetAttribute ("Interval", TimeValue (MicroSeconds(interPacketInterval)));
     client.SetAttribute ("MaxPackets", UintegerValue(10000000));
 
     app.Add (client.Install (node));

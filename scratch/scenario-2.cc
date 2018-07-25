@@ -15,6 +15,7 @@ main (int argc, char *argv[])
 	double speed = 3.0; 		// UE speed
 	double bsrTimer = 2.0;
 	double reorderingTimer = 1.0;
+	int interPacketInterval = 1000; // intepacket interval in us 
 	int runSet = 1;
 
 
@@ -28,6 +29,7 @@ main (int argc, char *argv[])
 	cmd.AddValue ("bsrTimer", "BSR timer [ms]", bsrTimer);
 	cmd.AddValue ("reorderingTimer", "reordering timer [ms]", reorderingTimer);
 	cmd.AddValue("useRlcAm", "Use rlc am", useRlcAm);
+	cmd.AddValue("interPacketInterval", "inter-packet interval [us]", interPacketInterval);
 	cmd.Parse (argc, argv);
 
 	// RNG
@@ -180,7 +182,6 @@ main (int argc, char *argv[])
  // Packet Sink - Bearer 3 UL
  //SimulationConfig::SetupUdpPacketSink (remoteHost, ulPort, 0.1, simTime, ulStream);
 
- uint16_t interPacketInterval = 1;
  // App - Bearer 3 DL
  SimulationConfig::SetupUdpApplication (remoteHost, 							// node
 	 																			ueIpIface.GetAddress (0), // destination address
