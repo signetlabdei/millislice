@@ -61,7 +61,7 @@ main (int argc, char *argv[])
 	Config::SetDefault ("ns3::MmWave3gppBuildingsPropagationLossModel::UpdateCondition", BooleanValue(true)); // enable or disable the LOS/NLOS update when the UE moves
 
 	Config::SetDefault ("ns3::MmWave3gppChannel::UpdatePeriod", TimeValue (MilliSeconds (100))); // Set channel update period, 0 stands for no update.
-	Config::SetDefault ("ns3::MmWave3gppChannel::CellScan", BooleanValue(false)); // Set true to use cell scanning method, false to use the default power method.
+	Config::SetDefault ("ns3::MmWave3gppChannel::DirectBeam", BooleanValue(true)); // Set true to perform the beam in the exact direction of receiver node.
 	Config::SetDefault ("ns3::MmWave3gppChannel::PortraitMode", BooleanValue(true)); // use blockage model with UT in portrait mode
 	Config::SetDefault ("ns3::MmWave3gppChannel::NumNonselfBlocking", IntegerValue(4)); // number of non-self blocking obstacles
 	Config::SetDefault ("ns3::MmWave3gppChannel::BlockerSpeed", DoubleValue(1)); // speed of non-self blocking obstacles
@@ -158,16 +158,41 @@ main (int argc, char *argv[])
  Ptr<OutputStreamWrapper> dlStream = asciiTraceHelper.CreateFileStream (filePath + "PacketSinkDlRx.txt");
  Ptr<OutputStreamWrapper> ulStream = asciiTraceHelper.CreateFileStream (filePath + "PacketSinkUlRx.txt");
 
- uint16_t dlPort = 1234;
- uint16_t dlPort1 = 1235;
- uint16_t ulPort = 2000;
- SimulationConfig::SetupUdpPacketSink (ueNodes.Get (0), dlPort, 0.1, simTime, dlStream);
- SimulationConfig::SetupUdpPacketSink (ueNodes.Get (0), dlPort1, 0.1, simTime, dlStream);
+ uint16_t dlPort = 1234; 	// port for DRB 3
+ uint16_t dlPort1 = 1235; // port for DRB 4
+ uint16_t ulPort = 2000; // port for DRB 4
+
  SimulationConfig::SetupUdpPacketSink (remoteHost, ulPort, 0.1, simTime, ulStream);
+ SimulationConfig::SetupUdpPacketSink (ueNodes.Get (0), // node
+ 																			 dlPort, 					// port
+																			 0.01, 						// start time
+																			 simTime, 				// stop time
+																			 dlStream); 			// trace file
+
+ SimulationConfig::SetupUdpPacketSink (ueNodes.Get (0), // node
+ 																			 dlPort1, 				// port
+																			 0.01, 						// start time
+																			 simTime, 				// stop time
+																			 dlStream);				// trace file
 
  uint16_t interPacketInterval = 1;
- SimulationConfig::SetupUdpApplication (remoteHost, ueIpIface.GetAddress (0), dlPort, interPacketInterval, 0.5, simTime);
- //SimulationConfig::SetupUdpApplication (remoteHost, ueIpIface.GetAddress (0), dlPort1, interPacketInterval, 0.11, simTime);
+ // Bearer 3 DL
+ SimulationConfig::SetupUdpApplication (remoteHost, 							// node
+	 																			ueIpIface.GetAddress (0), // destination address
+																				dlPort, 									// destination port
+																				interPacketInterval, 			// interpacket interval
+																				0.3, 											// start time
+																				simTime);									// stop time
+
+ // Bearer 4 DL
+ SimulationConfig::SetupUdpApplication (remoteHost, 							// node
+	 																			ueIpIface.GetAddress (0), // destination address
+																				dlPort1, 									// destination port
+																				interPacketInterval, 			// interpacket interval
+																				0.3, 										// start time
+																				simTime);									// stop time
+
+ // Bearer 3 UL
  //SimulationConfig::SetupUdpApplication (ueNodes.Get (0), remoteHostAddr, ulPort, interPacketInterval, 0.3, simTime);
 
  helper->EnableTraces();
