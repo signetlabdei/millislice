@@ -667,6 +667,117 @@ MmWaveBaRrComponentCarrierManager::DoUlReceiveMacCe (MacCeListElement_s bsr, uin
     }
 }
 
-} // end of namespace mmwave 
+////////////////////////////////////////////////////////////////////
+
+NS_OBJECT_ENSURE_REGISTERED (MmWaveSplitDrbComponentCarrierManager);
+
+MmWaveSplitDrbComponentCarrierManager::MmWaveSplitDrbComponentCarrierManager ()
+{
+  NS_LOG_FUNCTION (this);
+
+}
+
+MmWaveSplitDrbComponentCarrierManager::~MmWaveSplitDrbComponentCarrierManager ()
+{
+  NS_LOG_FUNCTION (this);
+}
+
+TypeId
+MmWaveSplitDrbComponentCarrierManager::GetTypeId ()
+{
+  static TypeId tid = TypeId ("ns3::MmWaveSplitDrbComponentCarrierManager")
+                .SetParent<MmWaveNoOpComponentCarrierManager> ()
+                .SetGroupName("Lte")
+                .AddConstructor<MmWaveSplitDrbComponentCarrierManager> ()
+                ;
+  return tid;
+}
+
+
+void
+MmWaveSplitDrbComponentCarrierManager::DoReportBufferStatus (LteMacSapProvider::ReportBufferStatusParameters params)
+{
+  NS_LOG_FUNCTION (this);
+
+  NS_ASSERT_MSG( m_enabledComponentCarrier.find(params.rnti)!=m_enabledComponentCarrier.end(), " UE with provided RNTI not found. RNTI:"<<params.rnti);
+
+  uint32_t numberOfCarriersForUe = m_enabledComponentCarrier.find (params.rnti)->second;
+  if (params.lcid == 0 || params.lcid == 1 || numberOfCarriersForUe == 1)
+    {
+      NS_LOG_INFO("Buffer status forwarded to the primary carrier.");
+      auto ueManager = m_ccmRrcSapUser->GetUeManager (params.rnti);
+      m_macSapProvidersMap.at (ueManager->GetComponentCarrierId ())->ReportBufferStatus (params);
+    }
+  else
+    {
+      uint8_t cc = 0;
+      if( m_drbCcMap.find(params.lcid) != m_drbCcMap.end() )
+      {
+        cc = m_drbCcMap.at(params.lcid);
+      }
+      m_macSapProvidersMap.find (cc)->second->ReportBufferStatus (params);
+    }
+}
+
+
+void
+MmWaveSplitDrbComponentCarrierManager::DoUlReceiveMacCe (MacCeListElement_s bsr, uint8_t componentCarrierId)
+{
+  NS_LOG_FUNCTION (this);
+  NS_ASSERT_MSG (componentCarrierId == 0, "Received BSR from a ComponentCarrier not allowed, ComponentCarrierId = " << componentCarrierId);
+  NS_ASSERT_MSG (bsr.m_macCeType == MacCeListElement_s::BSR, "Received a Control Message not allowed " << bsr.m_macCeType);
+
+  uint32_t numberOfCarriersForUe = m_enabledComponentCarrier.find(bsr.m_rnti)->second;
+
+  if ( bsr.m_macCeType == MacCeListElement_s::BSR)
+    {
+      MacCeListElement_s newBsr;
+      newBsr.m_rnti = bsr.m_rnti;
+      // mac control element type, values can be BSR, PHR, CRNTI
+      newBsr.m_macCeType = bsr.m_macCeType;
+      // the power headroom, 64 means no valid phr is available
+      newBsr.m_macCeValue.m_phr = bsr.m_macCeValue.m_phr;
+      // indicates that the CRNTI MAC CE was received. The value is not used.
+      newBsr.m_macCeValue.m_crnti = bsr.m_macCeValue.m_crnti;
+      // and value 64 means that the buffer status should not be updated
+      newBsr.m_macCeValue.m_bufferStatus.resize (4);
+      // always all 4 LCGs are present see 6.1.3.1 of 3GPP TS 36.321.
+
+      //compute the total bandwidth. Consider only the active component carriers
+      double totalBandwidth = 0;
+      for (uint8_t i = 0; i < numberOfCarriersForUe; i++)
+      {
+        totalBandwidth += m_bandwidthMap[i];
+      }
+
+      // notify MAC of each component carrier that is enabled for this UE
+      for ( uint16_t i = 0;  i < numberOfCarriersForUe ; i++)
+        {
+          // divide the traffic proportionally according to the bandwidth of each
+          // component carrier
+          for (uint16_t j = 0; j < 4; j++) // for each LCG
+            {
+              uint8_t bsrStatusId = bsr.m_macCeValue.m_bufferStatus.at (j);
+              uint32_t bufferSize = BufferSizeLevelBsr::BsrId2BufferSize (bsrStatusId);
+              // here the buffer should be divide among the different sap
+              // since the buffer status report are compressed information
+              // it is needed to use BsrId2BufferSize to uncompress
+              // after the split over all component carriers is is needed to
+              // compress again the information to fit MacCeListElement_s structure
+              // verify how many Component Carrier are enabled per UE
+              newBsr.m_macCeValue.m_bufferStatus.at(j) = BufferSizeLevelBsr::BufferSize2BsrId (bufferSize * m_bandwidthMap[i] / totalBandwidth);
+            }
+          NS_ASSERT_MSG (m_ccmMacSapProviderMap.find(i)!=m_ccmMacSapProviderMap.end(), "Mac sap provider does not exist.");
+          m_ccmMacSapProviderMap.find(i)->second->ReportMacCeToScheduler(newBsr);
+        }
+    }
+  else
+    {
+      auto ueManager = m_ccmRrcSapUser->GetUeManager (bsr.m_rnti);
+      m_ccmMacSapProviderMap.at (ueManager->GetComponentCarrierId ())->ReportMacCeToScheduler (bsr);
+    }
+}
+
+} // end of namespace mmwave
 
 } // end of namespace ns3

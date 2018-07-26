@@ -211,7 +211,27 @@ protected:
 
 }; // end of class MmWaveBaRrComponentCarrierManager
 
-} // end of namespace mmwave 
+class MmWaveSplitDrbComponentCarrierManager : public MmWaveNoOpComponentCarrierManager
+{
+public:
+
+  MmWaveSplitDrbComponentCarrierManager ();
+  virtual ~MmWaveSplitDrbComponentCarrierManager ();
+  /**
+   * \brief Get the type ID.
+   * \return the object TypeId
+   */
+  static TypeId GetTypeId ();
+
+protected:
+
+  // Inherited methods
+  virtual void DoReportBufferStatus (LteMacSapProvider::ReportBufferStatusParameters params);
+  virtual void DoUlReceiveMacCe (MacCeListElement_s bsr, uint8_t componentCarrierId);
+
+}; // end of class MmWaveSplitDrbComponentCarrierManager
+
+} // end of namespace mmwave
 
 } // end of namespace ns3
 

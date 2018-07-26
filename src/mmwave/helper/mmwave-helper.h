@@ -269,6 +269,14 @@ public:
 	 */
 	void SetBlockageMap (std::map<uint8_t, bool> blockageMap);
 
+	/**
+	 * Set the DRB - CC association if MmWaveSplitDrbComponentCarrierManager is used.
+	 *
+	 * \parmam map (DRB ID, CC ID)
+	 *
+	 */
+	void SetDrbCcMap (std::map<uint16_t, uint8_t> drbCcMap);
+
 	void EnablePdcpTraces (void);
 	void EnableMcTraces (void);
 	void EnableRlcTraces (void);
@@ -419,6 +427,12 @@ private:
 	 * is used
 	**/
 	std::map< uint8_t, bool > m_3gppBlockage;
+
+	/**
+	 * This map is used to define the DRB-CC association if MmWaveSplitDrbComponentCarrierManager
+	 * is used
+	**/
+	std::map< uint16_t, uint8_t > m_drbCcMap;
 
 };
 

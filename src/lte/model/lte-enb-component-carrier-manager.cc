@@ -142,4 +142,10 @@ LteEnbComponentCarrierManager::SetBandwidthMap (std::map<uint8_t, double> bandwi
   m_bandwidthMap = bandwidthMap;
 }
 
+void
+LteEnbComponentCarrierManager::SetDrbCcMap (std::map<uint16_t, uint8_t> drbCcMap)
+{
+  m_drbCcMap = drbCcMap;
+}
+
 } // end of namespace ns3

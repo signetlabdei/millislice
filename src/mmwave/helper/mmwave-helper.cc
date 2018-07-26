@@ -334,6 +334,12 @@ MmWaveHelper::SetBlockageMap (std::map<uint8_t, bool> blockageMap)
 }
 
 void
+MmWaveHelper::SetDrbCcMap (std::map<uint16_t, uint8_t> drbCcMap)
+{
+	m_drbCcMap = drbCcMap;
+}
+
+void
 MmWaveHelper::MmWaveChannelModelInitialization (void)
 {
 	NS_LOG_FUNCTION(this);
@@ -1714,6 +1720,11 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 	}
 
 	ccmEnbManager->SetBandwidthMap (bandwidthMap);
+
+	if (m_drbCcMap.size() > 0)
+	{
+		ccmEnbManager->SetDrbCcMap (m_drbCcMap);
+	}
 
 	if (m_useIdealRrc)
 	{

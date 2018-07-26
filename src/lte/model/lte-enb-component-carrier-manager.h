@@ -162,6 +162,12 @@ public:
 
   virtual void SetBandwidthMap (std::map<uint8_t, double> bandwidthMap);
 
+  /**
+	 * Set the DRB - CC association if MmWaveSplitDrbComponentCarrierManager is used.
+	 * \parmam map (DRB ID, CC ID)
+	 */
+	void SetDrbCcMap (std::map<uint16_t, uint8_t> drbCcMap);
+
 protected:
 
   // inherited from Object
@@ -213,6 +219,8 @@ protected:
   LteCcmRrcSapProvider* m_ccmRrcSapProvider; //!< A pointer to the SAP interface of the CCM instance to receive API calls from the eNodeB RRC instance.
 
   std::map<uint8_t, double> m_bandwidthMap;
+  std::map<uint16_t, uint8_t> m_drbCcMap; //!< This map defines the DRB-CC association if MmWaveSplitDrbComponentCarrierManager is used
+
 }; // end of class LteEnbComponentCarrierManager
 
 
