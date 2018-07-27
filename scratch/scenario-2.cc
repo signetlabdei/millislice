@@ -15,8 +15,9 @@ main (int argc, char *argv[])
 	double speed = 3.0; 		// UE speed
 	double bsrTimer = 2.0;
 	double reorderingTimer = 1.0;
-	int interPacketInterval = 1000; // intepacket interval in us 
+	int interPacketInterval = 1000; // intepacket interval in us
 	int runSet = 1;
+	bool splitDrb = false; // isolate DRBs in different CCs
 
 
 	CommandLine cmd;
@@ -30,6 +31,7 @@ main (int argc, char *argv[])
 	cmd.AddValue ("reorderingTimer", "reordering timer [ms]", reorderingTimer);
 	cmd.AddValue("useRlcAm", "Use rlc am", useRlcAm);
 	cmd.AddValue("interPacketInterval", "inter-packet interval [us]", interPacketInterval);
+	cmd.AddValue("splitDrb", "isolate DRBs in different CCs", splitDrb);
 	cmd.Parse (argc, argv);
 
 	// RNG
@@ -92,13 +94,29 @@ main (int argc, char *argv[])
  // First set UseCa = true, then NumberOfComponentCarriers
  Config::SetDefault("ns3::MmWaveHelper::UseCa",BooleanValue(noCc>1));
  Config::SetDefault("ns3::MmWaveHelper::NumberOfComponentCarriers", UintegerValue(noCc));
- Config::SetDefault("ns3::MmWaveHelper::EnbComponentCarrierManager",StringValue ("ns3::MmWaveBaRrComponentCarrierManager"));
+ if (splitDrb)
+ {
+	 Config::SetDefault("ns3::MmWaveHelper::EnbComponentCarrierManager",StringValue ("ns3::MmWaveSplitDrbComponentCarrierManager"));
+ }
+ else
+ {
+	 Config::SetDefault("ns3::MmWaveHelper::EnbComponentCarrierManager",StringValue ("ns3::MmWaveBaRrComponentCarrierManager"));
+ }
  Config::SetDefault("ns3::MmWaveHelper::ChannelModel",StringValue("ns3::MmWave3gppChannel"));
  Config::SetDefault("ns3::MmWaveHelper::PathlossModel",StringValue("ns3::MmWave3gppBuildingsPropagationLossModel"));
  Config::SetDefault("ns3::MmWaveHelper::RlcAmEnabled",BooleanValue(useRlcAm));
 
  Ptr<mmwave::MmWaveHelper> helper = CreateObject<mmwave::MmWaveHelper> ();
  helper->SetCcPhyParams(ccMap);
+
+ if (splitDrb)
+ {
+	 // Create the DRB - CC map
+	 std::map<uint16_t, uint8_t> drbCcMap;
+	 drbCcMap[3] = 0;
+	 drbCcMap[4] = 1;
+	 helper->SetDrbCcMap (drbCcMap);
+ }
 
  Ptr<mmwave::MmWavePointToPointEpcHelper> epcHelper = CreateObject<mmwave::MmWavePointToPointEpcHelper> ();
  helper->SetEpcHelper (epcHelper);
@@ -163,7 +181,6 @@ main (int argc, char *argv[])
 
  uint16_t dlPort = 1234; 	// port for DRB 3
  uint16_t dlPort1 = 1235; // port for DRB 4
- //uint16_t ulPort = 2000; // port for DRB 4
 
  // Packet Sink - Bearer 3 DL
  SimulationConfig::SetupUdpPacketSink (ueNodes.Get (0), // node
@@ -178,9 +195,6 @@ main (int argc, char *argv[])
 																			 0.01, 						// start time
 																			 simTime, 				// stop time
 																			 dlStream1);				// trace file
-
- // Packet Sink - Bearer 3 UL
- //SimulationConfig::SetupUdpPacketSink (remoteHost, ulPort, 0.1, simTime, ulStream);
 
  // App - Bearer 3 DL
  SimulationConfig::SetupUdpApplication (remoteHost, 							// node
@@ -197,9 +211,6 @@ main (int argc, char *argv[])
 																				interPacketInterval, 			// interpacket interval
 																				0.3, 											// start time
 																				simTime);									// stop time
-
- // Bearer 3 UL
- //SimulationConfig::SetupUdpApplication (ueNodes.Get (0), remoteHostAddr, ulPort, interPacketInterval, 0.3, simTime);
 
  helper->EnableTraces();
  BuildingsHelper::MakeMobilityModelConsistent ();
