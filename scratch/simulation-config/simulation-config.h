@@ -18,7 +18,7 @@ namespace ns3{
       static std::pair<Ptr<Node>, Ipv4Address> CreateInternet (Ptr<mmwave::MmWavePointToPointEpcHelper> epcHelper);
       static Ipv4InterfaceContainer InstallUeInternet (Ptr<mmwave::MmWavePointToPointEpcHelper> epcHelper, NodeContainer ueNodes, NetDeviceContainer ueNetDevices);
       static void SetConstantPositionMobility (NodeContainer nodes, Vector position);
-      static void SetConstantVelocityMobility (NodeContainer nodes, Vector position, Vector velocity);
+      static void SetConstantVelocityMobility (Ptr<Node> node, Vector position, Vector velocity);
       static void SetupUdpApplication (Ptr<Node> node, Ipv4Address address, uint16_t port, uint16_t interPacketInterval, double startTime, double endTime);
       static void SetupUdpPacketSink (Ptr<Node> node, uint16_t port, double startTime, double endTime, Ptr<OutputStreamWrapper> stream);
       static void SetTracesPath (std::string filePath);
@@ -132,19 +132,16 @@ namespace ns3{
   }
 
   void
-  SimulationConfig::SetConstantVelocityMobility (NodeContainer nodes, Vector position, Vector velocity)
+  SimulationConfig::SetConstantVelocityMobility (Ptr<Node> node, Vector position, Vector velocity)
   {
     Ptr<ListPositionAllocator> positionAlloc = CreateObject<ListPositionAllocator> ();
     MobilityHelper mobility;
-    positionAlloc->Add (position); // with distance = 15km txOpportunity is 903 bytes, so LTE CC1 is used too.
+    positionAlloc->Add (position);
     mobility.SetMobilityModel ("ns3::ConstantVelocityMobilityModel");
     mobility.SetPositionAllocator(positionAlloc);
-    mobility.Install (nodes);
-    for (uint8_t i=0; i<nodes.GetN (); i++)
-    {
-      nodes.Get (i)->GetObject<ConstantVelocityMobilityModel> ()->SetVelocity (velocity);
-    }
-    BuildingsHelper::Install (nodes);
+    mobility.Install (node);
+    node->GetObject<ConstantVelocityMobilityModel> ()->SetVelocity (velocity);
+    BuildingsHelper::Install (node);
   }
 
 

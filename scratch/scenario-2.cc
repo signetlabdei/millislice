@@ -137,7 +137,7 @@ main (int argc, char *argv[])
  y->SetAttribute ("Min", DoubleValue (-5));
  y->SetAttribute ("Max", DoubleValue (0));
 
- SimulationConfig::SetConstantVelocityMobility (ueNodes, Vector (25.0, y->GetValue (), 1.6), Vector (0.0, speed, 0.0));
+ SimulationConfig::SetConstantVelocityMobility (ueNodes.Get (0), Vector (25.0, y->GetValue (), 1.6), Vector (0.0, speed, 0.0));
 
  // Create random buildings
  RandomBuildings::CreateRandomBuildings (0, 	// street width
