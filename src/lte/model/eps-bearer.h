@@ -76,20 +76,35 @@ struct EpsBearer
 {
 
   /**
-   * QoS Class Indicator. See 3GPP 23.203 Section 6.1.7.2 for standard values.
+   * QoS Class Indicator. See 3GPP 23.203 V15.2.0 Section 5.7.4 for standard values.
    */
   enum Qci
   {
-    GBR_CONV_VOICE          = 1,
-    GBR_CONV_VIDEO          = 2,
-    GBR_GAMING              = 3,
-    GBR_NON_CONV_VIDEO      = 4,
-    NGBR_IMS                = 5,
-    NGBR_VIDEO_TCP_OPERATOR = 6,
-    NGBR_VOICE_VIDEO_GAMING = 7,
-    NGBR_VIDEO_TCP_PREMIUM  = 8,
-    NGBR_VIDEO_TCP_DEFAULT  = 9,
-		GBR_ULTRA_LOW_LAT				= 99,
+    // GBR
+    GBR_CONV_VOICE                = 1,
+    GBR_CONV_VIDEO                = 2,
+    GBR_GAMING                    = 3,
+    GBR_NON_CONV_VIDEO            = 4,
+    GBR_MISSION_CRITICAL_PTT      = 65,
+    GBR_NON_MISSION_CRITICAL_PTT  = 66,
+    GBR_MISSION_CRITICAL_VIDEO    = 67,
+    GBR_V2X                       = 75,
+    // NGBR
+    NGBR_IMS                      = 5,
+    NGBR_VIDEO_TCP_OPERATOR       = 6,
+    NGBR_VOICE_VIDEO_GAMING       = 7,
+    NGBR_VIDEO_TCP_PREMIUM        = 8,
+    NGBR_VIDEO_TCP_DEFAULT        = 9,
+    NGBR_MISSION_CRITICAL_DELAY_SENSITIVE = 69,
+    NGBR_MISSION_CRITICAL_DATA    = 70,
+    NGBR_V2X                      = 79,
+    NGBR_LOW_LAT_EMBB             = 80,
+    // DELAY CRITICAL GBR
+    DCGBR_REMOTE_CONTROL                = 81,
+    DCGBR_INTELLIGENT_TRANSPORT_SYS     = 82,
+    DCGBR_INTELLIGENT_TRANSPORT_SYS_2   = 83,
+    DCGBR_DISCRETE_AUTOMATION           = 84,
+    DCGBR_DISCRETE_AUTOMATION_2         = 85,
   } qci; ///< Qos class indicator
 
   GbrQosInformation gbrQosInfo; ///< GBR QOS information
@@ -124,7 +139,7 @@ struct EpsBearer
 
   /**
    *
-   * @return the priority associated with the QCI of this bearer as per 3GPP 23.203 Section 6.1.7.2
+   * @return the priority associated with the QCI of this bearer as per 3GPP 23.203 Section 5.7.4
    */
   uint8_t GetPriority () const;
 
@@ -132,7 +147,7 @@ struct EpsBearer
    *
    *
    *
-   * @return the packet delay budget associated with the QCI of this bearer as per 3GPP 23.203 Section 6.1.7.2
+   * @return the packet delay budget associated with the QCI of this bearer as per 3GPP 23.203 Section 5.7.4
    */
   uint16_t GetPacketDelayBudgetMs () const;
 
@@ -140,9 +155,25 @@ struct EpsBearer
    *
    *
    *
-   * @return the packet error loss rate associated with the QCI of this bearer as per 3GPP 23.203 Section 6.1.7.2
+   * @return the packet error loss rate associated with the QCI of this bearer as per 3GPP 23.203 Section 5.7.4
    */
-  double  GetPacketErrorLossRate () const;
+  double GetPacketErrorLossRate () const;
+
+  /**
+   *
+   *
+   *
+   * @return the averaging window duration associated with the QCI of this bearer as per 3GPP 23.203 Section 5.7.4
+   */
+  uint16_t GetDefaultAveragingWindow () const;
+
+  /**
+   *
+   *
+   *
+   * @return the maximum data burst volume associated with the QCI of this bearer as per 3GPP 23.203 Section 5.7.4
+   */
+  uint16_t GetDefaultMaximumDataBurstVolume () const;
 
 };
 
