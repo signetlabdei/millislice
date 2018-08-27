@@ -711,9 +711,11 @@ MmWaveSplitDrbComponentCarrierManager::DoReportBufferStatus (LteMacSapProvider::
   else
     {
       uint8_t cc = 0;
-      if( m_drbCcMap.find(params.lcid) != m_drbCcMap.end() )
+      uint8_t qci = m_rlcLcInstantiated.find(params.rnti)->second.find(params.lcid)->second.qci;
+      if( m_qciCcMap.find (qci) != m_qciCcMap.end() )
       {
-        cc = m_drbCcMap.at(params.lcid);
+        cc = m_qciCcMap.at (qci);
+        std::cout << "RNTI " << params.rnti << " lcid " << (uint32_t) params.lcid << " " << (uint16_t)qci << " CC " << (uint16_t)cc <<std::endl;
       }
       m_macSapProvidersMap.find (cc)->second->ReportBufferStatus (params);
     }
