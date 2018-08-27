@@ -112,10 +112,10 @@ main (int argc, char *argv[])
  if (splitDrb)
  {
 	 // Create the DRB - CC map
-	 std::map<uint16_t, uint8_t> drbCcMap;
-	 drbCcMap[3] = 0;
-	 drbCcMap[4] = 1;
-	 helper->SetDrbCcMap (drbCcMap);
+	 std::map<uint16_t, uint8_t> qciCcMap;
+	 qciCcMap[3] = 0;
+	 qciCcMap[4] = 1;
+	 helper->SetQciCcMap (qciCcMap);
  }
 
  Ptr<mmwave::MmWavePointToPointEpcHelper> epcHelper = CreateObject<mmwave::MmWavePointToPointEpcHelper> ();

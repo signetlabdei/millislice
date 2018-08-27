@@ -275,7 +275,7 @@ public:
 	 * \parmam map (DRB ID, CC ID)
 	 *
 	 */
-	void SetDrbCcMap (std::map<uint16_t, uint8_t> drbCcMap);
+	void SetQciCcMap (std::map<uint16_t, uint8_t> qciCcMap);
 
 	void EnablePdcpTraces (void);
 	void EnableMcTraces (void);
@@ -432,7 +432,7 @@ private:
 	 * This map is used to define the DRB-CC association if MmWaveSplitDrbComponentCarrierManager
 	 * is used
 	**/
-	std::map< uint16_t, uint8_t > m_drbCcMap;
+	std::map< uint16_t, uint8_t > m_qciCcMap;
 
 };
 

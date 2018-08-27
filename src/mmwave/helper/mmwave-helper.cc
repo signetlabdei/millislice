@@ -334,9 +334,9 @@ MmWaveHelper::SetBlockageMap (std::map<uint8_t, bool> blockageMap)
 }
 
 void
-MmWaveHelper::SetDrbCcMap (std::map<uint16_t, uint8_t> drbCcMap)
+MmWaveHelper::SetQciCcMap (std::map<uint16_t, uint8_t> qciCcMap)
 {
-	m_drbCcMap = drbCcMap;
+	m_qciCcMap = qciCcMap;
 }
 
 void
@@ -1721,9 +1721,9 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 
 	ccmEnbManager->SetBandwidthMap (bandwidthMap);
 
-	if (m_drbCcMap.size() > 0)
+	if (m_qciCcMap.size() > 0)
 	{
-		ccmEnbManager->SetDrbCcMap (m_drbCcMap);
+		ccmEnbManager->SetQciCcMap (m_qciCcMap);
 	}
 
 	if (m_useIdealRrc)
