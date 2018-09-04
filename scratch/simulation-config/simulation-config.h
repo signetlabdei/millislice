@@ -20,8 +20,12 @@ namespace ns3{
       static void SetConstantPositionMobility (NodeContainer nodes, Vector position);
       static void SetConstantVelocityMobility (Ptr<Node> node, Vector position, Vector velocity);
       static void SetupUdpApplication (Ptr<Node> node, Ipv4Address address, uint16_t port, uint16_t interPacketInterval, double startTime, double endTime);
+      static void SetupFtpModel3Application (Ptr<Node> clientNode, Ptr<Node> serverNode, Ipv4Address address, uint16_t port, double lambda, uint32_t fileSize, uint32_t sendSize, double startTime, double endTime, Ptr<OutputStreamWrapper> stream);
       static void SetupUdpPacketSink (Ptr<Node> node, uint16_t port, double startTime, double endTime, Ptr<OutputStreamWrapper> stream);
       static void SetTracesPath (std::string filePath);
+
+    private:
+      static void StartFileTransfer (ApplicationContainer clientApps, Ptr<ExponentialRandomVariable> ftpArrivals, double endTime);
   };
 
   class CallbackSinks
@@ -170,6 +174,59 @@ namespace ns3{
     app.Stop (Seconds (endTime));
 
     app.Get(0)->TraceConnectWithoutContext("Rx", MakeBoundCallback (&CallbackSinks::RxSink, stream));
+  }
+
+  void
+  SimulationConfig::SetupFtpModel3Application (Ptr<Node> clientNode, Ptr<Node> serverNode, Ipv4Address address, uint16_t port, double lambda, uint32_t fileSize, uint32_t sendSize, double startTime, double endTime, Ptr<OutputStreamWrapper> stream)
+  {
+    // Install FTP application on client node
+    ApplicationContainer clientApps;
+    FileTransferHelper ftp ("ns3::TcpSocketFactory", InetSocketAddress (address, port));
+    ftp.SetAttribute ("SendSize", UintegerValue (sendSize));
+    ftp.SetAttribute ("FileSize", UintegerValue (fileSize));
+    clientApps.Add (ftp.Install (clientNode));
+    clientApps.Start (Seconds (startTime));
+    clientApps.Stop (Seconds (endTime));
+
+    // Install Packetink application on server node
+    ApplicationContainer serverApps;
+    PacketSinkHelper packetSinkHelper ("ns3::TcpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), port));
+    serverApps = packetSinkHelper.Install (serverNode);
+    serverApps.Start (Seconds (startTime));
+    serverApps.Stop (Seconds (endTime));
+
+    serverApps.Get(0)->TraceConnectWithoutContext("Rx", MakeBoundCallback (&CallbackSinks::RxSink, stream));
+
+    // Trigger data transfer
+    Ptr<ExponentialRandomVariable> ftpArrivals = CreateObject<ExponentialRandomVariable> ();
+    ftpArrivals->SetAttribute ("Mean", DoubleValue (1/lambda));
+
+    double firstSend = ftpArrivals->GetValue () + startTime;
+    if (firstSend < endTime)
+    {
+      Simulator::Schedule (Seconds (firstSend), &StartFileTransfer, clientApps, ftpArrivals, endTime);
+      NS_LOG_INFO ("First file transmission scheduled at " << firstSend + Simulator::Now ().GetSeconds ());
+    }
+
+  }
+
+  void
+  SimulationConfig::StartFileTransfer (ApplicationContainer clientApps, Ptr<ExponentialRandomVariable> ftpArrivals, double endTime)
+  {
+    Ptr<FileTransferApplication> ftpApp = DynamicCast<FileTransferApplication> (clientApps.Get (0));
+    NS_ASSERT (ftpApp);
+    ftpApp->SendFile ();
+
+    double nextSend = ftpArrivals->GetValue ();
+    if (nextSend + Simulator::Now ().GetSeconds () < endTime)
+    {
+      Simulator::Schedule (Seconds (nextSend), &StartFileTransfer, clientApps, ftpArrivals, endTime);
+      NS_LOG_INFO ("Next file transmission scheduled at " << nextSend + Simulator::Now ().GetSeconds ());
+    }
+    else
+    {
+      NS_LOG_INFO ("Not enough time for further transmissions");
+    }
   }
 
   void
@@ -322,5 +379,6 @@ namespace ns3{
                 << std::endl;
       }
   }
+
 
 } // end namespace ns3
