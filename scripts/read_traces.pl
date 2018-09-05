@@ -380,7 +380,33 @@ if ($sampleTrace[2]) # 1. DlPdcpStats: packets sent by the eNB and received by t
   }
   $averageThroughput/=(scalar(@timeAxis)-1); # we do not have to consider the
                                              # first time instant 0
-  say "$averageThroughput\t$averageDelay\t$numOfRxpackets";
+
+  my $totDataTx; # total number of transmitted bytes
+  my $totDataRx; # total number of received bytes
+
+  # compute the total number of TXed bytes
+  open($fh, '<:encoding(UTF-8)', $filename)
+    or die "Could not open file '$filename' $!";
+
+  $row = <$fh>;
+  while ($row)
+  {
+    chomp $row; # this removes the EOL character
+    ($mode, $time, $cellId, $rnti, $lcid, $size, $delay) = split(' ',$row); # this splits the arguments
+    if ($mode eq 'Tx' && (($bearerId>0 && $lcid==$bearerId) || ($bearerId==0 && $lcid>2))) # consider only the txed data packets
+    {
+      $totDataTx+=$size;
+    }
+    $row = <$fh>;
+  }
+
+  # compute the total number of received bytes
+  for($timeCounter=0; $timeCounter<scalar(@timeAxis); $timeCounter++)
+  {
+    $totDataRx+=$dataRx[$timeCounter];
+  }
+
+  say "$averageThroughput\t$averageDelay\t$totDataTx\t$totDataRx";
 
   if($saveSampledTrace)
   {
@@ -478,8 +504,34 @@ if ($sampleTrace[3]) # 2. UlPdcpStats: packets sent by the UE and received by th
   }
   $averageThroughput/=(scalar(@timeAxis)-1); # we do not have to consider the
                                              # first time instant 0
-  say "$averageThroughput\t$averageDelay\t$numOfRxpackets";
 
+   my $totDataTx; # total number of transmitted bytes
+   my $totDataRx; # total number of received bytes
+
+   # compute the total number of TXed bytes
+   open($fh, '<:encoding(UTF-8)', $filename)
+     or die "Could not open file '$filename' $!";
+
+   $row = <$fh>;
+   while ($row)
+   {
+     chomp $row; # this removes the EOL character
+     ($mode, $time, $cellId, $rnti, $lcid, $size, $delay) = split(' ',$row); # this splits the arguments
+     if ($mode eq 'Tx' && (($bearerId>0 && $lcid==$bearerId) || ($bearerId==0 && $lcid>2))) # consider only the txed data packets
+     {
+       $totDataTx+=$size;
+     }
+     $row = <$fh>;
+   }
+
+   # compute the total number of received bytes
+   for($timeCounter=0; $timeCounter<scalar(@timeAxis); $timeCounter++)
+   {
+     $totDataRx+=$dataRx[$timeCounter];
+   }
+
+  say "$averageThroughput\t$averageDelay\t$totDataTx\t$totDataRx";
+ 
   if($saveSampledTrace)
   {
     # Now save the results
