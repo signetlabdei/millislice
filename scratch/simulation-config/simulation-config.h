@@ -117,8 +117,12 @@ namespace ns3{
     // Assign IP address to UEs, and install applications
     // Set the default gateway for the UE
     Ipv4StaticRoutingHelper ipv4RoutingHelper;
-    Ptr<Ipv4StaticRouting> ueStaticRouting = ipv4RoutingHelper.GetStaticRouting (ueNodes.Get (0)->GetObject<Ipv4> ());
-    ueStaticRouting->SetDefaultRoute (epcHelper->GetUeDefaultGatewayAddress (), 1);
+
+    for (uint8_t i = 0; i < ueNodes.GetN (); i++)
+    {
+      Ptr<Ipv4StaticRouting> ueStaticRouting = ipv4RoutingHelper.GetStaticRouting (ueNodes.Get (i)->GetObject<Ipv4> ());
+      ueStaticRouting->SetDefaultRoute (epcHelper->GetUeDefaultGatewayAddress (), 1);
+    }
 
     return ueIpIface;
   }
