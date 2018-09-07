@@ -6,6 +6,8 @@
 #include <ns3/mobility-module.h>
 #include <ns3/applications-module.h>
 #include <ns3/buildings-module.h>
+#include <ns3/rmcat-sender.h>
+#include <ns3/rmcat-receiver.h>
 
 NS_LOG_COMPONENT_DEFINE ("SimulationConfig");
 
@@ -22,6 +24,7 @@ namespace ns3{
       static void SetupUdpApplication (Ptr<Node> node, Ipv4Address address, uint16_t port, uint16_t interPacketInterval, double startTime, double endTime);
       static void SetupFtpModel3Application (Ptr<Node> clientNode, Ptr<Node> serverNode, Ipv4Address address, uint16_t port, double lambda, uint32_t fileSize, uint32_t sendSize, double startTime, double endTime, Ptr<OutputStreamWrapper> stream);
       static void SetupUdpPacketSink (Ptr<Node> node, uint16_t port, double startTime, double endTime, Ptr<OutputStreamWrapper> stream);
+      static void InstallApps (bool nada, Ptr<Node> sender, Ptr<Node> receiver, uint16_t port, float initBw, float minBw, float maxBw, float startTime, float stopTime);
       static void SetTracesPath (std::string filePath);
 
     private:
@@ -231,6 +234,32 @@ namespace ns3{
     {
       NS_LOG_INFO ("Not enough time for further transmissions");
     }
+  }
+
+  void
+  SimulationConfig::InstallApps (bool nada, Ptr<Node> sender, Ptr<Node> receiver, uint16_t port, float initBw, float minBw, float maxBw, float startTime, float stopTime)
+  {
+      Ptr<RmcatSender> sendApp = CreateObject<RmcatSender> ();
+      Ptr<RmcatReceiver> recvApp = CreateObject<RmcatReceiver> ();
+      sender->AddApplication (sendApp);
+      receiver->AddApplication (recvApp);
+
+      Ptr<Ipv4> ipv4 = receiver->GetObject<Ipv4> ();
+      Ipv4Address receiverIp = ipv4->GetAddress (1, 0).GetLocal ();
+      sendApp->Setup (receiverIp, port); // initBw, minBw, maxBw);
+
+      const auto fps = 25.;
+      auto innerCodec = new syncodecs::StatisticsCodec{fps};
+      auto codec = new syncodecs::ShapedPacketizer{innerCodec, DEFAULT_PACKET_SIZE};
+      sendApp->SetCodec (std::shared_ptr<syncodecs::Codec>{codec});
+
+      recvApp->Setup (port);
+
+      sendApp->SetStartTime (Seconds (startTime));
+      sendApp->SetStopTime (Seconds (stopTime));
+
+      recvApp->SetStartTime (Seconds (startTime));
+      recvApp->SetStopTime (Seconds (stopTime));
   }
 
   void

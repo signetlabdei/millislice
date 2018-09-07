@@ -245,7 +245,7 @@ main (int argc, char *argv[])
  // Install packet sink and application on eMBB nodes
  for (uint8_t i = 0; i < ueEmbbNodes.GetN (); i++)
  {
-	 SimulationConfig::SetupUdpPacketSink (ueEmbbNodes.Get (i), // node
+	 /*SimulationConfig::SetupUdpPacketSink (ueEmbbNodes.Get (i), // node
 	 																			 dlEmbbPort, 					// port
 																				 0.01, 						// start time
 																				 simTime, 				// stop time
@@ -257,10 +257,12 @@ main (int argc, char *argv[])
 																					1000, 			// interpacket interval
 																					0.3, 											// start time
 																					simTime);									// stop time
+*/
+	SimulationConfig::InstallApps (false, remoteHost, ueEmbbNodes.Get (i), dlEmbbPort, 150000, 150000, 150000, 0.3, simTime);
  }
 
  // Install packet sink and application on URLLC nodes
- for (uint8_t i = 0; i < ueUrllcNodes.GetN (); i++)
+ /*for (uint8_t i = 0; i < ueUrllcNodes.GetN (); i++)
  {
 	SimulationConfig::SetupUdpPacketSink (ueUrllcNodes.Get (i), // node
 																				dlUrllcPort, 					// port
@@ -274,7 +276,7 @@ main (int argc, char *argv[])
 																				 1000, 			// interpacket interval
 																				 0.3, 											// start time
 																				 simTime);									// stop time
- }
+ }*/
 
 
  helper->EnableTraces();
