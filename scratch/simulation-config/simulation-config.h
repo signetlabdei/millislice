@@ -8,6 +8,7 @@
 #include <ns3/buildings-module.h>
 #include <ns3/rmcat-sender.h>
 #include <ns3/rmcat-receiver.h>
+#include <ns3/dash-module.h>
 
 NS_LOG_COMPONENT_DEFINE ("SimulationConfig");
 
@@ -24,7 +25,8 @@ namespace ns3{
       static void SetupUdpApplication (Ptr<Node> node, Ipv4Address address, uint16_t port, uint16_t interPacketInterval, double startTime, double endTime);
       static void SetupFtpModel3Application (Ptr<Node> clientNode, Ptr<Node> serverNode, Ipv4Address address, uint16_t port, double lambda, uint32_t fileSize, uint32_t sendSize, double startTime, double endTime, Ptr<OutputStreamWrapper> stream);
       static void SetupUdpPacketSink (Ptr<Node> node, uint16_t port, double startTime, double endTime, Ptr<OutputStreamWrapper> stream);
-      static void InstallApps (bool nada, Ptr<Node> sender, Ptr<Node> receiver, uint16_t port, float initBw, float minBw, float maxBw, float startTime, float stopTime);
+      static void InstallRmcatApps (bool nada, Ptr<Node> sender, Ptr<Node> receiver, uint16_t port, float initBw, float minBw, float maxBw, float startTime, float stopTime);
+      static void SetupDashApplication (Ptr<Node> senderNode, Ptr<Node> receiverNode, uint32_t port, uint8_t videoId,  double startTime, double stopTime, Ptr<OutputStreamWrapper> stream);
       static void SetTracesPath (std::string filePath);
 
     private:
@@ -237,7 +239,7 @@ namespace ns3{
   }
 
   void
-  SimulationConfig::InstallApps (bool nada, Ptr<Node> sender, Ptr<Node> receiver, uint16_t port, float initBw, float minBw, float maxBw, float startTime, float stopTime)
+  SimulationConfig::InstallRmcatApps (bool nada, Ptr<Node> sender, Ptr<Node> receiver, uint16_t port, float initBw, float minBw, float maxBw, float startTime, float stopTime)
   {
       Ptr<RmcatSender> sendApp = CreateObject<RmcatSender> ();
       Ptr<RmcatReceiver> recvApp = CreateObject<RmcatReceiver> ();
@@ -260,6 +262,29 @@ namespace ns3{
 
       recvApp->SetStartTime (Seconds (startTime));
       recvApp->SetStopTime (Seconds (stopTime));
+  }
+
+  void
+  SimulationConfig::SetupDashApplication (Ptr<Node> clientNode, Ptr<Node> serverNode, uint32_t port, uint8_t videoId,  double startTime, double stopTime, Ptr<OutputStreamWrapper> stream)
+  {
+    Ptr<Ipv4> ipv4 = serverNode->GetObject<Ipv4> ();
+    Ipv4Address receiverIp = ipv4->GetAddress (1, 0).GetLocal ();
+
+    DashClientHelper client("ns3::TcpSocketFactory", InetSocketAddress(receiverIp, port), "ns3::DashClient");
+    //client.SetAttribute ("MaxBytes", UintegerValue (maxBytes));
+    client.SetAttribute("VideoId", UintegerValue(videoId)); // VideoId should be positive
+    client.SetAttribute("TargetDt", TimeValue(Seconds(35.0))); // The target time difference between receiving and playing a frame.
+    client.SetAttribute("window", TimeValue(Time("10s")));  // The window for measuring the average throughput (Time).
+    ApplicationContainer clientApp = client.Install(clientNode);
+    clientApp.Start(Seconds(startTime));
+    clientApp.Stop(Seconds(stopTime));
+
+    DashServerHelper server("ns3::TcpSocketFactory", InetSocketAddress(Ipv4Address::GetAny(), port));
+    ApplicationContainer serverApps = server.Install(serverNode);
+    serverApps.Start(Seconds(startTime));
+    serverApps.Stop(Seconds(stopTime));
+
+    serverApps.Get(0)->TraceConnectWithoutContext("Rx", MakeBoundCallback (&CallbackSinks::RxSink, stream));
   }
 
   void
