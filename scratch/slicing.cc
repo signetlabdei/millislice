@@ -258,7 +258,13 @@ main (int argc, char *argv[])
 																					0.3, 											// start time
 																					simTime);									// stop time
 */
-	SimulationConfig::InstallApps (false, remoteHost, ueEmbbNodes.Get (i), dlEmbbPort, 150000, 150000, 150000, 0.3, simTime);
+	SimulationConfig::SetupDashApplication (ueEmbbNodes.Get (i), // client node
+																					remoteHost, 				 // server node
+																					dlEmbbPort, 				 // port
+																					i+1, 								 // video ID
+																					0.3, 								 // start time
+																					simTime, 						 // stop time
+																					dlEmbbStream);			 // trace file
  }
 
  // Install packet sink and application on URLLC nodes
