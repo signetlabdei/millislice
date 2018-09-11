@@ -36,7 +36,8 @@ namespace ns3{
   class CallbackSinks
   {
     public:
-      static void RxSink (Ptr<OutputStreamWrapper> stream, Ptr<const Packet> packet, const Address &from);
+      static void RxSink (Ptr<OutputStreamWrapper> stream, Ptr<const Packet> packet, const Address &from = Address ());
+      static void TxSink (Ptr<OutputStreamWrapper> stream, Ptr<const Packet> packet, const Address &from = Address ());
   };
 
   class RandomBuildings
@@ -284,7 +285,8 @@ namespace ns3{
     serverApps.Start(Seconds(startTime));
     serverApps.Stop(Seconds(stopTime));
 
-    serverApps.Get(0)->TraceConnectWithoutContext("Rx", MakeBoundCallback (&CallbackSinks::RxSink, stream));
+    serverApps.Get(0)->TraceConnectWithoutContext("Tx", MakeBoundCallback (&CallbackSinks::TxSink, stream));
+    clientApp.Get(0)->TraceConnectWithoutContext("Rx", MakeBoundCallback (&CallbackSinks::RxSink, stream));
   }
 
   void
@@ -343,7 +345,13 @@ namespace ns3{
   void
   CallbackSinks::RxSink (Ptr<OutputStreamWrapper> stream, Ptr<const Packet> packet, const Address &from)
   {
-    *stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << packet->GetSize() << std::endl;
+    *stream->GetStream () << "Rx\t" << Simulator::Now ().GetSeconds () << "\t" << packet->GetSize() << std::endl;
+  }
+
+  void
+  CallbackSinks::TxSink (Ptr<OutputStreamWrapper> stream, Ptr<const Packet> packet, const Address &from)
+  {
+    *stream->GetStream () << "Tx\t" << Simulator::Now ().GetSeconds () << "\t" << packet->GetSize() << std::endl;
   }
 
   std::pair<Box, std::list<Box>>
