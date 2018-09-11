@@ -268,9 +268,9 @@ main (int argc, char *argv[])
  }
 
  // Install packet sink and application on URLLC nodes
- /*for (uint8_t i = 0; i < ueUrllcNodes.GetN (); i++)
+ for (uint8_t i = 0; i < ueUrllcNodes.GetN (); i++)
  {
-	SimulationConfig::SetupUdpPacketSink (ueUrllcNodes.Get (i), // node
+	/*SimulationConfig::SetupUdpPacketSink (ueUrllcNodes.Get (i), // node
 																				dlUrllcPort, 					// port
 																				0.01, 						// start time
 																				simTime, 				// stop time
@@ -282,7 +282,19 @@ main (int argc, char *argv[])
 																				 1000, 			// interpacket interval
 																				 0.3, 											// start time
 																				 simTime);									// stop time
- }*/
+	*/
+	 SimulationConfig::SetupFtpModel3Application (remoteHost,                     //client node
+                                                ueUrllcNodes.Get (i),           // server node
+                                                ueUrllcIpIface.GetAddress (i),  // destination address
+                                                dlUrllcPort,                    // destination port
+                                                1.5,                            // lambda
+                                                512000,                         // file size
+                                                536,                            // segments size OBS: this is the size of the packets that the application forwards to the socket. This is not the size of the packets that are actually going to be transmitted.
+                                                0.3,                            // start time
+                                                simTime,                        // end time
+                                                dlUrllcStream);                 // trace file
+
+ }
 
 
  helper->EnableTraces();
