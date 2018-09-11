@@ -105,6 +105,7 @@ namespace ns3
     uint32_t m_totalRx;      // Total bytes received
     TypeId m_tid;          // Protocol TypeId
     TracedCallback<Ptr<const Packet>, const Address &> m_rxTrace;
+    TracedCallback<Ptr<const Packet>, const Address &> m_txTrace;
 
     // A structure that contains the generated MPEG frames, for each client.
     std::map<Ptr<Socket>, std::queue<Packet> > m_queues;
@@ -115,4 +116,3 @@ namespace ns3
 } // namespace ns3
 
 #endif /* DASH_SERVER_H */
-

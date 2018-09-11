@@ -46,16 +46,26 @@ namespace ns3
   TypeId
   DashServer::GetTypeId(void)
   {
-    static TypeId tid =
-        TypeId("ns3::DashServer").SetParent<Application>().AddConstructor<
-            DashServer>().AddAttribute("Local",
-            "The Address on which to Bind the rx socket.", AddressValue(),
-            MakeAddressAccessor(&DashServer::m_local), MakeAddressChecker()).AddAttribute(
-            "Protocol", "The type id of the protocol to use for the rx socket.",
+    static TypeId tid = TypeId("ns3::DashServer")
+      .SetParent<Application>()
+      .AddConstructor<DashServer>()
+      .AddAttribute("Local",
+            "The Address on which to Bind the rx socket.",
+            AddressValue(),
+            MakeAddressAccessor(&DashServer::m_local),
+            MakeAddressChecker())
+      .AddAttribute("Protocol",
+            "The type id of the protocol to use for the rx socket.",
             TypeIdValue(UdpSocketFactory::GetTypeId()),
-            MakeTypeIdAccessor(&DashServer::m_tid), MakeTypeIdChecker()).AddTraceSource(
-            "Rx", "A packet has been received",
-            MakeTraceSourceAccessor(&DashServer::m_rxTrace));
+            MakeTypeIdAccessor(&DashServer::m_tid),
+            MakeTypeIdChecker())
+      .AddTraceSource ("Rx", "A packet has been received",
+            MakeTraceSourceAccessor (&DashServer::m_rxTrace),
+            "ns3::Packet::TracedCallback")
+      .AddTraceSource ("Tx", "A packet has been sent",
+            MakeTraceSourceAccessor (&DashServer::m_txTrace),
+            "ns3::Packet::TracedCallback")
+            ;
     return tid;
   }
 
@@ -241,6 +251,7 @@ namespace ns3
               }
             break;
           }
+        m_txTrace (frame, Address ());
         m_queues[socket].pop();
       }
 

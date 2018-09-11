@@ -39,25 +39,40 @@ namespace ns3
   TypeId
   DashClient::GetTypeId(void)
   {
-    static TypeId tid =
-        TypeId("ns3::DashClient").SetParent<Application>().AddConstructor<
-            DashClient>().AddAttribute("VideoId",
-            "The Id of the video that is played.", UintegerValue(0),
+    static TypeId tid = TypeId("ns3::DashClient")
+      .SetParent<Application>()
+      .AddConstructor<DashClient>()
+      .AddAttribute("VideoId",
+            "The Id of the video that is played.",
+            UintegerValue(0),
             MakeUintegerAccessor(&DashClient::m_videoId),
-            MakeUintegerChecker<uint32_t>(1)).AddAttribute("Remote",
-            "The address of the destination", AddressValue(),
-            MakeAddressAccessor(&DashClient::m_peer), MakeAddressChecker()).AddAttribute(
-            "Protocol", "The type of TCP protocol to use.",
+            MakeUintegerChecker<uint32_t>(1))
+      .AddAttribute("Remote",
+            "The address of the destination",
+            AddressValue(),
+            MakeAddressAccessor(&DashClient::m_peer),
+            MakeAddressChecker())
+      .AddAttribute("Protocol",
+            "The type of TCP protocol to use.",
             TypeIdValue(TcpSocketFactory::GetTypeId()),
-            MakeTypeIdAccessor(&DashClient::m_tid), MakeTypeIdChecker()).AddAttribute(
-            "TargetDt", "The target buffering time", TimeValue(Time("35s")),
-            MakeTimeAccessor(&DashClient::m_target_dt), MakeTimeChecker()).AddAttribute(
-            "window", "The window for measuring the average throughput (Time)",
-            TimeValue(Time("10s")), MakeTimeAccessor(&DashClient::m_window),
-            MakeTimeChecker()
-
-            ).AddTraceSource("Tx", "A new packet is created and is sent",
-            MakeTraceSourceAccessor(&DashClient::m_txTrace));
+            MakeTypeIdAccessor(&DashClient::m_tid),
+            MakeTypeIdChecker())
+      .AddAttribute("TargetDt",
+            "The target buffering time",
+            TimeValue(Time("35s")),
+            MakeTimeAccessor(&DashClient::m_target_dt),
+            MakeTimeChecker())
+      .AddAttribute("window",
+            "The window for measuring the average throughput (Time)",
+            TimeValue(Time("10s")),
+            MakeTimeAccessor(&DashClient::m_window),
+            MakeTimeChecker())
+      .AddTraceSource("Tx", "A new packet is created and is sent",
+            MakeTraceSourceAccessor(&DashClient::m_txTrace))
+      .AddTraceSource ("Rx", "A packet has been received",
+            MakeTraceSourceAccessor (&DashClient::m_rxTrace),
+            "ns3::Packet::TracedCallback")
+            ;
     return tid;
   }
 
@@ -241,6 +256,7 @@ namespace ns3
     m_player.ReceiveFrame(&message);
     m_segment_bytes += message.GetSize();
     m_totBytes += message.GetSize();
+    m_rxTrace (&message, Address ());
 
     message.RemoveHeader(mpegHeader);
     message.RemoveHeader(httpHeader);

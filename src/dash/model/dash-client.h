@@ -171,6 +171,7 @@ namespace ns3
 
     TypeId m_tid;
     TracedCallback<Ptr<const Packet> > m_txTrace;
+    TracedCallback<Ptr<const Packet>, const Address &> m_rxTrace;
     uint32_t m_videoId;      // The Id of the video that is requested
     Time m_startedReceiving; // Time of reception of the first MPEG frame
     Time m_sumDt;            // Used for calculating the average buffering time
