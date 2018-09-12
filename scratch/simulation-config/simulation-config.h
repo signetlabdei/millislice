@@ -196,13 +196,13 @@ namespace ns3{
     ftp.SetAttribute ("FileSize", UintegerValue (fileSize));
     clientApps.Add (ftp.Install (clientNode));
     clientApps.Start (Seconds (startTime));
-    clientApps.Stop (Seconds (endTime));
+    clientApps.Stop (Seconds (endTime-0.1));
 
     // Install Packetink application on server node
     ApplicationContainer serverApps;
     PacketSinkHelper packetSinkHelper ("ns3::TcpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), port));
     serverApps = packetSinkHelper.Install (serverNode);
-    serverApps.Start (Seconds (startTime));
+    serverApps.Start (Seconds (0));
     serverApps.Stop (Seconds (endTime));
 
     serverApps.Get(0)->TraceConnectWithoutContext("Rx", MakeBoundCallback (&CallbackSinks::RxSink, stream));
@@ -213,7 +213,7 @@ namespace ns3{
     ftpArrivals->SetAttribute ("Mean", DoubleValue (1/lambda));
 
     double firstSend = ftpArrivals->GetValue () + startTime;
-    if (firstSend < endTime)
+    if (firstSend < endTime-0.1)
     {
       Simulator::Schedule (Seconds (firstSend), &StartFileTransfer, clientApps, ftpArrivals, endTime);
       NS_LOG_INFO ("First file transmission scheduled at " << firstSend + Simulator::Now ().GetSeconds ());
@@ -279,11 +279,11 @@ namespace ns3{
     client.SetAttribute("window", TimeValue(Time("10s")));  // The window for measuring the average throughput (Time).
     ApplicationContainer clientApp = client.Install(clientNode);
     clientApp.Start(Seconds(startTime));
-    clientApp.Stop(Seconds(stopTime));
+    clientApp.Stop(Seconds(stopTime-0.1));
 
     DashServerHelper server("ns3::TcpSocketFactory", InetSocketAddress(Ipv4Address::GetAny(), port));
     ApplicationContainer serverApps = server.Install(serverNode);
-    serverApps.Start(Seconds(startTime));
+    serverApps.Start(Seconds(0));
     serverApps.Stop(Seconds(stopTime));
 
     serverApps.Get(0)->TraceConnectWithoutContext("Tx", MakeBoundCallback (&CallbackSinks::TxSink, stream));
