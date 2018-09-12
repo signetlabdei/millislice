@@ -206,6 +206,7 @@ namespace ns3{
     serverApps.Stop (Seconds (endTime));
 
     serverApps.Get(0)->TraceConnectWithoutContext("Rx", MakeBoundCallback (&CallbackSinks::RxSink, stream));
+    clientApps.Get(0)->TraceConnectWithoutContext("Tx", MakeBoundCallback (&CallbackSinks::TxSink, stream));
 
     // Trigger data transfer
     Ptr<ExponentialRandomVariable> ftpArrivals = CreateObject<ExponentialRandomVariable> ();
