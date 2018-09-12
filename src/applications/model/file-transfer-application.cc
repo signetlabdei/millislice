@@ -191,11 +191,12 @@ void FileTransferApplication::SendData (void)
         }
       NS_LOG_LOGIC ("sending packet at " << Simulator::Now ());
       Ptr<Packet> packet = Create<Packet> (toSend);
-      m_txTrace (packet);
-      int actual = m_socket->Send (packet);
+      int actual = m_socket->Send (packet); // if the buffer is full returns -1
       if (actual > 0)
         {
           m_totBytes += actual;
+          m_txTrace (packet, Address ()); // fire the trace only if the packet has been
+                                          // correctly forwarded to the socket
         }
       // We exit this loop when actual < toSend as the send side
       // buffer is full. The "DataSent" callback will pop when

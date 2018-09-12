@@ -42,9 +42,9 @@ class Socket;
  * zero). Once the lower layer send buffer is
  * filled, it waits until space is free to
  * send more data, essentially keeping a
- * constant flow of data. Only SOCK_STREAM 
- * and SOCK_SEQPACKET sockets are supported. 
- * For example, TCP sockets can be used, but 
+ * constant flow of data. Only SOCK_STREAM
+ * and SOCK_SEQPACKET sockets are supported.
+ * For example, TCP sockets can be used, but
  * UDP sockets can not be used.
  */
 
@@ -92,7 +92,7 @@ public:
    * return the total number of bytes that have been sent
    */
   uint32_t GetTotalBytes (void) const;
- 
+
   /**
    * \brief Send another file
    *
@@ -128,7 +128,7 @@ private:
   TypeId          m_tid;          //!< The type of protocol to use.
 
   /// Traced Callback: sent packets
-  TracedCallback<Ptr<const Packet> > m_txTrace;
+  TracedCallback<Ptr<const Packet>, const Address &> m_txTrace;
 
 private:
   /**
