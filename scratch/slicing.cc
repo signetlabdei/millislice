@@ -169,7 +169,7 @@ main (int argc, char *argv[])
 
  for (uint8_t i = 0; i < ueNodes.GetN (); i++)
  {
-	 SimulationConfig::SetConstantVelocityMobility (ueNodes.Get (i), Vector (x->GetValue (), y->GetValue (), 1.6), Vector (0.0, speed, 0.0));
+	 SimulationConfig::SetConstantVelocityMobility (ueNodes.Get (i), Vector (x->GetValue (), y->GetValue (), 1.6), Vector (speed, 0.0, 0.0));
  }
 
  // Create random buildings
@@ -293,7 +293,6 @@ main (int argc, char *argv[])
                                                 0.3,                            // start time
                                                 simTime,                        // end time
                                                 dlUrllcStream);                 // trace file
-
  }
 
 
