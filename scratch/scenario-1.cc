@@ -54,7 +54,7 @@ main (int argc, char *argv[])
 
   bool directBeam = true;
   bool is3gppRadiationPattern = true;
-  
+
   Config::SetDefault ("ns3::MmWave3gppChannel::UpdatePeriod", TimeValue (MilliSeconds (100))); // Set channel update period, 0 stands for no update.
   Config::SetDefault ("ns3::MmWave3gppChannel::DirectBeam", BooleanValue(directBeam)); // Set true to perform the beam in the exact direction of receiver node.
   Config::SetDefault ("ns3::AntennaArrayModel::IsotropicAntennaElements", BooleanValue(!is3gppRadiationPattern));
@@ -139,7 +139,7 @@ main (int argc, char *argv[])
  helper->ActivateDataRadioBearer (ueNetDevices, bearer);
 
  BuildingsHelper::MakeMobilityModelConsistent ();
- RandomBuildings::PrintGnuplottableBuildingListToFile (filePath + "buildings.txt");
+ PrintHelper::PrintGnuplottableBuildingListToFile (filePath + "buildings.txt");
 
  Simulator::Stop (Seconds (simTime));
  Simulator::Run ();

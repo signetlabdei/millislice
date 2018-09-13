@@ -1,6 +1,4 @@
 #include <ns3/core-module.h>
-#include <ns3/mmwave-component-carrier.h>
-#include <ns3/mmwave-point-to-point-epc-helper.h>
 #include <ns3/internet-module.h>
 #include <ns3/point-to-point-helper.h>
 #include <ns3/mobility-module.h>
@@ -9,6 +7,9 @@
 #include <ns3/rmcat-sender.h>
 #include <ns3/rmcat-receiver.h>
 #include <ns3/dash-module.h>
+#include <ns3/node-list.h>
+#include <ns3/lte-module.h>
+#include <ns3/mmwave-module.h>
 
 NS_LOG_COMPONENT_DEFINE ("SimulationConfig");
 
@@ -44,13 +45,20 @@ namespace ns3{
   {
     public:
       static void CreateRandomBuildings (double streetWidth, double blockSize, double maxXAxis, double maxYAxis, uint32_t numBlocks);
-      static void PrintGnuplottableBuildingListToFile (std::string filename);
 
     private:
       static std::pair<Box, std::list<Box>> GenerateBuildingBounds(double xMin, double xMax, double yMin, double yMax, double maxBuildSize, std::list<Box> m_previousBlocks );
       static bool AreOverlapping(Box a, Box b);
       static bool OverlapWithAnyPrevious(Box box, std::list<Box> m_previousBlocks);
 
+  };
+
+  class PrintHelper
+  {
+    public:
+      static void PrintGnuplottableBuildingListToFile (std::string filename);
+      static void PrintGnuplottableNodeListToFile (std::string filename);
+      static void UpdateGnuplottableNodeListToFile (std::string filename, Ptr<Node> node);
   };
 
   Ptr<mmwave::MmWaveComponentCarrier>
@@ -417,7 +425,7 @@ namespace ns3{
   }
 
   void
-  RandomBuildings::PrintGnuplottableBuildingListToFile (std::string filename)
+  PrintHelper::PrintGnuplottableBuildingListToFile (std::string filename)
   {
     std::ofstream outFile;
     outFile.open (filename.c_str (), std::ios_base::out | std::ios_base::trunc);
@@ -427,8 +435,8 @@ namespace ns3{
         return;
       }
 
-  	outFile << "set xrange [0:100]" << std::endl;
-  	outFile << "set yrange [0:100]" << std::endl;
+  	//outFile << "set xrange [0:100]" << std::endl;
+  	//outFile << "set yrange [0:100]" << std::endl;
   	outFile << "unset key" << std::endl;
   	outFile << "set grid" << std::endl;
 
@@ -444,6 +452,90 @@ namespace ns3{
                 << " front fs empty "
                 << std::endl;
       }
+  }
+
+  void
+  PrintHelper::PrintGnuplottableNodeListToFile (std::string filename)
+  {
+    std::ofstream outFile;
+    outFile.open (filename.c_str (), std::ios_base::out | std::ios_base::trunc);
+    if (!outFile.is_open ())
+      {
+        NS_LOG_ERROR ("Can't open file " << filename);
+        return;
+      }
+    for (NodeList::Iterator it = NodeList::Begin (); it != NodeList::End (); ++it)
+      {
+        Ptr<Node> node = *it;
+        int nDevs = node->GetNDevices ();
+        for (int j = 0; j < nDevs; j++)
+          {
+            Ptr<LteUeNetDevice> uedev = node->GetDevice (j)->GetObject <LteUeNetDevice> ();
+            Ptr<mmwave::MmWaveUeNetDevice> mmuedev = node->GetDevice (j)->GetObject <mmwave::MmWaveUeNetDevice> ();
+            Ptr<mmwave::McUeNetDevice> mcuedev = node->GetDevice (j)->GetObject <mmwave::McUeNetDevice> ();
+            Ptr<LteEnbNetDevice> enbdev = node->GetDevice (j)->GetObject <LteEnbNetDevice> ();
+            Ptr<mmwave::MmWaveEnbNetDevice> mmenbdev = node->GetDevice (j)->GetObject <mmwave::MmWaveEnbNetDevice> ();
+            if (uedev)
+              {
+                Vector pos = node->GetObject<MobilityModel> ()->GetPosition ();
+                outFile << "set label \"" << uedev->GetImsi ()
+                        << "\" at "<< pos.x << "," << pos.y << " left font \"Helvetica,8\" textcolor rgb \"black\" front point pt 1 ps 0.5 lc rgb \"black\" offset 0,0"
+                        << std::endl;
+
+                Simulator::Schedule (Seconds (1), &PrintHelper::UpdateGnuplottableNodeListToFile, filename, node);
+              }
+            else if (mmuedev)
+             {
+                Vector pos = node->GetObject<MobilityModel> ()->GetPosition ();
+                outFile << "set label \"" << mmuedev->GetImsi ()
+                        << "\" at "<< pos.x << "," << pos.y << " left font \"Helvetica,8\" textcolor rgb \"black\" front point pt 1 ps 0.5 lc rgb \"black\" offset 0,0"
+                        << std::endl;
+
+                Simulator::Schedule (Seconds (1), &PrintHelper::UpdateGnuplottableNodeListToFile, filename, node);
+              }
+            else if (mcuedev)
+             {
+                Vector pos = node->GetObject<MobilityModel> ()->GetPosition ();
+                outFile << "set label \"" << mcuedev->GetImsi ()
+                        << "\" at "<< pos.x << "," << pos.y << " left font \"Helvetica,8\" textcolor rgb \"black\" front point pt 1 ps 0.5 lc rgb \"black\" offset 0,0"
+                        << std::endl;
+
+                Simulator::Schedule (Seconds (1), &PrintHelper::UpdateGnuplottableNodeListToFile, filename, node);
+              }
+            else if (enbdev)
+              {
+                 Vector pos = node->GetObject<MobilityModel> ()->GetPosition ();
+                 outFile << "set label \"" << enbdev->GetCellId ()
+                         << "\" at "<< pos.x << "," << pos.y << " left font \"Helvetica,8\" textcolor rgb \"red\" front point pt 1 ps 0.5 lc rgb \"red\" offset 0,0"
+                         << std::endl;
+               }
+            else if (mmenbdev)
+              {
+                 Vector pos = node->GetObject<MobilityModel> ()->GetPosition ();
+                 outFile << "set label \"" << mmenbdev->GetCellId ()
+                         << "\" at "<< pos.x << "," << pos.y << " left font \"Helvetica,8\" textcolor rgb \"red\" front point pt 1 ps 0.5 lc rgb \"red\" offset 0,0"
+                         << std::endl;
+               }
+          }
+      }
+  }
+
+  void
+  PrintHelper::UpdateGnuplottableNodeListToFile (std::string filename, Ptr<Node> node)
+  {
+    std::ofstream outFile;
+    outFile.open (filename.c_str (), std::ios_base::app);
+    if (!outFile.is_open ())
+      {
+        NS_LOG_ERROR ("Can't open file " << filename);
+        return;
+      }
+    Vector pos = node->GetObject<MobilityModel> ()->GetPosition ();
+    outFile << "set label \""
+            << "\" at "<< pos.x << "," << pos.y << " left font \"Helvetica,8\" textcolor rgb \"black\" front point pt 1 ps 0.3 lc rgb \"black\" offset 0,0"
+            << std::endl;
+
+    Simulator::Schedule (Seconds (1), &PrintHelper::UpdateGnuplottableNodeListToFile, filename, node);
   }
 
 

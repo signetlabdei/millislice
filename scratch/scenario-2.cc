@@ -214,7 +214,7 @@ main (int argc, char *argv[])
 
  helper->EnableTraces();
  BuildingsHelper::MakeMobilityModelConsistent ();
- RandomBuildings::PrintGnuplottableBuildingListToFile (filePath + "buildings.txt");
+ PrintHelper::PrintGnuplottableBuildingListToFile (filePath + "buildings.txt");
 
  Simulator::Stop (Seconds (simTime));
  Simulator::Run ();
