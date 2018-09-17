@@ -19,6 +19,15 @@ main (int argc, char *argv[])
 	int runSet = 1;
 	int mode = 1; // mode 1 = 1 CC, no isolation
 								// mode 2 = 2 CC, complete isolation
+	double appStart = 0.3; // application start time
+	double appEnd; // application start time
+	bool urllcOn = true; // if true install the ftp application
+	bool embbOn = true; // if true install the dash application
+
+	// URLLC parameters
+	double lambdaUrllc = 0.2; // average number of file/s
+	int segmentSize = 536; // segment size in bytes
+	int fileSize = 512000; // file size in bytes
 
 	CommandLine cmd;
 	cmd.AddValue ("centerFreq", "Central frequency", centerFreq);
@@ -30,9 +39,17 @@ main (int argc, char *argv[])
 	cmd.AddValue ("bw", "Total bandwidth", bw);
 	cmd.AddValue ("bsrTimer", "BSR timer [ms]", bsrTimer);
 	cmd.AddValue ("reorderingTimer", "reordering timer [ms]", reorderingTimer);
-	cmd.AddValue("useRlcAm", "Use rlc am", useRlcAm);
-	cmd.AddValue("mode", "mode 1 = 1 CC, no isolation, mode 2 = 2 CC, complete isolation", mode);
+	cmd.AddValue ("useRlcAm", "Use rlc am", useRlcAm);
+	cmd.AddValue ("mode", "mode 1 = 1 CC, no isolation, mode 2 = 2 CC, complete isolation", mode);
+	cmd.AddValue ("lambdaUrllc", "average number of file/s", lambdaUrllc);
+	cmd.AddValue ("segmentSize", "segment size in bytes", segmentSize);
+	cmd.AddValue ("fileSize", "file size in bytes", fileSize);
+	cmd.AddValue ("appStart", "application start time", appStart);
+	cmd.AddValue ("appEnd", "application end time", appEnd);
+	cmd.AddValue ("urllcOn", "if true install the ftp application", urllcOn);
+	cmd.AddValue ("embbOn", "if true install the dash application", embbOn);
 	cmd.Parse (argc, argv);
+	appEnd = simTime;
 
 	// RNG
 	RngSeedManager::SetSeed (1);
@@ -239,60 +256,66 @@ main (int argc, char *argv[])
 
  // Install and start applications on UEs and remote host
  AsciiTraceHelper asciiTraceHelper;
- Ptr<OutputStreamWrapper> dlEmbbStream = asciiTraceHelper.CreateFileStream (filePath + "PacketSinkDlBearer3Rx.txt");
- Ptr<OutputStreamWrapper> dlUrllcStream = asciiTraceHelper.CreateFileStream (filePath + "PacketSinkDlBearer4Rx.txt");
+ Ptr<OutputStreamWrapper> dlEmbbStream = asciiTraceHelper.CreateFileStream (filePath + "eMBB-app-trace.txt");
+ Ptr<OutputStreamWrapper> dlUrllcStream = asciiTraceHelper.CreateFileStream (filePath + "urllc-app-trace.txt");
 
  // Install packet sink and application on eMBB nodes
- for (uint8_t i = 0; i < ueEmbbNodes.GetN (); i++)
+ if (embbOn)
  {
-	 /*SimulationConfig::SetupUdpPacketSink (ueEmbbNodes.Get (i), // node
-	 																			 dlEmbbPort, 					// port
-																				 0.01, 						// start time
-																				 simTime, 				// stop time
-																				 dlEmbbStream); 			// trace file
+	 for (uint8_t i = 0; i < ueEmbbNodes.GetN (); i++)
+	 {
+		 /*SimulationConfig::SetupUdpPacketSink (ueEmbbNodes.Get (i), // node
+		 																			 dlEmbbPort, 					// port
+																					 0.01, 						// start time
+																					 simTime, 				// stop time
+																					 dlEmbbStream); 			// trace file
 
-	 SimulationConfig::SetupUdpApplication (remoteHost, 							// node
-		 																			ueEmbbIpIface.GetAddress (i), // destination address
-																					dlEmbbPort, 									// destination port
-																					1000, 			// interpacket interval
-																					0.3, 											// start time
-																					simTime);									// stop time
-*/
-	SimulationConfig::SetupDashApplication (ueEmbbNodes.Get (i), // client node
-																					remoteHost, 				 // server node
-																					dlEmbbPort, 				 // port
-																					i+1, 								 // video ID
-																					0.3, 								 // start time
-																					simTime, 						 // stop time
-																					dlEmbbStream);			 // trace file
+		 SimulationConfig::SetupUdpApplication (remoteHost, 							// node
+			 																			ueEmbbIpIface.GetAddress (i), // destination address
+																						dlEmbbPort, 									// destination port
+																						1000, 			// interpacket interval
+																						0.3, 											// start time
+																						simTime);									// stop time
+	*/
+		SimulationConfig::SetupDashApplication (ueEmbbNodes.Get (i), // client node
+																						remoteHost, 				 // server node
+																						dlEmbbPort, 				 // port
+																						i+1, 								 // video ID
+																						appStart, 					 // start time
+																						appEnd, 						 // stop time
+																						dlEmbbStream);			 // trace file
+	 }
  }
 
  // Install packet sink and application on URLLC nodes
- for (uint8_t i = 0; i < ueUrllcNodes.GetN (); i++)
+ if (urllcOn)
  {
-	/*SimulationConfig::SetupUdpPacketSink (ueUrllcNodes.Get (i), // node
-																				dlUrllcPort, 					// port
-																				0.01, 						// start time
-																				simTime, 				// stop time
-																				dlUrllcStream); 			// trace file
+	for (uint8_t i = 0; i < ueUrllcNodes.GetN (); i++)
+	 {
+		/*SimulationConfig::SetupUdpPacketSink (ueUrllcNodes.Get (i), // node
+																					dlUrllcPort, 					// port
+																					0.01, 						// start time
+																					simTime, 				// stop time
+																					dlUrllcStream); 			// trace file
 
-	SimulationConfig::SetupUdpApplication (remoteHost, 							// node
-																				 ueUrllcIpIface.GetAddress (i), // destination address
-																				 dlUrllcPort, 									// destination port
-																				 1000, 			// interpacket interval
-																				 0.3, 											// start time
-																				 simTime);									// stop time
-	*/
-	 SimulationConfig::SetupFtpModel3Application (remoteHost,                     //client node
-                                                ueUrllcNodes.Get (i),           // server node
-                                                ueUrllcIpIface.GetAddress (i),  // destination address
-                                                dlUrllcPort,                    // destination port
-                                                1.5,                            // lambda
-                                                512000,                         // file size
-                                                536,                            // segments size OBS: this is the size of the packets that the application forwards to the socket. This is not the size of the packets that are actually going to be transmitted.
-                                                0.3,                            // start time
-                                                simTime,                        // end time
-                                                dlUrllcStream);                 // trace file
+		SimulationConfig::SetupUdpApplication (remoteHost, 							// node
+																					 ueUrllcIpIface.GetAddress (i), // destination address
+																					 dlUrllcPort, 									// destination port
+																					 1000, 			// interpacket interval
+																					 0.3, 											// start time
+																					 simTime);									// stop time
+		*/
+		 SimulationConfig::SetupFtpModel3Application (remoteHost,                     //client node
+	                                                ueUrllcNodes.Get (i),           // server node
+	                                                ueUrllcIpIface.GetAddress (i),  // destination address
+	                                                dlUrllcPort,                    // destination port
+	                                        				lambdaUrllc,                    // lambda
+	                                                fileSize,                       // file size
+	                                                segmentSize,                    // segments size OBS: this is the size of the packets that the application forwards to the socket. This is not the size of the packets that are actually going to be transmitted.
+	                                                appStart,                       // start time
+	                                                appEnd,                        	// end time
+	                                                dlUrllcStream);                 // trace file
+	 }
  }
 
 
