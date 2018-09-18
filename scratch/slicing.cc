@@ -24,6 +24,10 @@ main (int argc, char *argv[])
 	bool urllcOn = true; // if true install the ftp application
 	bool embbOn = true; // if true install the dash application
 
+	// Propagation loss model
+	bool useBuildings = false; // if true use MmWave3gppBuildingsPropagationLossModel
+	std::string condition = "a"; // MmWave3MmWave3gppPropagationLossModel condition, n = NLOS, l = LOS
+
 	// URLLC parameters
 	double lambdaUrllc = 0.2; // average number of file/s
 	int segmentSize = 536; // segment size in bytes
@@ -48,6 +52,8 @@ main (int argc, char *argv[])
 	cmd.AddValue ("appEnd", "application end time", appEnd);
 	cmd.AddValue ("urllcOn", "if true install the ftp application", urllcOn);
 	cmd.AddValue ("embbOn", "if true install the dash application", embbOn);
+	cmd.AddValue ("useBuildings", "if true use 3MmWave3gppBuildingsPropagationLossModel", useBuildings);
+	cmd.AddValue ("condition", "MmWave3MmWave3gppPropagationLossModel condition, n = NLOS, l = LOS, a = all", condition);
 	cmd.Parse (argc, argv);
 	appEnd = simTime;
 
@@ -72,7 +78,6 @@ main (int argc, char *argv[])
 
 	//The available channel scenarios are 'RMa', 'UMa', 'UMi-StreetCanyon', 'InH-OfficeMixed', 'InH-OfficeOpen', 'InH-ShoppingMall'
 	std::string scenario = "UMa";
-	std::string condition = "n"; // n = NLOS, l = LOS
 	Config::SetDefault ("ns3::MmWave3gppPropagationLossModel::ChannelCondition", StringValue(condition));
 	Config::SetDefault ("ns3::MmWave3gppPropagationLossModel::Scenario", StringValue(scenario));
 	Config::SetDefault ("ns3::MmWave3gppPropagationLossModel::OptionalNlos", BooleanValue(false));
@@ -139,7 +144,14 @@ main (int argc, char *argv[])
 	 Config::SetDefault("ns3::MmWaveHelper::EnbComponentCarrierManager",StringValue ("ns3::MmWaveNoOpComponentCarrierManager"));
  }
  Config::SetDefault("ns3::MmWaveHelper::ChannelModel",StringValue("ns3::MmWave3gppChannel"));
- Config::SetDefault("ns3::MmWaveHelper::PathlossModel",StringValue("ns3::MmWave3gppBuildingsPropagationLossModel"));
+ if (useBuildings)
+ {
+	 Config::SetDefault("ns3::MmWaveHelper::PathlossModel",StringValue("ns3::MmWave3gppBuildingsPropagationLossModel"));
+ }
+ else
+ {
+	 Config::SetDefault("ns3::MmWaveHelper::PathlossModel",StringValue("ns3::MmWave3gppPropagationLossModel"));	 
+ }
  Config::SetDefault("ns3::MmWaveHelper::RlcAmEnabled",BooleanValue(useRlcAm));
 
  Ptr<mmwave::MmWaveHelper> helper = CreateObject<mmwave::MmWaveHelper> ();
