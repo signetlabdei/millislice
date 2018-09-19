@@ -715,7 +715,7 @@ MmWaveSplitDrbComponentCarrierManager::DoReportBufferStatus (LteMacSapProvider::
       if( m_qciCcMap.find (qci) != m_qciCcMap.end() )
       {
         cc = m_qciCcMap.at (qci);
-        std::cout << "RNTI " << params.rnti << " lcid " << (uint32_t) params.lcid << " " << (uint16_t)qci << " CC " << (uint16_t)cc <<std::endl;
+        NS_LOG_INFO ("RNTI " << params.rnti << " lcid " << (uint32_t) params.lcid << " " << (uint16_t)qci << " CC " << (uint16_t)cc);
       }
       m_macSapProvidersMap.find (cc)->second->ReportBufferStatus (params);
     }

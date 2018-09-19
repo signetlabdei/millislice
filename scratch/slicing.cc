@@ -220,34 +220,27 @@ main (int argc, char *argv[])
  uint16_t dlUrllcPort = 1235; // port for eMBB
  uint16_t dlEmbbPort = 1236; 	// port for URLLC
 
- // Create a dedicated bearer for the URLLC users
- for (uint8_t i = 0; i < ueUrllcNodes.GetN (); i++)
- {
- 	Ptr<NetDevice> ueDevice = ueUrllcNetDevices.Get(0);
- 	Ptr<mmwave::MmWaveUeNetDevice> ueMmWaveDevice = DynamicCast<mmwave::MmWaveUeNetDevice> (ueDevice);
- 	EpcTft::PacketFilter packetFilter; // Create a new tft packet filter
- 	packetFilter.localPortStart = dlUrllcPort; // Set the filter policies
- 	packetFilter.localPortEnd = dlUrllcPort;
- 	Ptr<EpcTft> tft = Create<EpcTft> (); // Create a new tft
- 	tft->Add (packetFilter); // Add the packet filter
- 	epcHelper->ActivateEpsBearer (ueDevice, ueMmWaveDevice->GetImsi (), tft, EpsBearer (EpsBearer::DCGBR_REMOTE_CONTROL)); // Activate the bearer
- 	// All the packets that match the filter rule will be sent using this bearer.
- }
-
  // Create a dedicated bearer for the eMBB users
- for (uint8_t i = 0; i < ueEmbbNodes.GetN (); i++)
+ for (uint8_t i = 0; i < ueNodes.GetN (); i++)
  {
-	 Ptr<NetDevice> ueDevice = ueEmbbNetDevices.Get(0);
+	 Ptr<NetDevice> ueDevice = ueNetDevices.Get(i);
 	 Ptr<mmwave::MmWaveUeNetDevice> ueMmWaveDevice = DynamicCast<mmwave::MmWaveUeNetDevice> (ueDevice);
-	 EpcTft::PacketFilter packetFilter; // Create a new tft packet filter
-	 packetFilter.localPortStart = dlEmbbPort; // Set the filter policies
-	 packetFilter.localPortEnd = dlEmbbPort;
-	 Ptr<EpcTft> tft = Create<EpcTft> (); // Create a new tft
-	 tft->Add (packetFilter); // Add the packet filter
-	 epcHelper->ActivateEpsBearer (ueDevice, ueMmWaveDevice->GetImsi (), tft, EpsBearer (EpsBearer::NGBR_VIDEO_TCP_DEFAULT)); // Activate the bearer
+	 EpcTft::PacketFilter embbPacketFilter; // Create a new tft packet filter
+	 embbPacketFilter.remotePortStart = dlEmbbPort; // Set the filter policies
+	 embbPacketFilter.remotePortEnd = dlEmbbPort;
+	 Ptr<EpcTft> embbTft = Create<EpcTft> (); // Create a new tft
+	 embbTft->Add (embbPacketFilter); // Add the packet filter
+	 epcHelper->ActivateEpsBearer (ueDevice, ueMmWaveDevice->GetImsi (), embbTft, EpsBearer (EpsBearer::NGBR_VIDEO_TCP_DEFAULT)); // Activate the bearer
 	 // All the packets that match the filter rule will be sent using this bearer.
- }
 
+   EpcTft::PacketFilter urllcPacketFilter; // Create a new tft packet filter
+   urllcPacketFilter.localPortStart = dlUrllcPort; // Set the filter policies
+   urllcPacketFilter.localPortEnd = dlUrllcPort;
+   Ptr<EpcTft> urllcTft = Create<EpcTft> (); // Create a new tft
+   urllcTft->Add (urllcPacketFilter); // Add the packet filter
+   epcHelper->ActivateEpsBearer (ueDevice, ueMmWaveDevice->GetImsi (), urllcTft, EpsBearer (EpsBearer::DCGBR_REMOTE_CONTROL)); // Activate the bearer
+   // All the packets that match the filter rule will be sent using this bearer.
+ }
 
  // Install and start applications on UEs and remote host
  AsciiTraceHelper asciiTraceHelper;
@@ -300,7 +293,7 @@ main (int argc, char *argv[])
 	 																					simTime, 				// stop time
 	 																					dlUrllcStream); 			// trace file
 
-	 		SimulationConfig::SetupUdpApplication (remoteHost, 							// node
+	 		 SimulationConfig::SetupUdpApplication (remoteHost, 							// node
 	 																					 ueUrllcIpIface.GetAddress (i), // destination address
 	 																					 dlUrllcPort, 									// destination port
 	 																					 1000, 			// interpacket interval
