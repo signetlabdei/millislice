@@ -3,6 +3,8 @@
 
 using namespace ns3;
 
+void SetupScenario (NodeContainer enbNodes, NodeContainer ueNodes, std::string scenario);
+
 int
 main (int argc, char *argv[])
 {
@@ -13,7 +15,7 @@ main (int argc, char *argv[])
 	double centerFreq = 28e9;  // center frequency
 	double bw = 1e9; 						 // total bandwidth
 	bool useRlcAm = true;			// choose RLC AM / UM
-	double speed = 3.0; 		// UE speed
+	//double speed = 3.0; 		// UE speed
 	double bsrTimer = 2.0;
 	double reorderingTimer = 1.0;
 	int runSet = 1;
@@ -23,10 +25,12 @@ main (int argc, char *argv[])
 	double appEnd; // application start time
 	bool urllcOn = true; // if true install the ftp application
 	bool embbOn = true; // if true install the dash application
+	bool useUdp = false; // if true use UDP client apps
 
 	// Propagation loss model
 	bool useBuildings = false; // if true use MmWave3gppBuildingsPropagationLossModel
 	std::string condition = "a"; // MmWave3MmWave3gppPropagationLossModel condition, n = NLOS, l = LOS
+	std::string scenario = "test"; // the simulation scenario
 
 	// URLLC parameters
 	double lambdaUrllc = 0.2; // average number of file/s
@@ -54,6 +58,8 @@ main (int argc, char *argv[])
 	cmd.AddValue ("embbOn", "if true install the dash application", embbOn);
 	cmd.AddValue ("useBuildings", "if true use 3MmWave3gppBuildingsPropagationLossModel", useBuildings);
 	cmd.AddValue ("condition", "MmWave3MmWave3gppPropagationLossModel condition, n = NLOS, l = LOS, a = all", condition);
+	cmd.AddValue ("scenario", "the simulation scenario", scenario);
+	cmd.AddValue ("useUdp", "if true use UDP client apps", useUdp);
 	cmd.Parse (argc, argv);
 	appEnd = simTime;
 
@@ -77,9 +83,8 @@ main (int argc, char *argv[])
 	Config::SetDefault ("ns3::LteRlcUmLowLat::SendBsrWhenPacketTx", BooleanValue(true));
 
 	//The available channel scenarios are 'RMa', 'UMa', 'UMi-StreetCanyon', 'InH-OfficeMixed', 'InH-OfficeOpen', 'InH-ShoppingMall'
-	std::string scenario = "UMa";
 	Config::SetDefault ("ns3::MmWave3gppPropagationLossModel::ChannelCondition", StringValue(condition));
-	Config::SetDefault ("ns3::MmWave3gppPropagationLossModel::Scenario", StringValue(scenario));
+	Config::SetDefault ("ns3::MmWave3gppPropagationLossModel::Scenario", StringValue("UMa"));
 	Config::SetDefault ("ns3::MmWave3gppPropagationLossModel::OptionalNlos", BooleanValue(false));
 	Config::SetDefault ("ns3::MmWave3gppPropagationLossModel::Shadowing", BooleanValue(false)); // enable or disable the shadowing effect
 	Config::SetDefault ("ns3::MmWave3gppPropagationLossModel::InCar", BooleanValue(false)); // enable or disable the shadowing effect
@@ -150,7 +155,7 @@ main (int argc, char *argv[])
  }
  else
  {
-	 Config::SetDefault("ns3::MmWaveHelper::PathlossModel",StringValue("ns3::MmWave3gppPropagationLossModel"));	 
+	 Config::SetDefault("ns3::MmWaveHelper::PathlossModel",StringValue("ns3::MmWave3gppPropagationLossModel"));
  }
  Config::SetDefault("ns3::MmWaveHelper::RlcAmEnabled",BooleanValue(useRlcAm));
 
@@ -184,29 +189,7 @@ main (int argc, char *argv[])
  ueNodes.Add (ueEmbbNodes);
  ueNodes.Add (ueUrllcNodes);
 
- // Set eNB mobility
- SimulationConfig::SetConstantPositionMobility (enbNodes, Vector (50.0, 50.0, 10.0));
-
- // Set UE mobility
- Ptr<UniformRandomVariable> y = CreateObject<UniformRandomVariable> ();
- y->SetAttribute ("Min", DoubleValue (-5));
- y->SetAttribute ("Max", DoubleValue (0));
-
- Ptr<UniformRandomVariable> x = CreateObject<UniformRandomVariable> ();
- x->SetAttribute ("Min", DoubleValue (25));
- x->SetAttribute ("Max", DoubleValue (75));
-
- for (uint8_t i = 0; i < ueNodes.GetN (); i++)
- {
-	 SimulationConfig::SetConstantVelocityMobility (ueNodes.Get (i), Vector (x->GetValue (), y->GetValue (), 1.6), Vector (speed, 0.0, 0.0));
- }
-
- // Create random buildings
- RandomBuildings::CreateRandomBuildings (0, 	// street width
-	 																			 20, 	// block size
-																				 100, // max x-axis
-																				 50,	// max y-axis
-																				 7);	// number of buildings
+ SetupScenario (enbNodes, ueNodes, "test");
 
  // Install eNB device
  NetDeviceContainer enbNetDevices = helper->InstallEnbDevice (enbNodes);
@@ -276,26 +259,31 @@ main (int argc, char *argv[])
  {
 	 for (uint8_t i = 0; i < ueEmbbNodes.GetN (); i++)
 	 {
-		 /*SimulationConfig::SetupUdpPacketSink (ueEmbbNodes.Get (i), // node
-		 																			 dlEmbbPort, 					// port
-																					 0.01, 						// start time
-																					 simTime, 				// stop time
-																					 dlEmbbStream); 			// trace file
+		 if (useUdp)
+		 {
+			 SimulationConfig::SetupUdpPacketSink (ueEmbbNodes.Get (i), // node
+			 																			 dlEmbbPort, 					// port
+																						 0.01, 						// start time
+																						 simTime, 				// stop time
+																						 dlEmbbStream); 			// trace file
 
-		 SimulationConfig::SetupUdpApplication (remoteHost, 							// node
-			 																			ueEmbbIpIface.GetAddress (i), // destination address
-																						dlEmbbPort, 									// destination port
-																						1000, 			// interpacket interval
-																						0.3, 											// start time
-																						simTime);									// stop time
-	*/
-		SimulationConfig::SetupDashApplication (ueEmbbNodes.Get (i), // client node
-																						remoteHost, 				 // server node
-																						dlEmbbPort, 				 // port
-																						i+1, 								 // video ID
-																						appStart, 					 // start time
-																						appEnd, 						 // stop time
-																						dlEmbbStream);			 // trace file
+			 SimulationConfig::SetupUdpApplication (remoteHost, 							// node
+				 																			ueEmbbIpIface.GetAddress (i), // destination address
+																							dlEmbbPort, 									// destination port
+																							1000, 			// interpacket interval
+																							0.3, 											// start time
+																							simTime);									// stop time
+		 }
+		 else
+		 {
+			 SimulationConfig::SetupDashApplication (ueEmbbNodes.Get (i), // client node
+	 																						remoteHost, 				 // server node
+	 																						dlEmbbPort, 				 // port
+	 																						i+1, 								 // video ID
+	 																						appStart, 					 // start time
+	 																						appEnd, 						 // stop time
+	 																						dlEmbbStream);			 // trace file
+		 }
 	 }
  }
 
@@ -304,29 +292,34 @@ main (int argc, char *argv[])
  {
 	for (uint8_t i = 0; i < ueUrllcNodes.GetN (); i++)
 	 {
-		/*SimulationConfig::SetupUdpPacketSink (ueUrllcNodes.Get (i), // node
-																					dlUrllcPort, 					// port
-																					0.01, 						// start time
-																					simTime, 				// stop time
-																					dlUrllcStream); 			// trace file
+		 if (useUdp)
+		 {
+			 SimulationConfig::SetupUdpPacketSink (ueUrllcNodes.Get (i), // node
+	 																					dlUrllcPort, 					// port
+	 																					0.01, 						// start time
+	 																					simTime, 				// stop time
+	 																					dlUrllcStream); 			// trace file
 
-		SimulationConfig::SetupUdpApplication (remoteHost, 							// node
-																					 ueUrllcIpIface.GetAddress (i), // destination address
-																					 dlUrllcPort, 									// destination port
-																					 1000, 			// interpacket interval
-																					 0.3, 											// start time
-																					 simTime);									// stop time
-		*/
-		 SimulationConfig::SetupFtpModel3Application (remoteHost,                     //client node
-	                                                ueUrllcNodes.Get (i),           // server node
-	                                                ueUrllcIpIface.GetAddress (i),  // destination address
-	                                                dlUrllcPort,                    // destination port
-	                                        				lambdaUrllc,                    // lambda
-	                                                fileSize,                       // file size
-	                                                segmentSize,                    // segments size OBS: this is the size of the packets that the application forwards to the socket. This is not the size of the packets that are actually going to be transmitted.
-	                                                appStart,                       // start time
-	                                                appEnd,                        	// end time
-	                                                dlUrllcStream);                 // trace file
+	 		SimulationConfig::SetupUdpApplication (remoteHost, 							// node
+	 																					 ueUrllcIpIface.GetAddress (i), // destination address
+	 																					 dlUrllcPort, 									// destination port
+	 																					 1000, 			// interpacket interval
+	 																					 0.3, 											// start time
+	 																					 simTime);									// stop time
+		 }
+		 else
+		 {
+			 SimulationConfig::SetupFtpModel3Application (remoteHost,                     //client node
+		                                                ueUrllcNodes.Get (i),           // server node
+		                                                ueUrllcIpIface.GetAddress (i),  // destination address
+		                                                dlUrllcPort,                    // destination port
+		                                        				lambdaUrllc,                    // lambda
+		                                                fileSize,                       // file size
+		                                                segmentSize,                    // segments size OBS: this is the size of the packets that the application forwards to the socket. This is not the size of the packets that are actually going to be transmitted.
+		                                                appStart,                       // start time
+		                                                appEnd,                        	// end time
+		                                                dlUrllcStream);                 // trace file
+		 }
 	 }
  }
 
@@ -341,4 +334,53 @@ main (int argc, char *argv[])
  Simulator::Destroy ();
 
  return 0;
+}
+
+void
+SetupScenario (NodeContainer enbNodes, NodeContainer ueNodes, std::string scenario)
+{
+	if (scenario == "road")
+	{
+		NS_LOG_INFO ("Setting up the road scenario");
+		double speed = 3.0;
+
+		// Set eNB mobility
+		SimulationConfig::SetConstantPositionMobility (enbNodes, Vector (50.0, 50.0, 10.0));
+
+		// Set UE mobility
+		Ptr<UniformRandomVariable> y = CreateObject<UniformRandomVariable> ();
+		y->SetAttribute ("Min", DoubleValue (-5));
+		y->SetAttribute ("Max", DoubleValue (0));
+
+		Ptr<UniformRandomVariable> x = CreateObject<UniformRandomVariable> ();
+		x->SetAttribute ("Min", DoubleValue (25));
+		x->SetAttribute ("Max", DoubleValue (75));
+
+		for (uint8_t i = 0; i < ueNodes.GetN (); i++)
+		{
+		 SimulationConfig::SetConstantVelocityMobility (ueNodes.Get (i), Vector (x->GetValue (), y->GetValue (), 1.6), Vector (speed, 0.0, 0.0));
+		}
+
+		// Create random buildings
+		RandomBuildings::CreateRandomBuildings (0, 	// street width
+																					 20, 	// block size
+																					 100, // max x-axis
+																					 50,	// max y-axis
+																					 7);	// number of buildings
+	}
+	else if (scenario == "test")
+	{
+		NS_LOG_INFO ("Setting up the test scenario");
+
+		SimulationConfig::SetConstantPositionMobility (enbNodes, Vector (0.0, 0.0, 10.0));
+		for (uint8_t i=0; i<ueNodes.GetN (); i++)
+		{
+			SimulationConfig::SetConstantPositionMobility (ueNodes.Get (i), Vector (100.0, 0.0, 1.5));
+		}
+	}
+	else
+	{
+		NS_ABORT_MSG ("Undefined scenario");
+	}
+
 }
