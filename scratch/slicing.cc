@@ -9,6 +9,7 @@ int
 main (int argc, char *argv[])
 {
 	std::string filePath = ""; // where to save the traces
+	int numEnbs = 1;
 	int numEmbbUes = 1; // number of eMBB UEs
 	int numUrllcUes = 1; // number of URLLC UEs
 	double simTime = 15; 		 // simulation time
@@ -41,6 +42,7 @@ main (int argc, char *argv[])
 	cmd.AddValue ("centerFreq", "Central frequency", centerFreq);
 	cmd.AddValue ("numEmbbUes", "Number of eMBB UEs", numEmbbUes);
 	cmd.AddValue ("numUrllcUes", "Number of URLLC UEs", numUrllcUes);
+	cmd.AddValue ("numEnbs", "Number of mmwave eNBs", numEnbs);
 	cmd.AddValue ("simTime", "Simulation time", simTime);
 	cmd.AddValue ("filePath", "Where to put the output files", filePath);
 	cmd.AddValue ("runSet", "Run number", runSet);
@@ -176,7 +178,7 @@ main (int argc, char *argv[])
 
  // Create the eNB node
  NodeContainer enbNodes;
- enbNodes.Create (1);
+ enbNodes.Create (numEnbs);
 
  // Create UE node
  NodeContainer ueEmbbNodes;
@@ -189,7 +191,7 @@ main (int argc, char *argv[])
  ueNodes.Add (ueEmbbNodes);
  ueNodes.Add (ueUrllcNodes);
 
- SetupScenario (enbNodes, ueNodes, "test");
+ SetupScenario (enbNodes, ueNodes, scenario);
 
  // Install eNB device
  NetDeviceContainer enbNetDevices = helper->InstallEnbDevice (enbNodes);
@@ -215,6 +217,7 @@ main (int argc, char *argv[])
  ueIpIface.Add (ueEmbbIpIface);
  ueIpIface.Add (ueUrllcIpIface);
 
+ helper->AddX2Interface (enbNodes);
  helper->AttachToClosestEnb (ueNetDevices, enbNetDevices);
 
  uint16_t dlUrllcPort = 1235; // port for eMBB
@@ -361,14 +364,39 @@ SetupScenario (NodeContainer enbNodes, NodeContainer ueNodes, std::string scenar
 																					 50,	// max y-axis
 																					 7);	// number of buildings
 	}
-	else if (scenario == "test")
+	else if (scenario == "test-single-enb")
 	{
-		NS_LOG_INFO ("Setting up the test scenario");
+		NS_LOG_INFO ("test-single-enb scenario");
+		NS_ASSERT_MSG (!(enbNodes.GetN () > 1), "Too many enbs");
 
 		SimulationConfig::SetConstantPositionMobility (enbNodes, Vector (0.0, 0.0, 10.0));
 		for (uint8_t i=0; i<ueNodes.GetN (); i++)
 		{
 			SimulationConfig::SetConstantPositionMobility (ueNodes.Get (i), Vector (100.0, 0.0, 1.5));
+		}
+	}
+	else if (scenario == "test-two-enbs")
+	{
+		NS_LOG_INFO ("test-two-enbs scenario");
+		NS_ASSERT_MSG (enbNodes.GetN () == 2, "This works with two enbs");
+
+		NodeContainer enb1;
+		enb1.Add (enbNodes.Get (0));
+		NodeContainer enb2;
+		enb2.Add (enbNodes.Get (1));
+		SimulationConfig::SetConstantPositionMobility (enb1, Vector (100.0, 0.0, 10.0));
+		SimulationConfig::SetConstantPositionMobility (enb2, Vector (-100.0, 0.0, 10.0));
+
+		for (uint8_t i=0; i<ueNodes.GetN (); i++)
+		{
+			if (i%2 == 0)
+			{
+				SimulationConfig::SetConstantPositionMobility (ueNodes.Get (i), Vector (+5.0, 0.0, 1.5));
+			}
+			else
+			{
+				SimulationConfig::SetConstantPositionMobility (ueNodes.Get (i), Vector (-5.0, 0.0, 1.5));
+			}
 		}
 	}
 	else
