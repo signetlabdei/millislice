@@ -107,6 +107,8 @@ public:
    */
   Ptr<Socket> GetSocket (void) const;
 
+  void SetFileTransferCompletedCallback (Callback<void, Ptr<FileTransferApplication>>);
+
 protected:
   virtual void DoDispose (void);
 private:
@@ -127,8 +129,8 @@ private:
   uint32_t        m_totBytes;     //!< Total bytes sent so far
   TypeId          m_tid;          //!< The type of protocol to use.
 
-  /// Traced Callback: sent packets
-  TracedCallback<Ptr<const Packet>, const Address &> m_txTrace;
+  TracedCallback<Ptr<const Packet>, const Address &> m_txTrace; //!< Traced Callback: sent packets
+  Callback<void, Ptr<FileTransferApplication>> m_fileTransferCompleted; //!< A file has been correctly sent
 
 private:
   /**

@@ -212,6 +212,10 @@ void FileTransferApplication::SendData (void)
       NS_LOG_LOGIC ("FileTransferApplication closing");
       m_socket->Close ();
       m_connected = false;
+      if (!m_fileTransferCompleted.IsNull ())
+      {
+        m_fileTransferCompleted (this);
+      }
     }
   if (m_tid == UdpSocketFactory::GetTypeId ())
     {
@@ -260,6 +264,9 @@ void FileTransferApplication::DataSend (Ptr<Socket>, uint32_t)
     }
 }
 
-
+void FileTransferApplication::SetFileTransferCompletedCallback (Callback<void, Ptr<FileTransferApplication>> fileTransferCompleted)
+{
+  m_fileTransferCompleted = fileTransferCompleted;
+}
 
 } // Namespace ns3
