@@ -10,6 +10,7 @@
 #include <ns3/node-list.h>
 #include <ns3/lte-module.h>
 #include <ns3/mmwave-module.h>
+#include <ns3/trace-source-accessor.h>
 
 NS_LOG_COMPONENT_DEFINE ("SimulationConfig");
 
@@ -31,7 +32,8 @@ namespace ns3{
       static void SetTracesPath (std::string filePath);
 
     private:
-      static void StartFileTransfer (ApplicationContainer clientApps, Ptr<ExponentialRandomVariable> ftpArrivals, double endTime);
+      static void StartFileTransfer (Ptr<FileTransferApplication> ftpApp);
+      static void EndFileTransfer (Ptr<ExponentialRandomVariable> readingTime, double endTime, Ptr<FileTransferApplication> ftpApp);
   };
 
   class CallbackSinks
@@ -217,35 +219,44 @@ namespace ns3{
     clientApps.Get(0)->TraceConnectWithoutContext("Tx", MakeBoundCallback (&CallbackSinks::TxSink, stream));
 
     // Trigger data transfer
-    Ptr<ExponentialRandomVariable> ftpArrivals = CreateObject<ExponentialRandomVariable> ();
-    ftpArrivals->SetAttribute ("Mean", DoubleValue (1/lambda));
+    Ptr<ExponentialRandomVariable> readingTime = CreateObject<ExponentialRandomVariable> ();
+    readingTime->SetAttribute ("Mean", DoubleValue (1/lambda));
 
-    double firstSend = ftpArrivals->GetValue () + startTime;
+    Ptr<FileTransferApplication> ftpApp = DynamicCast<FileTransferApplication> (clientApps.Get (0));
+    ftpApp->SetFileTransferCompletedCallback (MakeBoundCallback (&SimulationConfig::EndFileTransfer, readingTime, endTime));
+
+    double firstSend = readingTime->GetValue () + startTime;
     if (firstSend < endTime-0.1)
     {
-      Simulator::Schedule (Seconds (firstSend), &StartFileTransfer, clientApps, ftpArrivals, endTime);
-      NS_LOG_INFO ("First file transmission scheduled at " << firstSend + Simulator::Now ().GetSeconds ());
-    }
-
-  }
-
-  void
-  SimulationConfig::StartFileTransfer (ApplicationContainer clientApps, Ptr<ExponentialRandomVariable> ftpArrivals, double endTime)
-  {
-    Ptr<FileTransferApplication> ftpApp = DynamicCast<FileTransferApplication> (clientApps.Get (0));
-    NS_ASSERT (ftpApp);
-    ftpApp->SendFile ();
-
-    double nextSend = ftpArrivals->GetValue ();
-    if (nextSend + Simulator::Now ().GetSeconds () < endTime)
-    {
-      Simulator::Schedule (Seconds (nextSend), &StartFileTransfer, clientApps, ftpArrivals, endTime);
-      NS_LOG_INFO ("Next file transmission scheduled at " << nextSend + Simulator::Now ().GetSeconds ());
+      Simulator::Schedule (Seconds (firstSend), &StartFileTransfer, ftpApp);
+      NS_LOG_INFO ("App " << ftpApp << " first file transmission scheduled at " << firstSend + Simulator::Now ().GetSeconds ());
     }
     else
     {
-      NS_LOG_INFO ("Not enough time for further transmissions");
+      NS_LOG_INFO ("App " << ftpApp << " not enough time for any transmission (firstSend="<< firstSend << " endTime=" << endTime << ").");
     }
+  }
+
+  void
+  SimulationConfig::EndFileTransfer (Ptr<ExponentialRandomVariable> readingTime, double endTime, Ptr<FileTransferApplication> ftpApp)
+  {
+    double nextSend = readingTime->GetValue ();
+    if (nextSend + Simulator::Now ().GetSeconds () < endTime)
+    {
+      Simulator::Schedule (Seconds (nextSend), &StartFileTransfer, ftpApp);
+      NS_LOG_INFO ("App " << ftpApp << " next file transmission scheduled at " << nextSend + Simulator::Now ().GetSeconds ());
+    }
+    else
+    {
+      NS_LOG_INFO ("App " << ftpApp << " not enough time for further transmissions.");
+    }
+  }
+
+  void
+  SimulationConfig::StartFileTransfer (Ptr<FileTransferApplication> ftpApp)
+  {
+    NS_LOG_INFO ("App " << ftpApp << " start file transmission");
+    ftpApp->SendFile ();
   }
 
   void
