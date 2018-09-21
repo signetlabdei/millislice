@@ -717,7 +717,23 @@ MmWaveSplitDrbComponentCarrierManager::DoReportBufferStatus (LteMacSapProvider::
         cc = m_qciCcMap.at (qci);
         NS_LOG_INFO ("RNTI " << params.rnti << " lcid " << (uint32_t) params.lcid << " " << (uint16_t)qci << " CC " << (uint16_t)cc);
       }
-      m_macSapProvidersMap.find (cc)->second->ReportBufferStatus (params);
+
+      if (cc == 0)
+      {
+        m_macSapProvidersMap.find (cc)->second->ReportBufferStatus (params);
+      }
+      else
+      {
+        LteMacSapProvider::ReportBufferStatusParameters newParams = params;
+        newParams.statusPduSize = 0;
+        m_macSapProvidersMap.find (cc)->second->ReportBufferStatus (newParams);
+
+        params.txQueueSize = 0;
+        params.txQueueHolDelay = 0;
+        params.retxQueueSize = 0;
+        params.retxQueueHolDelay = 0;
+        m_macSapProvidersMap.find (0)->second->ReportBufferStatus (params);
+      }
     }
 }
 
