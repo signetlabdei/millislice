@@ -31,7 +31,7 @@ main (int argc, char *argv[])
 	// Propagation loss model
 	bool useBuildings = false; // if true use MmWave3gppBuildingsPropagationLossModel
 	std::string condition = "a"; // MmWave3MmWave3gppPropagationLossModel condition, n = NLOS, l = LOS
-	std::string scenario = "test"; // the simulation scenario
+	std::string scenario = "test-single-enb"; // the simulation scenario
 
 	// URLLC parameters
 	double lambdaUrllc = 0.2; // average number of file/s
@@ -370,9 +370,16 @@ SetupScenario (NodeContainer enbNodes, NodeContainer ueNodes, std::string scenar
 		NS_ASSERT_MSG (!(enbNodes.GetN () > 1), "Too many enbs");
 
 		SimulationConfig::SetConstantPositionMobility (enbNodes, Vector (0.0, 0.0, 10.0));
+
+		Ptr<UniformDiscPositionAllocator> uePos = CreateObject<UniformDiscPositionAllocator> ();
+		uePos->SetRho (200.0);
+		uePos->SetX (0.0);
+		uePos->SetY (0.0);
+		uePos->SetZ (1.5);
+
 		for (uint8_t i=0; i<ueNodes.GetN (); i++)
 		{
-			SimulationConfig::SetConstantPositionMobility (ueNodes.Get (i), Vector (100.0, 0.0, 1.5));
+			SimulationConfig::SetConstantPositionMobility (ueNodes.Get (i), uePos->GetNext ());
 		}
 	}
 	else if (scenario == "test-two-enbs")
