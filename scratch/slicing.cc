@@ -1,7 +1,9 @@
 #include <ns3/mmwave-helper.h>
 #include <scratch/simulation-config/simulation-config.h>
+#include <ns3/mmwave-uniform-disc-ue-position-allocator.h>
 
 using namespace ns3;
+using namespace mmwave;
 
 void SetupScenario (NodeContainer enbNodes, NodeContainer ueNodes, std::string scenario);
 
@@ -27,6 +29,9 @@ main (int argc, char *argv[])
 	bool urllcOn = true; // if true install the ftp application
 	bool embbOn = true; // if true install the dash application
 	bool useUdp = false; // if true use UDP client apps
+
+	int embbUdpIPI = 1; // embb UDP interpacket interval
+	int urllcUdpIPI = 1000; // urllc UDP interpacket interval
 
 	// Propagation loss model
 	bool useBuildings = false; // if true use MmWave3gppBuildingsPropagationLossModel
@@ -62,6 +67,8 @@ main (int argc, char *argv[])
 	cmd.AddValue ("condition", "MmWave3MmWave3gppPropagationLossModel condition, n = NLOS, l = LOS, a = all", condition);
 	cmd.AddValue ("scenario", "the simulation scenario", scenario);
 	cmd.AddValue ("useUdp", "if true use UDP client apps", useUdp);
+	cmd.AddValue ("embbUdpIPI", "embb UDP interpacket interval", embbUdpIPI);
+	cmd.AddValue ("urllcUdpIPI", "urllc UDP interpacket interval", urllcUdpIPI);
 	cmd.Parse (argc, argv);
 	appEnd = simTime;
 
@@ -259,16 +266,16 @@ main (int argc, char *argv[])
 		 {
 			 SimulationConfig::SetupUdpPacketSink (ueEmbbNodes.Get (i), // node
 			 																			 dlEmbbPort, 					// port
-																						 0.01, 						// start time
-																						 simTime, 				// stop time
+																						 0.01, 								// start time
+																						 simTime, 						// stop time
 																						 dlEmbbStream); 			// trace file
 
-			 SimulationConfig::SetupUdpApplication (remoteHost, 							// node
+			 SimulationConfig::SetupUdpApplication (remoteHost, 									// node
 				 																			ueEmbbIpIface.GetAddress (i), // destination address
 																							dlEmbbPort, 									// destination port
-																							1000, 			// interpacket interval
-																							0.3, 											// start time
-																							simTime);									// stop time
+																							embbUdpIPI, 									// interpacket interval
+																							appStart, 										// start time
+																							appEnd);											// stop time
 		 }
 		 else
 		 {
@@ -291,17 +298,17 @@ main (int argc, char *argv[])
 		 if (useUdp)
 		 {
 			 SimulationConfig::SetupUdpPacketSink (ueUrllcNodes.Get (i), // node
-	 																					dlUrllcPort, 					// port
-	 																					0.01, 						// start time
-	 																					simTime, 				// stop time
+	 																					dlUrllcPort, 					 // port
+	 																					0.01, 								// start time
+	 																					simTime, 							// stop time
 	 																					dlUrllcStream); 			// trace file
 
-	 		 SimulationConfig::SetupUdpApplication (remoteHost, 							// node
+	 		 SimulationConfig::SetupUdpApplication (remoteHost, 									// node
 	 																					 ueUrllcIpIface.GetAddress (i), // destination address
 	 																					 dlUrllcPort, 									// destination port
-	 																					 1000, 			// interpacket interval
-	 																					 0.3, 											// start time
-	 																					 simTime);									// stop time
+	 																					 urllcUdpIPI, 									// interpacket interval
+	 																					 appStart, 											// start time
+	 																					 appEnd);												// stop time
 		 }
 		 else
 		 {
@@ -371,11 +378,13 @@ SetupScenario (NodeContainer enbNodes, NodeContainer ueNodes, std::string scenar
 
 		SimulationConfig::SetConstantPositionMobility (enbNodes, Vector (0.0, 0.0, 10.0));
 
-		Ptr<UniformDiscPositionAllocator> uePos = CreateObject<UniformDiscPositionAllocator> ();
-		uePos->SetRho (200.0);
+		Ptr<MmWaveUniformDiscUePositionAllocator> uePos = CreateObject<MmWaveUniformDiscUePositionAllocator> ();
+		uePos->SetRho (100.0);
 		uePos->SetX (0.0);
 		uePos->SetY (0.0);
 		uePos->SetZ (1.5);
+		uePos->SetR (10.0);
+		uePos->SetEnbNodeContainer (enbNodes);
 
 		for (uint8_t i=0; i<ueNodes.GetN (); i++)
 		{
