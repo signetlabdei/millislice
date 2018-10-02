@@ -24,6 +24,7 @@ main (int argc, char *argv[])
 	int runSet = 1;
 	int mode = 1; // mode 1 = 1 CC, no isolation
 								// mode 2 = 2 CC, complete isolation
+	int scheduler = 1; // the MAC scheduler
 	double appStart = 0.3; // application start time
 	double appEnd; // application start time
 	bool urllcOn = true; // if true install the ftp application
@@ -69,6 +70,7 @@ main (int argc, char *argv[])
 	cmd.AddValue ("useUdp", "if true use UDP client apps", useUdp);
 	cmd.AddValue ("embbUdpIPI", "embb UDP interpacket interval", embbUdpIPI);
 	cmd.AddValue ("urllcUdpIPI", "urllc UDP interpacket interval", urllcUdpIPI);
+	cmd.AddValue ("scheduler", "1: MmWaveFlexTtiMacScheduler, 2: MmWaveFlexTtiMaxWeightMacScheduler", scheduler);
 	cmd.Parse (argc, argv);
 	appEnd = simTime;
 
@@ -79,6 +81,7 @@ main (int argc, char *argv[])
 	SimulationConfig::SetTracesPath (filePath);
 
 	Config::SetDefault ("ns3::MmWaveFlexTtiMacScheduler::HarqEnabled", BooleanValue(true));
+	Config::SetDefault ("ns3::MmWaveFlexTtiMaxWeightMacScheduler::HarqEnabled", BooleanValue(true));
 	Config::SetDefault ("ns3::MmWavePhyMacCommon::TbDecodeLatency", UintegerValue(200.0));
 	Config::SetDefault ("ns3::MmWavePhyMacCommon::NumHarqProcess", UintegerValue(100));
 
@@ -167,6 +170,19 @@ main (int argc, char *argv[])
 	 Config::SetDefault("ns3::MmWaveHelper::PathlossModel",StringValue("ns3::MmWave3gppPropagationLossModel"));
  }
  Config::SetDefault("ns3::MmWaveHelper::RlcAmEnabled",BooleanValue(useRlcAm));
+
+ switch (scheduler)
+ {
+	 case 1:
+	 		Config::SetDefault("ns3::MmWaveHelper::Scheduler", StringValue ("ns3::MmWaveFlexTtiMacScheduler"));
+			break;
+	 case 2:
+	 		Config::SetDefault("ns3::MmWaveHelper::Scheduler", StringValue ("ns3::MmWaveFlexTtiMaxWeightMacScheduler"));
+			break;
+	 default:
+	 		NS_ABORT_MSG ("Unknown scheduler");
+ }
+
 
  Ptr<mmwave::MmWaveHelper> helper = CreateObject<mmwave::MmWaveHelper> ();
  helper->SetCcPhyParams(ccMap);
