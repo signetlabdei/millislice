@@ -1693,6 +1693,8 @@ void
 MmWaveFlexTtiMaxWeightMacScheduler::DoCschedLcConfigReq (const struct MmWaveMacCschedSapProvider::CschedLcConfigReqParameters& params)
 {
 	NS_LOG_FUNCTION (this);
+
+  // Update the m_ueSchedInfoMap
   std::map <uint16_t, struct UeSchedInfo>::iterator itUe = m_ueSchedInfoMap.find (params.m_rnti);
   if (itUe != m_ueSchedInfoMap.end ())
   {
@@ -1712,7 +1714,6 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoCschedLcConfigReq (const struct MmWaveMacC
   				EpsBearer lowLatBearer (EpsBearer::DCGBR_REMOTE_CONTROL);
   				itUe->second.m_flowStatsDl[lcid].m_deadlineUs = lowLatBearer.GetPacketDelayBudgetMs () * 1000;
   			}
-  			m_flowHeap.push_back ( &(itUe->second.m_flowStatsDl[lcid]) );
   		}
   		else if (params.m_logicalChannelConfigList[i].m_direction ==
   				LogicalChannelConfigListElement_s::DIR_UL)
@@ -1729,7 +1730,6 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoCschedLcConfigReq (const struct MmWaveMacC
   				EpsBearer lowLatBearer (EpsBearer::DCGBR_REMOTE_CONTROL);
   				itUe->second.m_flowStatsUl[lcid].m_deadlineUs = lowLatBearer.GetPacketDelayBudgetMs () * 1000;
   			}
-  			m_flowHeap.push_back ( &(itUe->second.m_flowStatsUl[lcid]) );
   		}
   		else if (params.m_logicalChannelConfigList[i].m_direction ==
   				LogicalChannelConfigListElement_s::DIR_BOTH)
@@ -1749,15 +1749,27 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoCschedLcConfigReq (const struct MmWaveMacC
   				itUe->second.m_flowStatsDl[lcid].m_deadlineUs = lowLatBearer.GetPacketDelayBudgetMs () * 1000;
   				itUe->second.m_flowStatsUl[lcid].m_deadlineUs = lowLatBearer.GetPacketDelayBudgetMs () * 1000;
   			}
-
-  			m_flowHeap.push_back ( &(itUe->second.m_flowStatsDl[lcid]) );
-  			m_flowHeap.push_back ( &(itUe->second.m_flowStatsUl[lcid]) );
   		}
   	}
   }
   else
   {
   	NS_LOG_ERROR ("Cannot find UE info entry");
+  }
+
+  // Copy all the active flows stats in m_flowHeap
+  m_flowHeap.clear ();
+  for (std::map<uint16_t, UeSchedInfo>::iterator ue = m_ueSchedInfoMap.begin (); ue != m_ueSchedInfoMap.end (); ue++)
+  {
+    for (std::vector<FlowStats>::iterator flow = ue->second.m_flowStatsDl.begin (); flow != ue->second.m_flowStatsDl.end (); flow++ )
+    {
+      m_flowHeap.push_back (&(*flow));
+    }
+
+    for (std::vector<FlowStats>::iterator flow = ue->second.m_flowStatsUl.begin (); flow != ue->second.m_flowStatsUl.end (); flow++ )
+    {
+      m_flowHeap.push_back (&(*flow));
+    }
   }
   return;
 }
