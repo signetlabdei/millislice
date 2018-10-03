@@ -1743,12 +1743,23 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoCschedLcConfigReq (const struct MmWaveMacC
   			itUe->second.m_flowStatsDl[lcid].m_qci = params.m_logicalChannelConfigList[i].m_qci;
   			itUe->second.m_flowStatsUl[lcid].m_qci = params.m_logicalChannelConfigList[i].m_qci;
 
-  			if (1 || params.m_logicalChannelConfigList[i].m_qci == EpsBearer::DCGBR_REMOTE_CONTROL)
+  			if (params.m_logicalChannelConfigList[i].m_qci == EpsBearer::DCGBR_REMOTE_CONTROL)
   			{
   				EpsBearer lowLatBearer (EpsBearer::DCGBR_REMOTE_CONTROL);
   				itUe->second.m_flowStatsDl[lcid].m_deadlineUs = lowLatBearer.GetPacketDelayBudgetMs () * 1000;
   				itUe->second.m_flowStatsUl[lcid].m_deadlineUs = lowLatBearer.GetPacketDelayBudgetMs () * 1000;
   			}
+        else if (params.m_logicalChannelConfigList[i].m_qci == EpsBearer::NGBR_VIDEO_TCP_DEFAULT)
+        {
+          EpsBearer defaultBearer (EpsBearer::NGBR_VIDEO_TCP_DEFAULT);
+          itUe->second.m_flowStatsDl[lcid].m_deadlineUs = defaultBearer.GetPacketDelayBudgetMs () * 1000;
+          itUe->second.m_flowStatsUl[lcid].m_deadlineUs = defaultBearer.GetPacketDelayBudgetMs () * 1000;
+        }
+        else
+        {
+          itUe->second.m_flowStatsDl[lcid].m_deadlineUs = 100 * 1000;
+          itUe->second.m_flowStatsUl[lcid].m_deadlineUs = 100 * 1000;
+        }
   		}
   	}
   }
