@@ -252,8 +252,16 @@ main (int argc, char *argv[])
 	 Ptr<NetDevice> ueDevice = ueNetDevices.Get(i);
 	 Ptr<mmwave::MmWaveUeNetDevice> ueMmWaveDevice = DynamicCast<mmwave::MmWaveUeNetDevice> (ueDevice);
 	 EpcTft::PacketFilter embbPacketFilter; // Create a new tft packet filter
-	 embbPacketFilter.remotePortStart = dlEmbbPort; // Set the filter policies
-	 embbPacketFilter.remotePortEnd = dlEmbbPort;
+	 if (useUdp)
+	 {
+		 embbPacketFilter.localPortStart = dlEmbbPort; // Set the filter policies
+		 embbPacketFilter.localPortEnd = dlEmbbPort;
+	 }
+	 else
+	 {
+		 embbPacketFilter.remotePortStart = dlEmbbPort; // Set the filter policies
+		 embbPacketFilter.remotePortEnd = dlEmbbPort;
+	 }
 	 Ptr<EpcTft> embbTft = Create<EpcTft> (); // Create a new tft
 	 embbTft->Add (embbPacketFilter); // Add the packet filter
 	 epcHelper->ActivateEpsBearer (ueDevice, ueMmWaveDevice->GetImsi (), embbTft, EpsBearer (EpsBearer::NGBR_VIDEO_TCP_DEFAULT)); // Activate the bearer
