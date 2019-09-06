@@ -1,5 +1,5 @@
 import sem
-ns_path = ''
+ns_path = './'
 ns_script = 'slicing'    
 ns_res_path = './slicing-res'
 
