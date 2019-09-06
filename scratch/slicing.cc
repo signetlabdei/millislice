@@ -5,6 +5,8 @@
 using namespace ns3;
 using namespace mmwave;
 
+double vMin, vMax;	//speed used if test-single-enb-moving scenario is selected
+
 void SetupScenario(NodeContainer enbNodes, NodeContainer ueNodes, std::string scenario);
 
 int main(int argc, char *argv[])
@@ -16,6 +18,8 @@ int main(int argc, char *argv[])
 	double simTime = 15;   // simulation time
 	double f0 = 0.0;	   // frequency of CC0
 	double f1 = 0.0;	   // frequency of CC1
+	vMin = 1.0;
+	vMax = 10.0;
 	double bw = 1e9;	   // total bandwidth
 	double ccRatio = 0.25; // bandwidth CC0 / bandwidth CC1
 	bool useRlcAm = true;  // choose RLC AM / UM
@@ -23,8 +27,6 @@ int main(int argc, char *argv[])
 	double bsrTimer = 2.0;
 	double reorderingTimer = 1.0;
 	int runSet = 1;
-	double vMin = 1.0;	 // min speed used if test-single-enb-moving scenario is selected
-	double vMax = 10.0;	// max speed used if test-single-enb-moving scenario is selected
 	int mode = 1;		   // mode 1 = 1 CC, no isolation
 						   // mode 2 = 2 CC, complete isolation
 	int scheduler = 1;	 // the MAC scheduler
@@ -436,10 +438,6 @@ void SetupScenario(NodeContainer enbNodes, NodeContainer ueNodes, std::string sc
 		uePos->SetZ(1.5);
 		uePos->SetR(10.0);
 		uePos->SetEnbNodeContainer(enbNodes);
-
-		// Give users mobility
-		double vMin = 1.0;
-		double vMax = 10.0;
 
 		for (uint8_t i = 0; i < ueNodes.GetN(); i++)
 		{
