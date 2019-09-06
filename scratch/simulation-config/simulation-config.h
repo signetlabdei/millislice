@@ -175,8 +175,8 @@ void SimulationConfig::SetRandomWalkMobility(Ptr<Node> node, Vector position, do
   std::ostringstream paramUnifRv;
   paramUnifRv << "ns3::UniformRandomVariable[Min=" << vMin << "|Max=" << vMax << "]";
   mobility.SetMobilityModel("ns3::RandomWalk2dMobilityModel",
-                            "Mode", StringValue("Time"),  
-                            "Time", StringValue("4s"), // Time to wait before chanign speed and/or direction of the walk
+                            "Mode", StringValue("Time"),
+                            "Time", StringValue("4s"), // Time to wait before changing speed and/or direction of the walk
                             "Speed", StringValue(paramUnifRv.str()),
                             "Bounds", RectangleValue(Rectangle(-400.0, 400.0, -400.0, 400.0)));
   mobility.SetPositionAllocator(positionAlloc);
