@@ -11,7 +11,6 @@
 #include <ns3/lte-module.h>
 #include <ns3/mmwave-module.h>
 #include <ns3/trace-source-accessor.h>
-
 NS_LOG_COMPONENT_DEFINE("SimulationConfig");
 
 namespace ns3
@@ -25,7 +24,7 @@ public:
   static Ipv4InterfaceContainer InstallUeInternet(Ptr<mmwave::MmWavePointToPointEpcHelper> epcHelper, NodeContainer ueNodes, NetDeviceContainer ueNetDevices);
   static void SetConstantPositionMobility(NodeContainer nodes, Vector position);
   static void SetConstantVelocityMobility(Ptr<Node> node, Vector position, Vector velocity);
-  static void SetRandomWalkMobility(Ptr<Node> node, Vector position);
+  static void SetRandomWalkMobility(Ptr<Node> node, Vector position, double vMin, double vMax);
   static void SetupUdpApplication(Ptr<Node> node, Ipv4Address address, uint16_t port, uint16_t interPacketInterval, double startTime, double endTime);
   static void SetupFtpModel3Application(Ptr<Node> clientNode, Ptr<Node> serverNode, Ipv4Address address, uint16_t port, double lambda, uint32_t fileSize, uint32_t sendSize, double startTime, double endTime, Ptr<OutputStreamWrapper> stream);
   static void SetupUdpPacketSink(Ptr<Node> node, uint16_t port, double startTime, double endTime, Ptr<OutputStreamWrapper> stream);
@@ -167,16 +166,18 @@ void SimulationConfig::SetConstantVelocityMobility(Ptr<Node> node, Vector positi
   BuildingsHelper::Install(node);
 }
 
-void SimulationConfig::SetRandomWalkMobility(Ptr<Node> node, Vector position)
+void SimulationConfig::SetRandomWalkMobility(Ptr<Node> node, Vector position, double vMin, double vMax)
 {
   Ptr<ListPositionAllocator> positionAlloc = CreateObject<ListPositionAllocator>();
   positionAlloc->Add(position);
   MobilityHelper mobility;
-
+  // Not too elegant
+  std::ostringstream paramUnifRv;
+  paramUnifRv << "ns3::UniformRandomVariable[Min=" << vMin << "|Max=" << vMax << "]";
   mobility.SetMobilityModel("ns3::RandomWalk2dMobilityModel",
                             "Mode", StringValue("Time"),  
                             "Time", StringValue("4s"), // Time to wait before chanign speed and/or direction of the walk
-                            "Speed", StringValue("ns3::UniformRandomVariable[Min=1.0|Max=10.0]"),
+                            "Speed", StringValue(paramUnifRv.str()),
                             "Bounds", RectangleValue(Rectangle(-400.0, 400.0, -400.0, 400.0)));
   mobility.SetPositionAllocator(positionAlloc);
   mobility.Install(node);

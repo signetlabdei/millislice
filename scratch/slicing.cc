@@ -23,6 +23,8 @@ int main(int argc, char *argv[])
 	double bsrTimer = 2.0;
 	double reorderingTimer = 1.0;
 	int runSet = 1;
+	double vMin = 1.0;	 // min speed used if test-single-enb-moving scenario is selected
+	double vMax = 10.0;	// max speed used if test-single-enb-moving scenario is selected
 	int mode = 1;		   // mode 1 = 1 CC, no isolation
 						   // mode 2 = 2 CC, complete isolation
 	int scheduler = 1;	 // the MAC scheduler
@@ -36,8 +38,8 @@ int main(int argc, char *argv[])
 	int urllcUdpIPI = 1000; // urllc UDP interpacket interval
 
 	// Propagation loss model
-	bool useBuildings = false;				  // if true use MmWave3gppBuildingsPropagationLossModel
-	std::string condition = "a";			  // MmWave3MmWave3gppPropagationLossModel condition, n = NLOS, l = LOS
+	bool useBuildings = false;						 // if true use MmWave3gppBuildingsPropagationLossModel
+	std::string condition = "a";					 // MmWave3MmWave3gppPropagationLossModel condition, n = NLOS, l = LOS
 	std::string scenario = "test-single-enb-moving"; // the simulation scenario
 
 	// URLLC parameters
@@ -48,6 +50,8 @@ int main(int argc, char *argv[])
 	CommandLine cmd;
 	cmd.AddValue("f0", "Frequency of CC0", f0);
 	cmd.AddValue("f1", "Frequency of CC1", f1);
+	cmd.AddValue("vMin", "Min speed used if test-single-enb-moving scenario is selected", vMin);
+	cmd.AddValue("vMax", "Max speed used if test-single-enb-moving scenario is selected", vMax);
 	cmd.AddValue("numEmbbUes", "Number of eMBB UEs", numEmbbUes);
 	cmd.AddValue("numUrllcUes", "Number of URLLC UEs", numUrllcUes);
 	cmd.AddValue("numEnbs", "Number of mmwave eNBs", numEnbs);
@@ -434,11 +438,13 @@ void SetupScenario(NodeContainer enbNodes, NodeContainer ueNodes, std::string sc
 		uePos->SetEnbNodeContainer(enbNodes);
 
 		// Give users mobility
+		double vMin = 1.0;
+		double vMax = 10.0;
 
 		for (uint8_t i = 0; i < ueNodes.GetN(); i++)
 		{
 			// Use RandomWalkMobilityModel
-			SimulationConfig::SetRandomWalkMobility(ueNodes.Get(i), uePos->GetNext());
+			SimulationConfig::SetRandomWalkMobility(ueNodes.Get(i), uePos->GetNext(), vMin, vMax);
 		}
 	}
 
