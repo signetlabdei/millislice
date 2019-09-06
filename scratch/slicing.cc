@@ -15,8 +15,10 @@ main (int argc, char *argv[])
 	int numEmbbUes = 1; // number of eMBB UEs
 	int numUrllcUes = 1; // number of URLLC UEs
 	double simTime = 15; 		 // simulation time
-	double centerFreq = 28e9;  // center frequency
+  double f0 = 0.0;  // frequency of CC0
+  double f1 = 0.0;  // frequency of CC1
 	double bw = 1e9; 						 // total bandwidth
+  double ccRatio = 0.25; // bandwidth CC0 / bandwidth CC1
 	bool useRlcAm = true;			// choose RLC AM / UM
 	//double speed = 3.0; 		// UE speed
 	double bsrTimer = 2.0;
@@ -45,7 +47,8 @@ main (int argc, char *argv[])
 	int fileSize = 512000; // file size in bytes
 
 	CommandLine cmd;
-	cmd.AddValue ("centerFreq", "Central frequency", centerFreq);
+  cmd.AddValue ("f0", "Frequency of CC0", f0);
+	cmd.AddValue ("f1", "Frequency of CC1", f1);
 	cmd.AddValue ("numEmbbUes", "Number of eMBB UEs", numEmbbUes);
 	cmd.AddValue ("numUrllcUes", "Number of URLLC UEs", numUrllcUes);
 	cmd.AddValue ("numEnbs", "Number of mmwave eNBs", numEnbs);
@@ -53,6 +56,7 @@ main (int argc, char *argv[])
 	cmd.AddValue ("filePath", "Where to put the output files", filePath);
 	cmd.AddValue ("runSet", "Run number", runSet);
 	cmd.AddValue ("bw", "Total bandwidth", bw);
+  cmd.AddValue ("ccRatio", "bandwidth CC0 / bandwidth CC1", ccRatio);
 	cmd.AddValue ("bsrTimer", "BSR timer [ms]", bsrTimer);
 	cmd.AddValue ("reorderingTimer", "reordering timer [ms]", reorderingTimer);
 	cmd.AddValue ("useRlcAm", "Use rlc am", useRlcAm);
@@ -136,16 +140,19 @@ main (int argc, char *argv[])
 	}
 
  // Create the component carriers
+ NS_ABORT_MSG_IF (f0 == 0.0 || (f1 == 0.0 && mode == 2), "Set the carrier frequency first!");
  std::map<uint8_t, mmwave::MmWaveComponentCarrier> ccMap;
- for(int i = 0; i < numCc; i++)
+ if (mode == 1)
  {
-	  double ccFreq = centerFreq + bw/(2*numCc)*(2*i-numCc+1); // compute the CC frequency
-	  Ptr<mmwave::MmWaveComponentCarrier> cc = SimulationConfig::CreateMmWaveCc (ccFreq,   // frequency
-		 																																					 i, 		 	 // CC ID
-																																							 i==0,	 	 // is primary?
-																																						 	 bw/numCc); // bandwidth
-
-		ccMap.insert(std::pair<uint8_t, mmwave::MmWaveComponentCarrier> (i, *cc));
+   Ptr<mmwave::MmWaveComponentCarrier> cc0 = SimulationConfig::CreateMmWaveCc (f0, 0, true, bw);
+   ccMap.insert(std::pair<uint8_t, mmwave::MmWaveComponentCarrier> (0, *cc0));
+ }
+ else if (mode == 2)
+ {
+   Ptr<mmwave::MmWaveComponentCarrier> cc0 = SimulationConfig::CreateMmWaveCc (f0, 0, true, bw * ccRatio);
+   Ptr<mmwave::MmWaveComponentCarrier> cc1 = SimulationConfig::CreateMmWaveCc (f1, 1, false, bw * (1 - ccRatio));
+   ccMap.insert(std::pair<uint8_t, mmwave::MmWaveComponentCarrier> (0, *cc0));
+   ccMap.insert(std::pair<uint8_t, mmwave::MmWaveComponentCarrier> (1, *cc1));
  }
 
  // Create and set the helper
