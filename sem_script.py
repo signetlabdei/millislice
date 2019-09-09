@@ -58,7 +58,7 @@ params_grid = {
 }
 
 runs = 1
-campaign.run_missing_simulations(params_grid, runs)
+campaign.run_missing_simulations(sem.list_param_combinations(params_grid), runs)
 
 # Get missing results for no CA and CC equal to 28GHz
 params_grid = {
@@ -94,4 +94,4 @@ params_grid = {
     'vMin': 10.0,
 }
 
-campaign.run_missing_simulations(params_grid, runs)
+campaign.run_missing_simulations(sem.list_param_combinations(params_grid), runs)
