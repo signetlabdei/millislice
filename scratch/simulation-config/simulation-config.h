@@ -25,8 +25,8 @@ public:
   static void SetConstantPositionMobility(NodeContainer nodes, Vector position);
   static void SetConstantVelocityMobility(Ptr<Node> node, Vector position, Vector velocity);
   static void SetRandomWalkMobility(Ptr<Node> node, Vector position, double vMin, double vMax);
-  static void SetupUdpApplication(Ptr<Node> node, Ipv4Address address, uint16_t port, uint16_t interPacketInterval, double startTime, double endTime);
-  static double RateToIPI(uint16_t appRate, UdpClientHelper udpClient);
+  static void SetupUdpApplication(Ptr<Node> node, Ipv4Address address, uint16_t port, double appRate, double startTime, double endTime);
+  static double RateToIPI(double appRate);
   static void SetupFtpModel3Application(Ptr<Node> clientNode, Ptr<Node> serverNode, Ipv4Address address, uint16_t port, double lambda, uint32_t fileSize, uint32_t sendSize, double startTime, double endTime, Ptr<OutputStreamWrapper> stream);
   static void SetupUdpPacketSink(Ptr<Node> node, uint16_t port, double startTime, double endTime, Ptr<OutputStreamWrapper> stream);
   static void InstallRmcatApps(bool nada, Ptr<Node> sender, Ptr<Node> receiver, uint16_t port, float initBw, float minBw, float maxBw, float startTime, float stopTime);
@@ -185,18 +185,19 @@ void SimulationConfig::SetRandomWalkMobility(Ptr<Node> node, Vector position, do
   BuildingsHelper::Install(node);
 }
 
-void SimulationConfig::SetupUdpApplication(Ptr<Node> node, Ipv4Address address, uint16_t port, uint16_t interPacketInterval, double startTime, double endTime)
+void SimulationConfig::SetupUdpApplication(Ptr<Node> node, Ipv4Address address, uint16_t port, double appRate, double startTime, double endTime)
 {
   ApplicationContainer app;
   UdpClientHelper client(address, port);
-  client.SetAttribute("Interval", TimeValue(MicroSeconds(interPacketInterval)));
+  double appIPI = SimulationConfig::RateToIPI(appRate);
+  client.SetAttribute("Interval", TimeValue(Seconds(appIPI)));
   client.SetAttribute("MaxPackets", UintegerValue(10000000));
 
   app.Add(client.Install(node));
   app.Start(Seconds(startTime));
   app.Stop(Seconds(endTime));
 
-  NS_LOG_INFO("Number of packets to send " << std::floor((endTime - startTime) / interPacketInterval * 1000));
+  NS_LOG_INFO("Number of packets to send " << std::floor((endTime - startTime) / appIPI * 1000));
 }
 
 void SimulationConfig::SetupUdpPacketSink(Ptr<Node> node, uint16_t port, double startTime, double endTime, Ptr<OutputStreamWrapper> stream)
@@ -545,6 +546,14 @@ void PrintHelper::UpdateGnuplottableNodeListToFile(std::string filename, Ptr<Nod
           << std::endl;
 
   Simulator::Schedule(Seconds(1), &PrintHelper::UpdateGnuplottableNodeListToFile, filename, node);
+}
+
+static double RateToIPI(double appRate)
+{
+  // Get packet size
+  uint16_t packetSize = 1024; // Hardcoded for now
+
+  return packetSize*8/appRate;
 }
 
 } // end namespace ns3
