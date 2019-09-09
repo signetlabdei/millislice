@@ -36,8 +36,12 @@ int main(int argc, char *argv[])
 	bool embbOn = true;	// if true install the dash application
 	bool useUdp = false;   // if true use UDP client apps
 
-	int embbUdpIPI = 1;		// embb UDP interpacket interval
-	int urllcUdpIPI = 1000; // urllc UDP interpacket interval
+
+
+    double embbUdprate;       // embb Udp rate
+	double urllcUdprate;      // urllc Udp rate
+	//int embbUdpIPI = 1;		 embb UDP interpacket interval
+	//int urllcUdpIPI = 1000;  urllc UDP interpacket interval
 
 	// Propagation loss model
 	bool useBuildings = false;						 // if true use MmWave3gppBuildingsPropagationLossModel
@@ -77,8 +81,8 @@ int main(int argc, char *argv[])
 	cmd.AddValue("condition", "MmWave3MmWave3gppPropagationLossModel condition, n = NLOS, l = LOS, a = all", condition);
 	cmd.AddValue("scenario", "the simulation scenario", scenario);
 	cmd.AddValue("useUdp", "if true use UDP client apps", useUdp);
-	cmd.AddValue("embbUdpIPI", "embb UDP interpacket interval", embbUdpIPI);
-	cmd.AddValue("urllcUdpIPI", "urllc UDP interpacket interval", urllcUdpIPI);
+	cmd.AddValue("embbUdpIPI", "embb UDP rate", embbUdprate);
+	cmd.AddValue("urllcUdpIPI", "urllc UDP rate", urllcUdprate);
 	cmd.AddValue("scheduler", "1: MmWaveFlexTtiMacScheduler, 2: MmWaveFlexTtiMaxWeightMacScheduler", scheduler);
 	cmd.Parse(argc, argv);
 	appEnd = simTime;
@@ -308,7 +312,7 @@ int main(int argc, char *argv[])
 				SimulationConfig::SetupUdpApplication(remoteHost,				   // node
 													  ueEmbbIpIface.GetAddress(i), // destination address
 													  dlEmbbPort,				   // destination port
-													  embbUdpIPI,				   // interpacket interval
+													  embbUdprate,				   // embb rate
 													  appStart,					   // start time
 													  appEnd);					   // stop time
 			}
@@ -341,7 +345,7 @@ int main(int argc, char *argv[])
 				SimulationConfig::SetupUdpApplication(remoteHost,					// node
 													  ueUrllcIpIface.GetAddress(i), // destination address
 													  dlUrllcPort,					// destination port
-													  urllcUdpIPI,					// interpacket interval
+													  urllcUdprate,					// urllc rate
 													  appStart,						// start time
 													  appEnd);						// stop time
 			}
