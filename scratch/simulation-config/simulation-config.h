@@ -26,6 +26,7 @@ public:
   static void SetConstantVelocityMobility(Ptr<Node> node, Vector position, Vector velocity);
   static void SetRandomWalkMobility(Ptr<Node> node, Vector position, double vMin, double vMax);
   static void SetupUdpApplication(Ptr<Node> node, Ipv4Address address, uint16_t port, uint16_t interPacketInterval, double startTime, double endTime);
+  static double RateToIPI(uint16_t appRate, UdpClientHelper udpClient);
   static void SetupFtpModel3Application(Ptr<Node> clientNode, Ptr<Node> serverNode, Ipv4Address address, uint16_t port, double lambda, uint32_t fileSize, uint32_t sendSize, double startTime, double endTime, Ptr<OutputStreamWrapper> stream);
   static void SetupUdpPacketSink(Ptr<Node> node, uint16_t port, double startTime, double endTime, Ptr<OutputStreamWrapper> stream);
   static void InstallRmcatApps(bool nada, Ptr<Node> sender, Ptr<Node> receiver, uint16_t port, float initBw, float minBw, float maxBw, float startTime, float stopTime);
