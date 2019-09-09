@@ -1,5 +1,0 @@
-set label "1" at 0,0 left font "Helvetica,8" textcolor rgb "red" front point pt 1 ps 0.5 lc rgb "red" offset 0,0
-set label "1" at -367.218,111.451 left font "Helvetica,8" textcolor rgb "black" front point pt 1 ps 0.5 lc rgb "black" offset 0,0
-set label "2" at -299.282,-144.355 left font "Helvetica,8" textcolor rgb "black" front point pt 1 ps 0.5 lc rgb "black" offset 0,0
-set label "" at -370.151,102.736 left font "Helvetica,8" textcolor rgb "black" front point pt 1 ps 0.3 lc rgb "black" offset 0,0
-set label "" at -302.685,-150.193 left font "Helvetica,8" textcolor rgb "black" front point pt 1 ps 0.3 lc rgb "black" offset 0,0
