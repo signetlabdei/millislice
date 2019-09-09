@@ -1,2 +1,0 @@
-unset key
-set grid
