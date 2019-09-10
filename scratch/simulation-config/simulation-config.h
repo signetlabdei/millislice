@@ -188,7 +188,7 @@ void SimulationConfig::SetupUdpApplication(Ptr<Node> node, Ipv4Address address, 
 {
   ApplicationContainer app;
   UdpClientHelper client(address, port);
-  client.SetAttribute("Interval", TimeValue(Seconds(interPacketInterval)));
+  client.SetAttribute("Interval", TimeValue(MicroSeconds(interPacketInterval)));
   client.SetAttribute("MaxPackets", UintegerValue(10000000));
 
   app.Add(client.Install(node));
