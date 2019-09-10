@@ -26,7 +26,7 @@ for rate in urllc_rate_grid:
 
 
 # Set amount of simulation time
-sim_duration = 3.0
+sim_duration = 10.0
 
 params_grid = {
     'appEnd': sim_duration,
@@ -57,12 +57,12 @@ params_grid = {
     'useBuildings': False,  # Use MmWave3gppPropagationLossModel
     'useRlcAm': False,  # Use RLC UM
     'useUdp': True,
-    'vMax': 1.0,
-    'vMin': 10.0,
+    'vMax': 10.0,
+    'vMin': 1.0,
 }
 
 print(params_grid)
-runs = 1
+runs = 5
 campaign.run_missing_simulations(sem.list_param_combinations(params_grid), runs)
 
 # Get missing results for no CA and CC equal to 28GHz
