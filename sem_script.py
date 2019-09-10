@@ -13,13 +13,17 @@ embb_packet_size = 1024
 embb_rate_grid = list(range(80, 120, 10))
 embb_IPI_grid = []
 for rate in embb_rate_grid:
-    embb_IPI_grid.append(embb_packet_size*8/(rate*1e6))
+    # Mbit/s to IPI in microseconds
+    temp_IPI = embb_packet_size*8/(rate)
+    embb_IPI_grid.append(int(round(temp_IPI)))
 # URLLC
 urllc_packet_size = 1024
 urllc_rate_grid = list(range(1, 2, 1))
 urllc_IPI_grid = []
 for rate in urllc_rate_grid:
-    urllc_IPI_grid.append(urllc_packet_size*8/(rate*1e6))
+    temp_IPI = urllc_packet_size*8/(rate)
+    urllc_IPI_grid.append(int(round(temp_IPI)))
+
 
 # Set amount of simulation time
 sim_duration = 3.0
