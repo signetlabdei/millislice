@@ -25,7 +25,7 @@ public:
   static void SetConstantPositionMobility(NodeContainer nodes, Vector position);
   static void SetConstantVelocityMobility(Ptr<Node> node, Vector position, Vector velocity);
   static void SetRandomWalkMobility(Ptr<Node> node, Vector position, double vMin, double vMax);
-  static void SetupUdpApplication(Ptr<Node> node, Ipv4Address address, uint16_t port, uint16_t interPacketInterval, double startTime, double endTime);
+  static void SetupUdpApplication(Ptr<Node> node, Ipv4Address address, uint16_t port, uint16_t interPacketInterval, Ptr<OutputStreamWrapper> stream, double startTime, double endTime);
   static void SetupFtpModel3Application(Ptr<Node> clientNode, Ptr<Node> serverNode, Ipv4Address address, uint16_t port, double lambda, uint32_t fileSize, uint32_t sendSize, double startTime, double endTime, Ptr<OutputStreamWrapper> stream);
   static void SetupUdpPacketSink(Ptr<Node> node, uint16_t port, double startTime, double endTime, Ptr<OutputStreamWrapper> stream);
   static void InstallRmcatApps(bool nada, Ptr<Node> sender, Ptr<Node> receiver, uint16_t port, float initBw, float minBw, float maxBw, float startTime, float stopTime);
@@ -184,7 +184,7 @@ void SimulationConfig::SetRandomWalkMobility(Ptr<Node> node, Vector position, do
   BuildingsHelper::Install(node);
 }
 
-void SimulationConfig::SetupUdpApplication(Ptr<Node> node, Ipv4Address address, uint16_t port, uint16_t interPacketInterval, double startTime, double endTime)
+void SimulationConfig::SetupUdpApplication(Ptr<Node> node, Ipv4Address address, uint16_t port, uint16_t interPacketInterval, Ptr<OutputStreamWrapper> stream, double startTime, double endTime)
 {
   ApplicationContainer app;
   UdpClientHelper client(address, port);
@@ -196,6 +196,8 @@ void SimulationConfig::SetupUdpApplication(Ptr<Node> node, Ipv4Address address, 
   app.Stop(Seconds(endTime));
 
   NS_LOG_INFO("Number of packets to send " << std::floor((endTime - startTime) / interPacketInterval * 1000));
+  // Probably does not exist?
+  app.Get(0)->TraceConnectWithoutContext("Tx", MakeBoundCallback(&CallbackSinks::TxSink, stream));
 }
 
 void SimulationConfig::SetupUdpPacketSink(Ptr<Node> node, uint16_t port, double startTime, double endTime, Ptr<OutputStreamWrapper> stream)
@@ -370,12 +372,21 @@ void RandomBuildings::CreateRandomBuildings(double streetWidth, double blockSize
 
 void CallbackSinks::RxSink(Ptr<OutputStreamWrapper> stream, Ptr<const Packet> packet, const Address &from)
 {
-  *stream->GetStream() << "Rx\t" << Simulator::Now().GetSeconds() << "\t" << packet->GetSize() << std::endl;
+  // Get info about the packet
+  Ptr<Packet> testPacket = packet->Copy(); // Need a non const reference to the packet
+  SeqTsHeader seqTs;
+  testPacket->RemoveHeader(seqTs);
+  uint32_t currentSeqNmb = seqTs.GetSeq();
+  Time currentTimestamp = seqTs.GetTs();
+  int64_t microsTimestamp = currentTimestamp.GetNanoSeconds();
+
+  *stream->GetStream() << Simulator::Now().GetNanoSeconds() << "\t" << packet->GetSize() 
+    << "\t" << std::to_string(microsTimestamp) << "\t" << std::to_string(currentSeqNmb) << std::endl;
 }
 
 void CallbackSinks::TxSink(Ptr<OutputStreamWrapper> stream, Ptr<const Packet> packet, const Address &from)
 {
-  *stream->GetStream() << "Tx\t" << Simulator::Now().GetSeconds() << "\t" << packet->GetSize() << std::endl;
+  *stream->GetStream() << Simulator::Now().GetNanoSeconds() << "\t" << packet->GetSize() << std::endl;
 }
 
 std::pair<Box, std::list<Box>>

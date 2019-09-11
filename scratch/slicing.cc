@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
 	// Propagation loss model
 	bool useBuildings = false;						 // if true use MmWave3gppBuildingsPropagationLossModel
 	std::string condition = "a";					 // MmWave3MmWave3gppPropagationLossModel condition, n = NLOS, l = LOS
-	std::string scenario = "test-single-enb-moving"; // the simulation scenario
+	std::string scenario = "test-single-enb"; // the simulation scenario
 
 	// URLLC parameters
 	double lambdaUrllc = 0.2; // average number of file/s
@@ -198,6 +198,8 @@ int main(int argc, char *argv[])
 	Ptr<mmwave::MmWaveHelper> helper = CreateObject<mmwave::MmWaveHelper>();
 	helper->SetCcPhyParams(ccMap);
 
+	NS_LOG_UNCOND("Test log");
+
 	if (splitDrb)
 	{
 		// Create the DRB - CC map
@@ -288,9 +290,22 @@ int main(int argc, char *argv[])
 	}
 
 	// Install and start applications on UEs and remote host
+
+	// Create tracing streams
+	std::ostringstream dlTraceStructure;
+	dlTraceStructure << "| Time of rx |" << "\t" << "| Packet size |" << "\t" <<
+		"| Tstamp |" << "\t" << "| Seq num | \n"; 
+
 	AsciiTraceHelper asciiTraceHelper;
-	Ptr<OutputStreamWrapper> dlEmbbStream = asciiTraceHelper.CreateFileStream(filePath + "eMBB-app-trace.txt");
-	Ptr<OutputStreamWrapper> dlUrllcStream = asciiTraceHelper.CreateFileStream(filePath + "urllc-app-trace.txt");
+	Ptr<OutputStreamWrapper> dlEmbbStream = asciiTraceHelper.CreateFileStream(filePath + "eMBB-dl-app-trace.txt");
+	Ptr<OutputStreamWrapper> dlUrllcStream = asciiTraceHelper.CreateFileStream(filePath + "urllc-dl-app-trace.txt");
+	// Specify structure of the dl trace files
+	*dlEmbbStream-> GetStream() << dlTraceStructure.str();
+	*dlUrllcStream-> GetStream() << dlTraceStructure.str();
+
+	// Enable UL embb and urllc traces, trace sources not active yet
+	Ptr<OutputStreamWrapper> ulEmbbStream = asciiTraceHelper.CreateFileStream(filePath + "eMBB-ul-app-trace.txt");
+	Ptr<OutputStreamWrapper> ulUrllcStream = asciiTraceHelper.CreateFileStream(filePath + "urllc-ul-sink-app-trace.txt");
 
 	// Install packet sink and application on eMBB nodes
 	if (embbOn)
@@ -309,6 +324,7 @@ int main(int argc, char *argv[])
 													  ueEmbbIpIface.GetAddress(i), // destination address
 													  dlEmbbPort,				   // destination port
 													  embbUdpIPI,				   // embb rate
+													  ulEmbbStream,					// trace file
 													  appStart,					   // start time
 													  appEnd);					   // stop time
 			}
@@ -342,6 +358,7 @@ int main(int argc, char *argv[])
 													  ueUrllcIpIface.GetAddress(i), // destination address
 													  dlUrllcPort,					// destination port
 													  urllcUdpIPI,					// urllc rate
+													  ulUrllcStream,				// trace file
 													  appStart,						// start time
 													  appEnd);						// stop time
 			}
