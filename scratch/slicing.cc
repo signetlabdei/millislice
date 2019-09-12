@@ -292,9 +292,9 @@ int main(int argc, char *argv[])
 	// Install and start applications on UEs and remote host
 
 	// Create tracing streams
-	std::ostringstream dlTraceStructure;
-	dlTraceStructure << "| Time of rx |" << "\t" << "| Packet size |" << "\t" <<
-		"| Tstamp |" << "\t" << "| Seq num | \n"; 
+	std::ostringstream dlTraceStructure, ulTraceStructure;
+	dlTraceStructure << "| Time of rx | \t | Time of tx | \t | Packet size | \t | Seq num | \t | Packet UID |\n"; 
+	ulTraceStructure << "| Time of tx | \t | Packet size | \t | Seq num | \t | Packet UID | \t | Dest address | \n" ;
 
 	AsciiTraceHelper asciiTraceHelper;
 	Ptr<OutputStreamWrapper> dlEmbbStream = asciiTraceHelper.CreateFileStream(filePath + "eMBB-dl-app-trace.txt");
@@ -306,6 +306,9 @@ int main(int argc, char *argv[])
 	// Enable UL embb and urllc traces, trace sources not active yet
 	Ptr<OutputStreamWrapper> ulEmbbStream = asciiTraceHelper.CreateFileStream(filePath + "eMBB-ul-app-trace.txt");
 	Ptr<OutputStreamWrapper> ulUrllcStream = asciiTraceHelper.CreateFileStream(filePath + "urllc-ul-sink-app-trace.txt");
+	// Specify structure of the ul trace files
+	*ulEmbbStream-> GetStream() << ulTraceStructure.str();
+	*ulUrllcStream-> GetStream() << ulTraceStructure.str();
 
 	// Install packet sink and application on eMBB nodes
 	if (embbOn)
