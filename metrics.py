@@ -15,13 +15,28 @@ def throughput(dict):
 
 
 def delay_app():
-    results = campaign.db.get_complete_results()
-    # Get the required output traces
-    trace_bucket = []
-    for result in results:
-        dl_app_trace = result['output']['test_eMBB-dl-app-trace.txt']
-        trace_bucket.append(dl_app_trace)
-        print(dl_app_trace)
-        print('---------------------')
+    trace_str = 'test_eMBB-dl-app-trace.txt'
+    trace_data = load_results(trace_name=trace_str)
+    print(trace_data)
 
+
+def load_results(trace_name, param=None):
+    # Get the required files IDs
+    if param is not None:
+        res_data = campaign.db.get_results(param)
+    else:
+        res_data = campaign.db.get_results()
+
+    # Get list containing data of the trace for the various param combination
+    res_bucket = []
+    for res_istance in res_data:
+        res_id = res_istance['meta']['id']
+        res_path = campaign.db.get_result_files(res_id)[trace_name]
+        res_bucket.append(np.loadtxt(fname=res_path, skiprows=1)) # Skip structure spec row
+    
+    return res_bucket
+
+
+
+# Test
 delay_app()
