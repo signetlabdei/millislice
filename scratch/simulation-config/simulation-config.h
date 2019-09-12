@@ -42,6 +42,9 @@ class CallbackSinks
 public:
   static void RxSink(Ptr<OutputStreamWrapper> stream, Ptr<const Packet> packet, const Address &from = Address());
   static void TxSink(Ptr<OutputStreamWrapper> stream, Ptr<const Packet> packet, const Address &from = Address());
+  // Specific UDP sinks, to enable increased telemetry and not break compatibility
+  static void RxSinkUdp(Ptr<OutputStreamWrapper> stream, Ptr<const Packet> packet, const Address &from = Address());
+  static void TxSinkUdp(Ptr<OutputStreamWrapper> stream, Ptr<const Packet> packet, const Address &from = Address());
 };
 
 class RandomBuildings
@@ -196,8 +199,9 @@ void SimulationConfig::SetupUdpApplication(Ptr<Node> node, Ipv4Address address, 
   app.Stop(Seconds(endTime));
 
   NS_LOG_INFO("Number of packets to send " << std::floor((endTime - startTime) / interPacketInterval * 1000));
+
   // Probably does not exist?
-  app.Get(0)->TraceConnectWithoutContext("Tx", MakeBoundCallback(&CallbackSinks::TxSink, stream));
+  app.Get(0)->TraceConnectWithoutContext("Tx", MakeBoundCallback(&CallbackSinks::TxSinkUdp, stream));
 }
 
 void SimulationConfig::SetupUdpPacketSink(Ptr<Node> node, uint16_t port, double startTime, double endTime, Ptr<OutputStreamWrapper> stream)
@@ -208,7 +212,7 @@ void SimulationConfig::SetupUdpPacketSink(Ptr<Node> node, uint16_t port, double 
   app.Start(Seconds(startTime));
   app.Stop(Seconds(endTime));
 
-  app.Get(0)->TraceConnectWithoutContext("Rx", MakeBoundCallback(&CallbackSinks::RxSink, stream));
+  app.Get(0)->TraceConnectWithoutContext("Rx", MakeBoundCallback(&CallbackSinks::RxSinkUdp, stream));
 }
 
 void SimulationConfig::SetupFtpModel3Application(Ptr<Node> clientNode, Ptr<Node> serverNode, Ipv4Address address, uint16_t port, double lambda, uint32_t fileSize, uint32_t sendSize, double startTime, double endTime, Ptr<OutputStreamWrapper> stream)
@@ -369,8 +373,17 @@ void RandomBuildings::CreateRandomBuildings(double streetWidth, double blockSize
   }
   /* END Create the building */
 }
-
 void CallbackSinks::RxSink(Ptr<OutputStreamWrapper> stream, Ptr<const Packet> packet, const Address &from)
+{
+  *stream->GetStream() << "Rx\t" << Simulator::Now().GetSeconds() << "\t" << packet->GetSize() << std::endl;
+}
+
+void CallbackSinks::TxSink(Ptr<OutputStreamWrapper> stream, Ptr<const Packet> packet, const Address &from)
+{
+  *stream->GetStream() << "Tx\t" << Simulator::Now().GetSeconds() << "\t" << packet->GetSize() << std::endl;
+}
+
+void CallbackSinks::RxSinkUdp(Ptr<OutputStreamWrapper> stream, Ptr<const Packet> packet, const Address &from)
 {
   // Get info about the packet
   Ptr<Packet> testPacket = packet->Copy(); // Need a non const reference to the packet
@@ -380,13 +393,22 @@ void CallbackSinks::RxSink(Ptr<OutputStreamWrapper> stream, Ptr<const Packet> pa
   Time currentTimestamp = seqTs.GetTs();
   int64_t microsTimestamp = currentTimestamp.GetNanoSeconds();
 
-  *stream->GetStream() << Simulator::Now().GetNanoSeconds() << "\t" << packet->GetSize() 
-    << "\t" << std::to_string(microsTimestamp) << "\t" << std::to_string(currentSeqNmb) << std::endl;
+  *stream->GetStream() << Simulator::Now().GetNanoSeconds() << "\t" << std::to_string(microsTimestamp) << "\t" << packet->GetSize()
+                       << "\t" << std::to_string(currentSeqNmb) << "\t" << std::to_string(packet->GetUid()) << "\t" << std::endl;
 }
 
-void CallbackSinks::TxSink(Ptr<OutputStreamWrapper> stream, Ptr<const Packet> packet, const Address &from)
+void CallbackSinks::TxSinkUdp(Ptr<OutputStreamWrapper> stream, Ptr<const Packet> packet, const Address &to)
 {
-  *stream->GetStream() << Simulator::Now().GetNanoSeconds() << "\t" << packet->GetSize() << std::endl;
+  // Get info about the packet
+  Ptr<Packet> testPacket = packet->Copy(); // Need a non const reference to the packet
+  SeqTsHeader seqTs;
+  testPacket->RemoveHeader(seqTs);
+  uint32_t currentSeqNmb = seqTs.GetSeq();
+  // Get dest address info
+  Ipv4Address destIpv4 = Ipv4Address::ConvertFrom(to);
+
+  *stream->GetStream() << Simulator::Now().GetNanoSeconds() << "\t" << packet->GetSize() << "\t" << std::to_string(currentSeqNmb) << "\t" 
+    << packet->GetUid()<< "\t" << destIpv4.Get() << std::endl;
 }
 
 std::pair<Box, std::list<Box>>

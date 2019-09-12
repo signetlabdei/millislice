@@ -69,6 +69,10 @@ UdpClient::GetTypeId (void)
                    UintegerValue (1024),
                    MakeUintegerAccessor (&UdpClient::m_size),
                    MakeUintegerChecker<uint32_t> (12,65507))
+    .AddTraceSource ("Tx",
+                  "A packet has been transmitted",
+                  MakeTraceSourceAccessor (&UdpClient::m_txTrace),
+                  "ns3::Packet::AddressTracedCallback")
   ;
   return tid;
 }
@@ -194,7 +198,8 @@ UdpClient::Send (void)
                                     << peerAddressStringStream.str () << " Uid: "
                                     << p->GetUid () << " Time: "
                                     << (Simulator::Now ()).GetSeconds ());
-
+      // We are sending a packet, trace it
+      m_txTrace(p, m_peerAddress);
     }
   else
     {
