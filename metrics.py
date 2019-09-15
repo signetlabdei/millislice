@@ -1,6 +1,6 @@
 import sem
 import numpy as np
-import matplotlib
+
 
 # Functions
 
@@ -53,8 +53,9 @@ def throughput_app(bearer_type, param_comb=None):
     Args:
         bearer_type (str): either urrlc or embb
     """
-    print('--Computing throughput--')
+    print('--Computing per-user throughput--')
     # Select proper trace file
+    
     if bearer_type == 'urllc':
         trace_str = 'test_urllc-dl-app-trace.txt'
     else:
@@ -66,8 +67,25 @@ def throughput_app(bearer_type, param_comb=None):
     else:
         trace_data = load_results(trace_name=trace_str)
 
+
     # Placeholder
-    print(trace_data)
+    #print(trace_data)
+    ris = []
+    for item in trace_data:
+        
+        g = (len(item['results'])*1024)/((item['params']['appEnd']- item['params']['appStart'])*1e6)            #computing overall throughput
+        single_g = g/(item['params']['numEmbbUes'])                                                             #computing per user throughput
+        par = item['params']
+        ris.append({
+
+            'values' : single_g,
+            'params' : par
+
+        })
+    
+    return ris
+
+
 
 
 def delay_app(bearer_type, param_comb=None):
@@ -93,14 +111,68 @@ def delay_app(bearer_type, param_comb=None):
         trace_data = load_results(trace_name=trace_str)
 
     trace_data = load_results(trace_name=trace_str)
+    delay = []
+    for item in trace_data:
+        time_rx = item['results'][:,0]                                # get time of rx
+        time_tx = item['results'][:,2]                                # get time of tx
+        par = item['params']                                                                        
+        pck_delay = (time_rx -time_tx)/1e6                            # packet delay
+        delay.append({
 
+            'latency' : pck_delay.mean(),                             # latency = mean of packet delay
+            'std'     : pck_delay.std(),                              # latency std
+            'params'  : par 
+
+        })
+
+    return delay
+
+
+    
+    
+    
+    
+    
+    
+    
+    
     # Placeholder
-    print(trace_data)
+    #print(trace_data)
 
 # Actual metrics computation
 
 
 # Load the SEM campaign
+
+
 campaign = sem.CampaignManager.load('./slicing-res')
 print('--SEM campaign succesfully loaded--')
-test_no_param = delay_app('emmb')
+
+
+#  testing bullshit 
+
+dc = delay_app('urllc')
+print(dc[0]['latency'], ' ----std : ', dc[0]['std'] )
+
+
+
+
+
+
+
+
+
+
+#for i in dc:
+    #print(i['params'])
+    #print('---------------------')
+    #print(i['values'],'  Mbit/s')
+    #print('-----------------------') 
+
+
+
+
+
+#pd = load_results('test_urllc-dl-app-trace.txt')
+#print(type(pd[0]['results'][:,0]))
+  
