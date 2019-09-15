@@ -83,6 +83,12 @@ def throughput_app(bearer_type, param_comb=None):
 
         })
     
+    for item in ris:
+        print(item['params'])
+        print('---------------------')
+        print(item['values'],'  Mbit/s')
+        print('-----------------------') 
+
     return ris
 
 
@@ -97,7 +103,10 @@ def delay_app(bearer_type, param_comb=None):
     Args:
         bearer_type (str): either urrlc or embb
     """
-    print('--Computing packet delay--')
+    print('--Computing average packet delay--')
+    print('------------------------------------------')
+    print('------------------------------------------')
+
     # Select proper trace file
     if bearer_type == 'urllc':
         trace_str = 'test_urllc-dl-app-trace.txt'
@@ -125,6 +134,12 @@ def delay_app(bearer_type, param_comb=None):
 
         })
 
+    for item in delay:
+        print(item['params'])
+        print('----------------------------')
+        print(item['latency'], 'us ----std : ', item['std'] )
+        print('-----------------------------')
+
     return delay
 
 
@@ -150,29 +165,4 @@ print('--SEM campaign succesfully loaded--')
 
 
 #  testing bullshit 
-
 dc = delay_app('urllc')
-print(dc[0]['latency'], ' ----std : ', dc[0]['std'] )
-
-
-
-
-
-
-
-
-
-
-#for i in dc:
-    #print(i['params'])
-    #print('---------------------')
-    #print(i['values'],'  Mbit/s')
-    #print('-----------------------') 
-
-
-
-
-
-#pd = load_results('test_urllc-dl-app-trace.txt')
-#print(type(pd[0]['results'][:,0]))
-  
