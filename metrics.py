@@ -4,18 +4,48 @@ import numpy as np
 # Functions
 
 
-def print_metric(metric_bucket):
+def print_metric(metric_bucket, intro, output_str=None):
     """
     Print metrics and params that generated them
     """
     # Placeholder    
-    for item in metric_bucket:
-        # print(item['params'])
-        # print('---------------------')
-        print(item['values'])
-        print('-----------------------')
+    metric_bucket.sort(key=ret_rng_run)
     # Find out which param is changing
+    params_mask = []
+    params_list = list(metric_bucket[0]['params'].keys())   # list of params
+    for item in params_list:
+        # Check if that param is the same for all simulations
+        temp_bucket = []
+        for sim in metric_bucket:
+            temp_bucket.append(sim['params'][item])
+        params_mask.append(check_constant(temp_bucket))
 
+    print('Constant simulations params:')
+    const_par = np.array(params_list)[np.logical_not(params_mask)]
+    str_const = ''
+    for param in const_par:
+        str_const += (param + ': ')
+        str_const += (str(metric_bucket[0]['params'][param]) + '\t')
+
+    print(str_const.center(20))
+
+    print('Metric values:')
+    var_par = np.array(params_list)[params_mask]
+    str_var = ''
+    for sim in metric_bucket:
+        str_var += (intro + str(sim['values']) + '\n')
+        for param in var_par:
+            str_var += (param + ': ')
+            str_var += (str(sim['params'][param]) + '\t')
+        str_var += '\n -------------- \n'
+
+    print(str_var)
+
+def check_constant(bucket):
+    return bucket[1:] != bucket[:-1]
+
+def ret_rng_run(elem):
+    return elem['params']['RngRun']
 
 def load_results(trace_name, param=None):
     """ 
@@ -151,7 +181,7 @@ def pkt_loss_app(bearer_type, param_comb=None):
     # Select proper trace file
     if bearer_type == 'urllc':
         trace_str_dl = 'test_urllc-dl-app-trace.txt'
-        trace_str_ul = 'test_urllc-ul-app-trace.txt'
+        trace_str_ul = 'test_urllc-ul-sink-app-trace.txt'
     else:
         trace_str_dl = 'test_eMBB-dl-app-trace.txt'
         trace_str_ul = 'test_eMBB-ul-app-trace.txt'
@@ -180,8 +210,19 @@ def pkt_loss_app(bearer_type, param_comb=None):
 campaign = sem.CampaignManager.load('./slicing-res')
 print('--SEM campaign succesfully loaded--')
 
-#  testing bullshit
-#dc = delay_app('urllc')
-# print(dc)
-test = pkt_loss_app('embb')
-print_metric(test)
+out_file = open("slicing-res/metrics_output.txt","a") 
+print('--URLLC results--')
+urllc_packet_loss = pkt_loss_app('urllc')
+print_metric(urllc_packet_loss, 'Packet loss: ')
+urllc_delay = delay_app('urllc')
+print_metric(urllc_delay, 'Latency, jitter: ')
+urllc_throughput = throughput_app('urllc')
+print_metric(urllc_throughput, 'Throughput: ')
+
+print('--eMBB results--')
+embb_packet_loss = pkt_loss_app('embb')
+print_metric(embb_packet_loss, 'Packet loss: ')
+embb_delay = delay_app('embb')
+print_metric(embb_delay, 'Latency, jitter: ')
+embb_throughput = throughput_app('embb')
+print_metric(embb_throughput, 'Throughput: ')
