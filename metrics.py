@@ -1,15 +1,17 @@
 import sem
 import numpy as np
+from textwrap import wrap
 
 # Functions
-
 
 def print_metric(metric_bucket, intro, output_str=None):
     """
     Print metrics and params that generated them
     """
-    # Placeholder    
+    # Place similar params close together
     metric_bucket.sort(key=ret_rng_run)
+    if output_str is None:
+        output_str = ''
     # Find out which param is changing
     params_mask = []
     params_list = list(metric_bucket[0]['params'].keys())   # list of params
@@ -20,26 +22,23 @@ def print_metric(metric_bucket, intro, output_str=None):
             temp_bucket.append(sim['params'][item])
         params_mask.append(check_constant(temp_bucket))
 
-    print('Constant simulations params:')
+    output_str += 'Constant simulations params: \n'
     const_par = np.array(params_list)[np.logical_not(params_mask)]
-    str_const = ''
     for param in const_par:
-        str_const += (param + ': ')
-        str_const += (str(metric_bucket[0]['params'][param]) + '\t')
+        output_str += (param + ': ')
+        output_str += (str(metric_bucket[0]['params'][param]) + '\t')
+    output_str += '\n'
 
-    print(str_const.center(20))
-
-    print('Metric values:')
+    output_str += 'Metric values: \n' 
     var_par = np.array(params_list)[params_mask]
-    str_var = ''
     for sim in metric_bucket:
-        str_var += (intro + str(sim['values']) + '\n')
+        output_str += (intro + str(sim['values']) + '\n')
         for param in var_par:
-            str_var += (param + ': ')
-            str_var += (str(sim['params'][param]) + '\t')
-        str_var += '\n -------------- \n'
+            output_str += (param + ': ')
+            output_str += (str(sim['params'][param]) + '\t')
+        output_str += '\n -------------- \n'
 
-    print(str_var)
+    return output_str
 
 def check_constant(bucket):
     return bucket[1:] != bucket[:-1]
@@ -210,19 +209,24 @@ def pkt_loss_app(bearer_type, param_comb=None):
 campaign = sem.CampaignManager.load('./slicing-res')
 print('--SEM campaign succesfully loaded--')
 
-out_file = open("slicing-res/metrics_output.txt","a") 
-print('--URLLC results--')
+out_str = ''
+print('--Computing URLLC results--')
 urllc_packet_loss = pkt_loss_app('urllc')
-print_metric(urllc_packet_loss, 'Packet loss: ')
+out_str = print_metric(urllc_packet_loss, 'URLLC packet loss: \n ', out_str)
 urllc_delay = delay_app('urllc')
-print_metric(urllc_delay, 'Latency, jitter: ')
+out_str = print_metric(urllc_delay, 'URLLC latency, jitter: \n', out_str)
 urllc_throughput = throughput_app('urllc')
-print_metric(urllc_throughput, 'Throughput: ')
+out_str = print_metric(urllc_throughput, 'URLLC throughput: \n', out_str)
 
-print('--eMBB results--')
+print('--Computing eMBB results--')
 embb_packet_loss = pkt_loss_app('embb')
-print_metric(embb_packet_loss, 'Packet loss: ')
+out_str = print_metric(embb_packet_loss, 'eMBB packet loss: ', out_str)
 embb_delay = delay_app('embb')
-print_metric(embb_delay, 'Latency, jitter: ')
+out_str = print_metric(embb_delay, 'eMBB latency, jitter: ', out_str)
 embb_throughput = throughput_app('embb')
-print_metric(embb_throughput, 'Throughput: ')
+out_str = print_metric(embb_throughput, 'eMBB throughput: ', out_str)
+print(out_str)
+
+# Output to file
+out_file = open("slicing-res/metrics_output.txt","a") 
+out_file.write(out_str)
