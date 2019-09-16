@@ -391,9 +391,9 @@ void CallbackSinks::RxSinkUdp(Ptr<OutputStreamWrapper> stream, Ptr<const Packet>
   testPacket->RemoveHeader(seqTs);
   uint32_t currentSeqNmb = seqTs.GetSeq();
   Time currentTimestamp = seqTs.GetTs();
-  int64_t microsTimestamp = currentTimestamp.GetNanoSeconds();
+  int64_t nanosTimestamp = currentTimestamp.GetNanoSeconds();
 
-  *stream->GetStream() << Simulator::Now().GetNanoSeconds() << "\t" << std::to_string(microsTimestamp) << "\t" << packet->GetSize()
+  *stream->GetStream() << Simulator::Now().GetNanoSeconds() << "\t" << std::to_string(nanosTimestamp) << "\t" << packet->GetSize()
                        << "\t" << std::to_string(currentSeqNmb) << "\t" << std::to_string(packet->GetUid()) << "\t" << std::endl;
 }
 

@@ -1,8 +1,20 @@
 import sem
 import numpy as np
 
-
 # Functions
+
+
+def print_metric(metric_bucket):
+    """
+    Print metrics and params that generated them
+    """
+    # Placeholder    
+    for item in metric_bucket:
+        # print(item['params'])
+        # print('---------------------')
+        print(item['values'])
+        print('-----------------------')
+    # Find out which param is changing
 
 
 def load_results(trace_name, param=None):
@@ -54,8 +66,8 @@ def throughput_app(bearer_type, param_comb=None):
         bearer_type (str): either urrlc or embb
     """
     print('--Computing per-user throughput--')
+
     # Select proper trace file
-    
     if bearer_type == 'urllc':
         trace_str = 'test_urllc-dl-app-trace.txt'
     else:
@@ -67,31 +79,22 @@ def throughput_app(bearer_type, param_comb=None):
     else:
         trace_data = load_results(trace_name=trace_str)
 
-
-    # Placeholder
-    #print(trace_data)
     ris = []
     for item in trace_data:
-        
-        g = (len(item['results'])*1024)/((item['params']['appEnd']- item['params']['appStart'])*1e6)            #computing overall throughput
-        single_g = g/(item['params']['numEmbbUes'])                                                             #computing per user throughput
-        par = item['params']
+        g = (len(item['results'])*1024)/((item['params']['appEnd'] -
+                                          item['params']['appStart'])*1e6)  # computing overall throughput
+        # computing per user throughput
+        if bearer_type == 'urllc':
+            single_g = g/(item['params']['numUrllcUes'])
+        else:
+            single_g = g/(item['params']['numEmbbUes'])
+
         ris.append({
-
-            'values' : single_g,
-            'params' : par
-
+            'values': single_g,
+            'params': item['params']
         })
-    
-    for item in ris:
-        print(item['params'])
-        print('---------------------')
-        print(item['values'],'  Mbit/s')
-        print('-----------------------') 
 
     return ris
-
-
 
 
 def delay_app(bearer_type, param_comb=None):
@@ -104,8 +107,6 @@ def delay_app(bearer_type, param_comb=None):
         bearer_type (str): either urrlc or embb
     """
     print('--Computing average packet delay--')
-    print('------------------------------------------')
-    print('------------------------------------------')
 
     # Select proper trace file
     if bearer_type == 'urllc':
@@ -119,50 +120,68 @@ def delay_app(bearer_type, param_comb=None):
     else:
         trace_data = load_results(trace_name=trace_str)
 
-    trace_data = load_results(trace_name=trace_str)
     delay = []
     for item in trace_data:
-        time_rx = item['results'][:,0]                                # get time of rx
-        time_tx = item['results'][:,2]                                # get time of tx
-        par = item['params']                                                                        
-        pck_delay = (time_rx -time_tx)/1e6                            # packet delay
+        # get time of rx
+        time_rx = item['results'][:, 0]
+        # get time of tx
+        time_tx = item['results'][:, 2]
+        # packet delay
+        pck_delay = (time_rx - time_tx)/1e6
         delay.append({
-
-            'latency' : pck_delay.mean(),                             # latency = mean of packet delay
-            'std'     : pck_delay.std(),                              # latency std
-            'params'  : par 
-
+            # latency = mean of packet delay
+            'values': [pck_delay.mean(), pck_delay.std()],  # Output both latency and jitter
+            'params': item['params']
         })
-
-    for item in delay:
-        print(item['params'])
-        print('----------------------------')
-        print(item['latency'], 'us ----std : ', item['std'] )
-        print('-----------------------------')
 
     return delay
 
 
-    
-    
-    
-    
-    
-    
-    
-    
-    # Placeholder
-    #print(trace_data)
+def pkt_loss_app(bearer_type, param_comb=None):
+    """ 
+    Computes the average delay @ APP layer.
+    If parameters combination are provided, then only the simulations for
+    such values are taken into consideration for the computation.
+
+    Args:
+        bearer_type (str): either urrlc or embb
+    """
+    print('--Computing average packet loss--')
+
+    # Select proper trace file
+    if bearer_type == 'urllc':
+        trace_str_dl = 'test_urllc-dl-app-trace.txt'
+        trace_str_ul = 'test_urllc-ul-app-trace.txt'
+    else:
+        trace_str_dl = 'test_eMBB-dl-app-trace.txt'
+        trace_str_ul = 'test_eMBB-ul-app-trace.txt'
+
+    # Load results, specify params if given on input
+    if param_comb is not None:
+        trace_dl = load_results(trace_name=trace_str_dl, param=param_comb)
+        trace_ul = load_results(trace_name=trace_str_ul, param=param_comb)
+    else:
+        trace_dl = load_results(trace_name=trace_str_dl)
+        trace_ul = load_results(trace_name=trace_str_ul)
+
+    loss = []
+    for index in range(len(trace_dl)):   # Amount of sim same for ul and dl
+        dropped = len(trace_ul[index]['results']) - len(trace_dl[index]['results']) # Overall lost packets
+        dropped = dropped/len(trace_ul[index]['results'])   # Percentage of packets lost
+        loss.append({
+            'values': dropped,
+            'params': trace_dl[index]['params']
+        })
+
+    return loss
 
 # Actual metrics computation
-
-
 # Load the SEM campaign
-
-
 campaign = sem.CampaignManager.load('./slicing-res')
 print('--SEM campaign succesfully loaded--')
 
-
-#  testing bullshit 
-dc = delay_app('urllc')
+#  testing bullshit
+#dc = delay_app('urllc')
+# print(dc)
+test = pkt_loss_app('embb')
+print_metric(test)
