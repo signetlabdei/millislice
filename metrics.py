@@ -39,16 +39,21 @@ def group_by_params(metric_bucket):
     # Group sims having same param
     while(len(metric_bucket)> 0):
         temp_param = metric_bucket[0]['params']
-        run_bucket = []
+        mean_bucket = []
+        # If we have variance, save that as well
+        var_bucket = []
         waste_bucket = []
         # Find sims with same params
         for sim in metric_bucket:
             if sim['params'] == temp_param:
-                run_bucket.append(sim['values'])
+                mean_bucket.append(sim['mean'])
+                if('var' in metric_bucket[0]):
+                    var_bucket.append(sim['var'])
                 waste_bucket.append(sim)  
         # Create entry for same params, different runs	
         out_bucket.append({
-            'values': run_bucket,
+            'mean': mean_bucket,
+            'var': var_bucket,
             'params': temp_param
         })
         # Remove elements that have been joined
@@ -62,7 +67,7 @@ def load_results(trace_name, param=None):
     """ 
     Loads the results from specifics file traces.
     If params are specified, it loads just the results of the
-    simulations corresponding to such values.
+    simulations corresponding to such mean.
 
     Args:
         trace_name (str): filename of the trace(s) to load
@@ -102,7 +107,7 @@ def throughput_app(bearer_type, param_comb=None):
     """ 
     Computes the average throughput @ APP layer
     If parameters combination are provided, then only the simulations for
-    such values are taken into consideration for the computation.
+    such mean are taken into consideration for the computation.
 
     Args:
         bearer_type (str): either urrlc or embb
@@ -132,7 +137,7 @@ def throughput_app(bearer_type, param_comb=None):
             single_g = g/(item['params']['numEmbbUes'])
 
         ris.append({
-            'values': single_g,
+            'mean': single_g,
             'params': item['params']
         })
 
@@ -143,7 +148,7 @@ def delay_app(bearer_type, param_comb=None):
     """ 
     Computes the average delay @ APP layer.
     If parameters combination are provided, then only the simulations for
-    such values are taken into consideration for the computation.
+    such mean are taken into consideration for the computation.
 
     Args:
         bearer_type (str): either urrlc or embb
@@ -172,7 +177,8 @@ def delay_app(bearer_type, param_comb=None):
         pck_delay = (time_rx - time_tx)/1e6
         delay.append({
             # latency = mean of packet delay
-            'values': [pck_delay.mean(), pck_delay.std()],  # Output both latency and jitter
+            'mean': pck_delay.mean(), 
+            'var': pck_delay.std(),  # Output both latency and jitter
             'params': item['params']
         })
 
@@ -183,7 +189,7 @@ def pkt_loss_app(bearer_type, param_comb=None):
     """ 
     Computes the average delay @ APP layer.
     If parameters combination are provided, then only the simulations for
-    such values are taken into consideration for the computation.
+    such mean are taken into consideration for the computation.
 
     Args:
         bearer_type (str): either urrlc or embb
@@ -211,7 +217,7 @@ def pkt_loss_app(bearer_type, param_comb=None):
         dropped = len(trace_ul[index]['results']) - len(trace_dl[index]['results']) # Overall lost packets
         dropped = dropped/len(trace_ul[index]['results'])   # Percentage of packets lost
         loss.append({
-            'values': dropped,
+            'mean': dropped,
             'params': trace_dl[index]['params']
         })
 
