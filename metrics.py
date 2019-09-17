@@ -1,10 +1,10 @@
 import sem
 import numpy as np
-from textwrap import wrap
+from statistics import mean 
 
 # Functions
 
-def print_metric(metric_bucket, intro):
+def print_metric(metric_bucket, intro, just_mean=0):
     """
     Print metrics and params that generated them
     """
@@ -24,8 +24,21 @@ def print_metric(metric_bucket, intro):
         for param in params_to_rem:
             sim['params'].pop(param, None)
     out = group_by_params(metric_bucket)
-    print(out)
+
+    if(just_mean == 0):
+        print(out)
+    else:
+        print(metrics_means(out))
     return out
+
+def metrics_means(metric_bucket):
+    for res in metric_bucket:
+        res['mean'] = mean(res['mean'])
+        if(len(res['var']) > 0):
+            res['var'] = mean(res['var']) 
+
+    return metric_bucket
+
 
 def check_constant(bucket):
     return bucket[1:] == bucket[:-1]
@@ -229,16 +242,16 @@ campaign = sem.CampaignManager.load('./slicing-res')
 print('--SEM campaign succesfully loaded--')
 print('--Computing URLLC results--')
 urllc_packet_loss = pkt_loss_app('urllc')
-urllc_packet_loss =  print_metric(urllc_packet_loss, 'URLLC PACKET LOSS \n')
+urllc_packet_loss =  print_metric(urllc_packet_loss, 'URLLC PACKET LOSS \n', 1)
 urllc_delay = delay_app('urllc')
-urllc_delay =  print_metric(urllc_delay, 'URLLC DELAY \n')
+urllc_delay =  print_metric(urllc_delay, 'URLLC DELAY \n', 1)
 urllc_thr = throughput_app('urllc')
-urllc_thr =  print_metric(urllc_thr, 'URLLC THROUGHPUT \n')
+urllc_thr =  print_metric(urllc_thr, 'URLLC THROUGHPUT \n', 1)
 print('--Computing EMBB results--')
 embb_packet_loss = pkt_loss_app('embb')
-embb_packet_loss =  print_metric(embb_packet_loss, 'EMBB PACKET LOSS \n')
+embb_packet_loss =  print_metric(embb_packet_loss, 'EMBB PACKET LOSS \n', 1)
 embb_delay = delay_app('embb')
-embb_delay =  print_metric(embb_delay, 'EMBB DELAY \n')
+embb_delay =  print_metric(embb_delay, 'EMBB DELAY \n', 1)
 embb_thr = throughput_app('embb')
-embb_thr =  print_metric(embb_thr, 'EMBB THROUGHPUT \n')
+embb_thr =  print_metric(embb_thr, 'EMBB THROUGHPUT \n', 1)
 
