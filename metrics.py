@@ -10,6 +10,8 @@ def print_metric(metric_bucket, intro, output_str=None):
     """
     # Place similar params close together
     metric_bucket.sort(key=ret_rng_run)
+    # Improve formatting
+
     if output_str is None:
         output_str = ''
     # Find out which param is changing
@@ -45,6 +47,20 @@ def check_constant(bucket):
 
 def ret_rng_run(elem):
     return elem['params']['RngRun']
+
+def group_by_params(metric_bucket):
+    for sim in metric_bucket:
+        sim['params']
+
+def beautify(metric_bucket):
+    for sim in metric_bucket:
+        sim['params']['f0'] = "{:.2e}".format(sim['params']['f0'])
+        sim['params']['f1'] = "{:.2e}".format(sim['params']['f1'])
+        sim['params']['mode'] = 'no CA' if sim['params']['mode'] == 1 else 'CA'
+        sim['values'] = ['%.4e' % x for x in sim['values']] if isinstance(sim['values'], list) \
+            else "{:.4e}".format(sim['values'])
+
+    return metric_bucket
 
 def load_results(trace_name, param=None):
     """ 
@@ -110,7 +126,7 @@ def throughput_app(bearer_type, param_comb=None):
 
     ris = []
     for item in trace_data:
-        g = (len(item['results'])*1024)/((item['params']['appEnd'] -
+        g = (len(item['results'])*1024*8)/((item['params']['appEnd'] -
                                           item['params']['appStart'])*1e6)  # computing overall throughput
         # computing per user throughput
         if bearer_type == 'urllc':
@@ -228,5 +244,5 @@ out_str = print_metric(embb_throughput, 'eMBB throughput: ', out_str)
 print(out_str)
 
 # Output to file
-out_file = open("slicing-res/metrics_output.txt","a") 
+out_file = open("slicing-res/metrics_output_b.txt","a") 
 out_file.write(out_str)

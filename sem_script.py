@@ -27,6 +27,7 @@ for rate in urllc_rate_grid:
 
 # Set amount of simulation time
 sim_duration = 0.31
+runs = 5
 
 params_grid = {
     'appEnd': sim_duration,
@@ -47,7 +48,7 @@ params_grid = {
     'numEnbs': 1,
     'numUrllcUes': 10,
     'reorderingTimer': 1.0,
-    'runSet': 1,
+    'runSet': list(range(runs)),
     'segmentSize': 536,
     'scenario': 'test-single-enb-moving',
     'scheduler': 1,  # Round Robin Scheduler
@@ -62,12 +63,11 @@ params_grid = {
 }
 
 print(params_grid)
-runs = 2
-campaign.run_missing_simulations(sem.list_param_combinations(params_grid), runs)
+campaign.run_missing_simulations(sem.list_param_combinations(params_grid))
 
 # Get missing results for no CA and CC equal to 28GHz
 params_grid.update(mode=1, f0=28e9)
-campaign.run_missing_simulations(sem.list_param_combinations(params_grid), runs)
+campaign.run_missing_simulations(sem.list_param_combinations(params_grid))
 
 campaign = sem.CampaignManager.load('./slicing-res')
 results = sem.CampaignManager.get_results_as_numpy_array()
