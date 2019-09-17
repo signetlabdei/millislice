@@ -10,7 +10,7 @@ campaign = sem.CampaignManager.new(
 # Obtain IPIs from rates
 # eMMB
 embb_packet_size = 1024
-embb_rate_grid = list(range(80, 120, 10))
+embb_rate_grid = list(range(100, 120, 10))
 embb_IPI_grid = []
 for rate in embb_rate_grid:
     # Mbit/s to IPI in microseconds
@@ -26,11 +26,11 @@ for rate in urllc_rate_grid:
 
 
 # Set amount of simulation time
-sim_duration = 0.31
+sim_duration = 1.3
 runs = 5
 
 params_grid = {
-    'appEnd': sim_duration,
+    'appEnd': sim_duration - 0.5,
     'appStart': 0.3,
     'bsrTimer': 2.0,
     'bw': 5e8,
@@ -49,6 +49,7 @@ params_grid = {
     'numUrllcUes': 10,
     'reorderingTimer': 1.0,
     'runSet': list(range(runs)),
+    'RngRun': 1,
     'segmentSize': 536,
     'scenario': 'test-single-enb-moving',
     'scheduler': 1,  # Round Robin Scheduler
@@ -66,9 +67,9 @@ print(params_grid)
 campaign.run_missing_simulations(sem.list_param_combinations(params_grid))
 
 # Get missing results for no CA and CC equal to 28GHz
-params_grid.update(mode=1, f0=28e9)
-campaign.run_missing_simulations(sem.list_param_combinations(params_grid))
+#params_grid.update(mode=1, f0=28e9)
+#campaign.run_missing_simulations(sem.list_param_combinations(params_grid))
 
-campaign = sem.CampaignManager.load('./slicing-res')
-results = sem.CampaignManager.get_results_as_numpy_array()
+#campaign = sem.CampaignManager.load('./slicing-res')
+#results = sem.CampaignManager.get_results_as_numpy_array()
 

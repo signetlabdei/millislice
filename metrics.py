@@ -4,10 +4,11 @@ from textwrap import wrap
 
 # Functions
 
-def print_metric(metric_bucket):
+def print_metric(metric_bucket, intro):
     """
     Print metrics and params that generated them
     """
+    print(intro)
     # Find out which param is changing, if not remove it 
     params_to_rem = []
     params_list = list(metric_bucket[0]['params'].keys())   # list of params
@@ -22,8 +23,9 @@ def print_metric(metric_bucket):
     for sim in metric_bucket:
         for param in params_to_rem:
             sim['params'].pop(param, None)
-
-    return group_by_params(metric_bucket)
+    out = group_by_params(metric_bucket)
+    print(out)
+    return out
 
 def check_constant(bucket):
     return bucket[1:] == bucket[:-1]
@@ -219,7 +221,17 @@ def pkt_loss_app(bearer_type, param_comb=None):
 campaign = sem.CampaignManager.load('./slicing-res')
 print('--SEM campaign succesfully loaded--')
 print('--Computing URLLC results--')
-urllc_packet_loss = pkt_loss_app('embb')
-urllc_packet_loss =  print_metric(urllc_packet_loss)
-print(urllc_packet_loss)
+urllc_packet_loss = pkt_loss_app('urllc')
+urllc_packet_loss =  print_metric(urllc_packet_loss, 'URLLC PACKET LOSS \n')
+urllc_delay = delay_app('urllc')
+urllc_delay =  print_metric(urllc_delay, 'URLLC DELAY \n')
+urllc_thr = throughput_app('urllc')
+urllc_thr =  print_metric(urllc_thr, 'URLLC THROUGHPUT \n')
+print('--Computing EMBB results--')
+embb_packet_loss = pkt_loss_app('embb')
+embb_packet_loss =  print_metric(embb_packet_loss, 'EMBB PACKET LOSS \n')
+embb_delay = delay_app('embb')
+embb_delay =  print_metric(embb_delay, 'EMBB DELAY \n')
+embb_thr = throughput_app('embb')
+embb_thr =  print_metric(embb_thr, 'EMBB THROUGHPUT \n')
 
