@@ -5,7 +5,7 @@
 using namespace ns3;
 using namespace mmwave;
 
-double vMin, vMax;	//speed used if test-single-enb-moving scenario is selected
+double vMin, vMax, rho;	//speed used if test-single-enb-moving scenario is selected
 
 void SetupScenario(NodeContainer enbNodes, NodeContainer ueNodes, std::string scenario);
 
@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
 	double reorderingTimer = 1.0;
 	int runSet = 1;
 	int mode = 1;		   // mode 1 = 1 CC, no isolation
-						   // mode 2 = 2 CC, complete isolation
+						   			// mode 2 = 2 CC, complete isolation
 	int scheduler = 1;	 // the MAC scheduler
 	double appStart = 0.3; // application start time
 	double appEnd;		   // application start time
@@ -80,6 +80,7 @@ int main(int argc, char *argv[])
 	cmd.AddValue("embbUdpIPI", "embb UDP inter packet interval", embbUdpIPI);
 	cmd.AddValue("urllcUdpIPI", "urllc UDP inter packet interval", urllcUdpIPI);
 	cmd.AddValue("scheduler", "1: MmWaveFlexTtiMacScheduler, 2: MmWaveFlexTtiMaxWeightMacScheduler", scheduler);
+	cmd.AddValue("rho", "radius of the circle in mobliity model", rho);
 	cmd.Parse(argc, argv);
 	appEnd = simTime;
 
@@ -293,7 +294,7 @@ int main(int argc, char *argv[])
 
 	// Create tracing streams
 	std::ostringstream dlTraceStructure, ulTraceStructure;
-	dlTraceStructure << "| Time of rx | \t | Time of tx | \t | Packet size | \t | Seq num | \t | Packet UID |\n"; 
+	dlTraceStructure << "| Time of rx | \t | Time of tx | \t | Packet size | \t | Seq num | \t | Packet UID |\n";
 	ulTraceStructure << "| Time of tx | \t | Packet size | \t | Seq num | \t | Packet UID | \t | Dest address | \n" ;
 
 	AsciiTraceHelper asciiTraceHelper;
@@ -452,7 +453,7 @@ void SetupScenario(NodeContainer enbNodes, NodeContainer ueNodes, std::string sc
 		SimulationConfig::SetConstantPositionMobility(enbNodes, Vector(0.0, 0.0, 10.0));
 
 		Ptr<MmWaveUniformDiscUePositionAllocator> uePos = CreateObject<MmWaveUniformDiscUePositionAllocator>();
-		uePos->SetRho(400.0);
+		uePos->SetRho(rho);
 		uePos->SetX(0.0);
 		uePos->SetY(0.0);
 		uePos->SetZ(1.5);
@@ -462,7 +463,7 @@ void SetupScenario(NodeContainer enbNodes, NodeContainer ueNodes, std::string sc
 		for (uint8_t i = 0; i < ueNodes.GetN(); i++)
 		{
 			// Use RandomWalkMobilityModel
-			SimulationConfig::SetRandomWalkMobility(ueNodes.Get(i), uePos->GetNext(), vMin, vMax);
+			SimulationConfig::SetRandomWalkMobility(ueNodes.Get(i), uePos->GetNext(), vMin, vMax, rho);
 		}
 	}
 

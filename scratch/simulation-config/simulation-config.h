@@ -24,7 +24,7 @@ public:
   static Ipv4InterfaceContainer InstallUeInternet(Ptr<mmwave::MmWavePointToPointEpcHelper> epcHelper, NodeContainer ueNodes, NetDeviceContainer ueNetDevices);
   static void SetConstantPositionMobility(NodeContainer nodes, Vector position);
   static void SetConstantVelocityMobility(Ptr<Node> node, Vector position, Vector velocity);
-  static void SetRandomWalkMobility(Ptr<Node> node, Vector position, double vMin, double vMax);
+  static void SetRandomWalkMobility(Ptr<Node> node, Vector position, double vMin, double vMax, double rho);
   static void SetupUdpApplication(Ptr<Node> node, Ipv4Address address, uint16_t port, uint16_t interPacketInterval, Ptr<OutputStreamWrapper> stream, double startTime, double endTime);
   static void SetupFtpModel3Application(Ptr<Node> clientNode, Ptr<Node> serverNode, Ipv4Address address, uint16_t port, double lambda, uint32_t fileSize, uint32_t sendSize, double startTime, double endTime, Ptr<OutputStreamWrapper> stream);
   static void SetupUdpPacketSink(Ptr<Node> node, uint16_t port, double startTime, double endTime, Ptr<OutputStreamWrapper> stream);
@@ -169,7 +169,7 @@ void SimulationConfig::SetConstantVelocityMobility(Ptr<Node> node, Vector positi
   BuildingsHelper::Install(node);
 }
 
-void SimulationConfig::SetRandomWalkMobility(Ptr<Node> node, Vector position, double vMin, double vMax)
+void SimulationConfig::SetRandomWalkMobility(Ptr<Node> node, Vector position, double vMin, double vMax, double rho)
 {
   Ptr<ListPositionAllocator> positionAlloc = CreateObject<ListPositionAllocator>();
   positionAlloc->Add(position);
@@ -181,7 +181,7 @@ void SimulationConfig::SetRandomWalkMobility(Ptr<Node> node, Vector position, do
                             "Mode", StringValue("Time"),
                             "Time", StringValue("4s"), // Time to wait before changing speed and/or direction of the walk
                             "Speed", StringValue(paramUnifRv.str()),
-                            "Bounds", RectangleValue(Rectangle(-400.0, 400.0, -400.0, 400.0)));
+                            "Bounds", RectangleValue(Rectangle(-rho, rho, -rho, rho)));
   mobility.SetPositionAllocator(positionAlloc);
   mobility.Install(node);
   BuildingsHelper::Install(node);
@@ -407,7 +407,7 @@ void CallbackSinks::TxSinkUdp(Ptr<OutputStreamWrapper> stream, Ptr<const Packet>
   // Get dest address info
   Ipv4Address destIpv4 = Ipv4Address::ConvertFrom(to);
 
-  *stream->GetStream() << Simulator::Now().GetNanoSeconds() << "\t" << packet->GetSize() << "\t" << std::to_string(currentSeqNmb) << "\t" 
+  *stream->GetStream() << Simulator::Now().GetNanoSeconds() << "\t" << packet->GetSize() << "\t" << std::to_string(currentSeqNmb) << "\t"
     << packet->GetUid()<< "\t" << destIpv4.Get() << std::endl;
 }
 
