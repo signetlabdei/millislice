@@ -26,8 +26,8 @@ for rate in urllc_rate_grid:
 
 
 # Set amount of simulation time
-sim_duration = 0.8
-runs = 2
+sim_duration = 1.2
+runs = 5
 
 params_grid = {
     'appEnd': sim_duration - 0.5,
@@ -47,7 +47,7 @@ params_grid = {
     'numEmbbUes': 10,
     'numEnbs': 1,
     'numUrllcUes': 10,
-    'rho': 300,
+    'rho': 400,
     'reorderingTimer': 1.0,
     'runSet': list(range(runs)),
     'RngRun' : 1,
