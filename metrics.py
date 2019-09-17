@@ -4,63 +4,57 @@ from textwrap import wrap
 
 # Functions
 
-def print_metric(metric_bucket, intro, output_str=None):
+def print_metric(metric_bucket):
     """
     Print metrics and params that generated them
     """
-    # Place similar params close together
-    metric_bucket.sort(key=ret_rng_run)
-    # Improve formatting
-
-    if output_str is None:
-        output_str = ''
-    # Find out which param is changing
-    params_mask = []
+    # Find out which param is changing, if not remove it 
+    params_to_rem = []
     params_list = list(metric_bucket[0]['params'].keys())   # list of params
     for item in params_list:
         # Check if that param is the same for all simulations
         temp_bucket = []
         for sim in metric_bucket:
             temp_bucket.append(sim['params'][item])
-        params_mask.append(check_constant(temp_bucket))
-
-    output_str += 'Constant simulations params: \n'
-    const_par = np.array(params_list)[np.logical_not(params_mask)]
-    for param in const_par:
-        output_str += (param + ': ')
-        output_str += (str(metric_bucket[0]['params'][param]) + '\t')
-    output_str += '\n'
-
-    output_str += 'Metric values: \n' 
-    var_par = np.array(params_list)[params_mask]
+        if (check_constant(temp_bucket)):
+            params_to_rem.append(item)
+    # Remove all constant params            
     for sim in metric_bucket:
-        output_str += (intro + str(sim['values']) + '\n')
-        for param in var_par:
-            output_str += (param + ': ')
-            output_str += (str(sim['params'][param]) + '\t')
-        output_str += '\n -------------- \n'
+        for param in params_to_rem:
+            sim['params'].pop(param, None)
 
-    return output_str
+    return group_by_params(metric_bucket)
 
 def check_constant(bucket):
-    return bucket[1:] != bucket[:-1]
-
-def ret_rng_run(elem):
-    return elem['params']['RngRun']
+    return bucket[1:] == bucket[:-1]
 
 def group_by_params(metric_bucket):
+    # Remove param specifying different runs
     for sim in metric_bucket:
-        sim['params']
+        sim['params'].pop('RngRun', None) 
+        sim['params'].pop('runSet', None) 
+    out_bucket = []
+    # Group sims having same param
+    while(len(metric_bucket)> 0):
+        temp_param = metric_bucket[0]['params']
+        run_bucket = []
+        waste_bucket = []
+        # Find sims with same params
+        for sim in metric_bucket:
+            if sim['params'] == temp_param:
+                run_bucket.append(sim['values'])
+                waste_bucket.append(sim)  
+        # Create entry for same params, different runs	
+        out_bucket.append({
+            'values': run_bucket,
+            'params': temp_param
+        })
+        # Remove elements that have been joined
+        for sim in waste_bucket:
+            metric_bucket.remove(sim)
 
-def beautify(metric_bucket):
-    for sim in metric_bucket:
-        sim['params']['f0'] = "{:.2e}".format(sim['params']['f0'])
-        sim['params']['f1'] = "{:.2e}".format(sim['params']['f1'])
-        sim['params']['mode'] = 'no CA' if sim['params']['mode'] == 1 else 'CA'
-        sim['values'] = ['%.4e' % x for x in sim['values']] if isinstance(sim['values'], list) \
-            else "{:.4e}".format(sim['values'])
+    return out_bucket
 
-    return metric_bucket
 
 def load_results(trace_name, param=None):
     """ 
@@ -224,25 +218,8 @@ def pkt_loss_app(bearer_type, param_comb=None):
 # Load the SEM campaign
 campaign = sem.CampaignManager.load('./slicing-res')
 print('--SEM campaign succesfully loaded--')
-
-out_str = ''
 print('--Computing URLLC results--')
-urllc_packet_loss = pkt_loss_app('urllc')
-out_str = print_metric(urllc_packet_loss, 'URLLC packet loss: \n ', out_str)
-urllc_delay = delay_app('urllc')
-out_str = print_metric(urllc_delay, 'URLLC latency, jitter: \n', out_str)
-urllc_throughput = throughput_app('urllc')
-out_str = print_metric(urllc_throughput, 'URLLC throughput: \n', out_str)
+urllc_packet_loss = pkt_loss_app('embb')
+urllc_packet_loss =  print_metric(urllc_packet_loss)
+print(urllc_packet_loss)
 
-print('--Computing eMBB results--')
-embb_packet_loss = pkt_loss_app('embb')
-out_str = print_metric(embb_packet_loss, 'eMBB packet loss: ', out_str)
-embb_delay = delay_app('embb')
-out_str = print_metric(embb_delay, 'eMBB latency, jitter: ', out_str)
-embb_throughput = throughput_app('embb')
-out_str = print_metric(embb_throughput, 'eMBB throughput: ', out_str)
-print(out_str)
-
-# Output to file
-out_file = open("slicing-res/metrics_output_b.txt","a") 
-out_file.write(out_str)
