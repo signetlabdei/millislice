@@ -76,6 +76,7 @@ def load_results(trace_name, param=None):
     """
 
     # Get the required files IDs
+    campaign = sem.CampaignManager.load('./slicing-res')
     if param is not None:
         res_data = campaign.db.get_results(param)
     else:
