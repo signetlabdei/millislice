@@ -1,5 +1,6 @@
 import sem
 import numpy as np
+import matplotlib.pyplot as plt
 from statistics import mean 
 
 # Functions
@@ -28,16 +29,39 @@ def print_metric(metric_bucket, intro, just_mean=0):
     if(just_mean == 0):
         print(out)
     else:
-        print(metrics_means(out))
+        print(compute_means(out))
     return out
 
-def metrics_means(metric_bucket):
+def compute_means(metric_bucket):
     for res in metric_bucket:
         res['mean'] = mean(res['mean'])
         if(len(res['var']) > 0):
             res['var'] = mean(res['var']) 
 
     return metric_bucket
+
+def plot_metric(metric_bucket, versus, metric):
+    """ 
+    Plots metric mean, CI and all run samples
+    Args:
+        versus (str): param to use on the x axis
+    """
+    # Obtain means
+    metric_bucket = group_by_params(metric_bucket)
+    means_bucket = compute_means(metric_bucket)
+    # Collect x's and y's
+    x = []
+    y = []
+    for sim in means_bucket:
+        x.append(sim['params'][versus])
+        y.append(sim['mean'])
+
+    # Plot means
+    plt.plot(x, y)
+    # Get title
+    plot_title =  f"{metric} vs. {versus}"
+    plt.title(plot_title)
+    plt.show()
 
 
 def check_constant(bucket):
@@ -240,13 +264,15 @@ def pkt_loss_app(bearer_type, param_comb=None):
 # Load the SEM campaign
 campaign = sem.CampaignManager.load('./slicing-res')
 print('--SEM campaign succesfully loaded--')
+"""
 print('--Computing URLLC results--')
 urllc_packet_loss = pkt_loss_app('urllc')
 urllc_packet_loss =  print_metric(urllc_packet_loss, 'URLLC PACKET LOSS \n', 1)
 urllc_delay = delay_app('urllc')
 urllc_delay =  print_metric(urllc_delay, 'URLLC DELAY \n', 1)
 urllc_thr = throughput_app('urllc')
-urllc_thr =  print_metric(urllc_thr, 'URLLC THROUGHPUT \n', 1)
+print_metric(urllc_thr, 'URLLC THROUGHPUT \n', 1)
+
 print('--Computing EMBB results--')
 embb_packet_loss = pkt_loss_app('embb')
 embb_packet_loss =  print_metric(embb_packet_loss, 'EMBB PACKET LOSS \n', 1)
@@ -254,4 +280,8 @@ embb_delay = delay_app('embb')
 embb_delay =  print_metric(embb_delay, 'EMBB DELAY \n', 1)
 embb_thr = throughput_app('embb')
 embb_thr =  print_metric(embb_thr, 'EMBB THROUGHPUT \n', 1)
-
+"""
+# Try plot
+plot_metric(throughput_app('urllc'), 'mode', 'Throughput')
+plot_metric(delay_app('urllc'), 'mode', 'Delay')
+plot_metric(pkt_loss_app('urllc'), 'mode', 'Packet loss')
