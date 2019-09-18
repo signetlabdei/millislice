@@ -2,7 +2,9 @@ import sem
 import copy
 import numpy as np
 import matplotlib.pyplot as plt
+import scipy.stats as stats
 from statistics import mean 
+from operator import add, sub
 
 # Functions
 
@@ -43,7 +45,7 @@ def compute_means(metric_bucket):
             out_bucket[index]['var'] = mean(metric_bucket[index]['var']) 
     return out_bucket
 
-def plot_metric(metric_bucket, versus, metric):
+def plot_metric(metric_bucket, versus, metric, shade):
     """ 
     Plots metric mean, CI and all run samples
     Args:
@@ -51,6 +53,7 @@ def plot_metric(metric_bucket, versus, metric):
     """
     # Obtain means
     metric_bucket = group_by_params(metric_bucket)
+    delta_bucket = delta_ci_interval(metric_bucket)
     means_bucket = compute_means(metric_bucket)
     # Collect x's and y's
     x = []
@@ -60,19 +63,42 @@ def plot_metric(metric_bucket, versus, metric):
         y.append(sim['mean'])
 
     # Plot means
-    plt.plot(x, y)
+    plt.plot(x, y, color=shade)
     # Plot all samples
     for x_val in x:
         y_buck = []
         for sim in metric_bucket:
             if sim['params'][versus] is x_val:
                 y_buck.append(sim['mean'])
-        plt.plot(x_val, y_buck, 'ro')
+        plt.plot(x_val, y_buck, linestyle='', marker='.', markersize=5, color=shade)
+
+    # Plot CIs
+    plt.fill_between(x, list(map(add, y, delta_bucket)), list(map(sub, y, delta_bucket)), color=shade, alpha=.4)
     # Get title
     plot_title =  f"{metric} vs. {versus}"
     plt.title(plot_title)
+    plt.grid()
     plt.show()
 
+def delta_ci_interval(metric_bucket):
+    out_bucket = []
+    for sim in metric_bucket:
+        std_err = stats.sem(sim['mean'])
+        delta = std_err * stats.t.ppf((1 + 0.95) / 2, len(sim['mean']) - 1)
+        out_bucket.append(delta)
+
+    return out_bucket
+
+def lighten_color(color, amount=0.5):
+    import matplotlib.colors as mc
+    import colorsys
+    try:
+        c = mc.cnames[color]
+    except:
+        c = color
+    c = colorsys.rgb_to_hls(*mc.to_rgb(c))
+
+    return colorsys.hls_to_rgb(c[0], 1 - amount * (1 - c[1]), c[2])
 
 def check_constant(bucket):
     return bucket[1:] == bucket[:-1]
@@ -292,6 +318,6 @@ embb_thr = throughput_app('embb')
 embb_thr =  print_metric(embb_thr, 'EMBB THROUGHPUT \n', 1)
 """
 # Try plot
-plot_metric(throughput_app('urllc'), 'mode', 'Throughput')
-plot_metric(delay_app('urllc'), 'mode', 'Delay')
-plot_metric(pkt_loss_app('urllc'), 'mode', 'Packet loss')
+plot_metric(throughput_app('urllc'), 'mode', 'Throughput', [0, 0, 0])
+plot_metric(delay_app('urllc'), 'mode', 'Delay', [0, 0, 0])
+plot_metric(pkt_loss_app('urllc'), 'mode', 'Packet loss', [0, 0, 0])
