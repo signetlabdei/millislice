@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
 						   			// mode 2 = 2 CC, complete isolation
 	int scheduler = 1;	 // the MAC scheduler
 	double appStart = 0.3; // application start time
-	double appEnd;		   // application start time
+	double appEnd = simTime;		   // application start time
 	bool urllcOn = true;   // if true install the ftp application
 	bool embbOn = true;	// if true install the dash application
 	bool useUdp = false;   // if true use UDP client apps
@@ -82,7 +82,7 @@ int main(int argc, char *argv[])
 	cmd.AddValue("scheduler", "1: MmWaveFlexTtiMacScheduler, 2: MmWaveFlexTtiMaxWeightMacScheduler", scheduler);
 	cmd.AddValue("rho", "radius of the circle in mobliity model", rho);
 	cmd.Parse(argc, argv);
-	appEnd = simTime;
+	// appEnd = simTime;
 
 	// RNG
 	RngSeedManager::SetSeed(1);

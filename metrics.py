@@ -3,6 +3,7 @@ import copy
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.stats as stats
+import seaborn as sns
 from statistics import mean 
 from operator import add, sub
 
@@ -63,6 +64,8 @@ def plot_metric(metric_bucket, versus, metric, shade):
         y.append(sim['mean'])
 
     # Plot means
+    sns.set()
+    sns.set_style("whitegrid")
     plt.plot(x, y, color=shade)
     # Plot all samples
     for x_val in x:
@@ -73,11 +76,12 @@ def plot_metric(metric_bucket, versus, metric, shade):
         plt.plot(x_val, y_buck, linestyle='', marker='.', markersize=5, color=shade)
 
     # Plot CIs
-    plt.fill_between(x, list(map(add, y, delta_bucket)), list(map(sub, y, delta_bucket)), color=shade, alpha=.4)
+    # plt.fill_between(x, list(map(add, y, delta_bucket)), list(map(sub, y, delta_bucket)), color=shade, alpha=.4)
+    print(y)
+    print(x)
     # Get title
     plot_title =  f"{metric} vs. {versus}"
     plt.title(plot_title)
-    plt.grid()
     plt.show()
 
 def delta_ci_interval(metric_bucket):
@@ -287,7 +291,8 @@ def pkt_loss_app(bearer_type, param_comb=None):
 
     loss = []
     for index in range(len(trace_dl)):   # Amount of sim same for ul and dl
-        dropped = len(trace_ul[index]['results']) - len(trace_dl[index]['results']) # Overall lost packets
+        sent = len(trace_ul[index]['results'])
+        dropped = sent - len(trace_dl[index]['results']) # Overall lost packets
         dropped = dropped/len(trace_ul[index]['results'])   # Percentage of packets lost
         loss.append({
             'mean': dropped,
@@ -321,3 +326,7 @@ embb_thr =  print_metric(embb_thr, 'EMBB THROUGHPUT \n', 1)
 plot_metric(throughput_app('urllc'), 'mode', 'Throughput', [0, 0, 0])
 plot_metric(delay_app('urllc'), 'mode', 'Delay', [0, 0, 0])
 plot_metric(pkt_loss_app('urllc'), 'mode', 'Packet loss', [0, 0, 0])
+
+plot_metric(throughput_app('embb'), 'mode', 'Throughput', [0, 0, 0])
+plot_metric(delay_app('embb'), 'mode', 'Delay', [0, 0, 0])
+plot_metric(pkt_loss_app('embb'), 'mode', 'Packet loss', [0, 0, 0])
