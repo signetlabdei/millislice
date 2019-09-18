@@ -1,4 +1,5 @@
 import sem
+import copy
 import numpy as np
 import matplotlib.pyplot as plt
 from statistics import mean 
@@ -33,12 +34,14 @@ def print_metric(metric_bucket, intro, just_mean=0):
     return out
 
 def compute_means(metric_bucket):
-    for res in metric_bucket:
-        res['mean'] = mean(res['mean'])
-        if(len(res['var']) > 0):
-            res['var'] = mean(res['var']) 
+    # Save original data
+    out_bucket = copy.deepcopy(metric_bucket)
 
-    return metric_bucket
+    for index in range(len(metric_bucket)):
+        out_bucket[index]['mean'] = mean(metric_bucket[index]['mean'])
+        if(len(metric_bucket[index]['var']) > 0):
+            out_bucket[index]['var'] = mean(metric_bucket[index]['var']) 
+    return out_bucket
 
 def plot_metric(metric_bucket, versus, metric):
     """ 
@@ -58,6 +61,13 @@ def plot_metric(metric_bucket, versus, metric):
 
     # Plot means
     plt.plot(x, y)
+    # Plot all samples
+    for x_val in x:
+        y_buck = []
+        for sim in metric_bucket:
+            if sim['params'][versus] is x_val:
+                y_buck.append(sim['mean'])
+        plt.plot(x_val, y_buck, 'ro')
     # Get title
     plot_title =  f"{metric} vs. {versus}"
     plt.title(plot_title)
