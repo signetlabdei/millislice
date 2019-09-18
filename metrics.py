@@ -54,7 +54,7 @@ def plot_metric(metric_bucket, versus, metric, shade):
     """
     # Obtain means
     metric_bucket = group_by_params(metric_bucket)
-    delta_bucket = delta_ci_interval(metric_bucket)
+    # delta_bucket = delta_ci_interval(metric_bucket)
     means_bucket = compute_means(metric_bucket)
     # Collect x's and y's
     x = []
@@ -66,7 +66,7 @@ def plot_metric(metric_bucket, versus, metric, shade):
     # Plot means
     sns.set()
     sns.set_style("whitegrid")
-    plt.plot(x, y, color=shade)
+    #plt.plot(x, y, color=shade)
     # Plot all samples
     for x_val in x:
         y_buck = []
@@ -77,12 +77,20 @@ def plot_metric(metric_bucket, versus, metric, shade):
 
     # Plot CIs
     # plt.fill_between(x, list(map(add, y, delta_bucket)), list(map(sub, y, delta_bucket)), color=shade, alpha=.4)
+    plt.violinplot(dataset=return_values(metric_bucket), positions=x, showextrema=False, showmeans=True, widths=0.1)
     print(y)
     print(x)
     # Get title
     plot_title =  f"{metric} vs. {versus}"
     plt.title(plot_title)
     plt.show()
+
+def return_values(metric_bucket):
+    out_bucket = []
+    for sim in metric_bucket:
+        out_bucket.append(sim['mean'])
+
+    return out_bucket
 
 def delta_ci_interval(metric_bucket):
     out_bucket = []
@@ -323,9 +331,11 @@ embb_thr = throughput_app('embb')
 embb_thr =  print_metric(embb_thr, 'EMBB THROUGHPUT \n', 1)
 """
 # Try plot
+"""
 plot_metric(throughput_app('urllc'), 'mode', 'Throughput', [0, 0, 0])
 plot_metric(delay_app('urllc'), 'mode', 'Delay', [0, 0, 0])
 plot_metric(pkt_loss_app('urllc'), 'mode', 'Packet loss', [0, 0, 0])
+"""
 
 plot_metric(throughput_app('embb'), 'mode', 'Throughput', [0, 0, 0])
 plot_metric(delay_app('embb'), 'mode', 'Delay', [0, 0, 0])

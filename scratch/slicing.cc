@@ -83,6 +83,9 @@ int main(int argc, char *argv[])
 	cmd.AddValue("rho", "radius of the circle in mobliity model", rho);
 	cmd.Parse(argc, argv);
 	// appEnd = simTime;
+	LogComponentEnable("LteRlcUm", LOG_LEVEL_ALL);
+	LogComponentEnable("LteRlcUmLowLat", LOG_LEVEL_ALL);
+	
 
 	// RNG
 	RngSeedManager::SetSeed(1);

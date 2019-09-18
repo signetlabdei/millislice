@@ -11,6 +11,7 @@
 #include <ns3/lte-module.h>
 #include <ns3/mmwave-module.h>
 #include <ns3/trace-source-accessor.h>
+
 NS_LOG_COMPONENT_DEFINE("SimulationConfig");
 
 namespace ns3

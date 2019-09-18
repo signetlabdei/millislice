@@ -5,7 +5,7 @@ ns_res_path = './slicing-res'
 
 # Create the actual simulation campagins
 campaign = sem.CampaignManager.new(
-    ns_path, ns_script, ns_res_path, check_repo=False)
+    ns_path, ns_script, ns_res_path, check_repo=False, optimized=False)
 
 # Obtain IPIs from rates
 # eMMB
@@ -26,8 +26,8 @@ for rate in urllc_rate_grid:
 
 
 # Set amount of simulation time
-sim_duration = 0.5
-runs = 3
+sim_duration = 0.31
+runs = 1
 
 params_grid = {
     'appEnd': sim_duration,
