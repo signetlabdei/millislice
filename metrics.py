@@ -4,8 +4,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy.stats as stats
 import seaborn as sns
-from statistics import mean 
+from statistics import mean
 from operator import add, sub
+import pandas as pd
 
 # Functions
 
@@ -14,7 +15,7 @@ def print_metric(metric_bucket, intro, just_mean=0):
     Print metrics and params that generated them
     """
     print(intro)
-    # Find out which param is changing, if not remove it 
+    # Find out which param is changing, if not remove it
     params_to_rem = []
     params_list = list(metric_bucket[0]['params'].keys())   # list of params
     for item in params_list:
@@ -24,7 +25,7 @@ def print_metric(metric_bucket, intro, just_mean=0):
             temp_bucket.append(sim['params'][item])
         if (check_constant(temp_bucket)):
             params_to_rem.append(item)
-    # Remove all constant params            
+    # Remove all constant params
     for sim in metric_bucket:
         for param in params_to_rem:
             sim['params'].pop(param, None)
@@ -36,93 +37,71 @@ def print_metric(metric_bucket, intro, just_mean=0):
         print(compute_means(out))
     return out
 
-def compute_means(metric_bucket):
-    # Save original data
-    out_bucket = copy.deepcopy(metric_bucket)
 
-    for index in range(len(metric_bucket)):
-        out_bucket[index]['mean'] = mean(metric_bucket[index]['mean'])
-        if(len(metric_bucket[index]['var']) > 0):
-            out_bucket[index]['var'] = mean(metric_bucket[index]['var']) 
-    return out_bucket
-
-def plot_metric(metric_bucket, versus, metric, shade):
+def plot_metric(metric_bucket, metric, prot, versus=None):
     """ 
     Plots metric mean, CI and all run samples
     Args:
         versus (str): param to use on the x axis
     """
-    # Obtain means
-    metric_bucket = group_by_params(metric_bucket)
-    # delta_bucket = delta_ci_interval(metric_bucket)
-    means_bucket = compute_means(metric_bucket)
-    # Collect x's and y's
-    x = []
-    y = []
-    for sim in means_bucket:
-        x.append(sim['params'][versus])
-        y.append(sim['mean'])
+    # Make sure figure is clean
+    plt.clf()
 
-    # Plot means
-    sns.set()
-    sns.set_style("whitegrid")
-    #plt.plot(x, y, color=shade)
-    # Plot all samples
-    for x_val in x:
-        y_buck = []
-        for sim in metric_bucket:
-            if sim['params'][versus] is x_val:
-                y_buck.append(sim['mean'])
-        plt.plot(x_val, y_buck, linestyle='', marker='.', markersize=5, color=shade)
+    # Build dataframe
+    metric_data = []
+    mode_data = []
+    versus_data = []
 
-    # Plot CIs
-    # plt.fill_between(x, list(map(add, y, delta_bucket)), list(map(sub, y, delta_bucket)), color=shade, alpha=.4)
-    plt.violinplot(dataset=return_values(metric_bucket), positions=x, showextrema=False, showmeans=True, widths=0.1)
-    print(y)
-    print(x)
-    # Get title
-    plot_title =  f"{metric} vs. {versus}"
+    for res in metric_bucket:
+        metric_data.append(res['mean'])
+        mode_data.append(res['params']['mode'])
+        versus_data.append(res['params'][versus])
+
+    frame = {
+        'metric': metric_data,
+        'mode': mode_data,
+        'versus': versus
+    }
+
+    metric_frame = pd.DataFrame(data=frame)
+    metric_frame['mode'] =  metric_frame['mode'].replace(1, 'no CA')
+    metric_frame['mode'] =  metric_frame['mode'].replace(2, 'CA')
+    
+    # Colors
+    fig = plt.gcf()
+    # dark_palette = ['#324d96', '#a62b2d']
+    light_palette = ['#90a5e0', '#c27a7c']
+    sns.set_style('whitegrid', {'axes.facecolor': '#EAEAF2'})
+    # Violin plot
+    ax = sns.violinplot(data=metric_frame, y='metric', x='versus', hue='mode', palette=light_palette, split=True, inner='stick')
+    #sns.stripplot(x="versus", y="metric", hue="mode", data=metric_frame, dodge=True, palette=dark_palette)
+
+    # Save, with the proper size
+    if check_constant(versus_data):
+        fig.set_size_inches(7, 7)
+        # Set title and filename
+        filename = f"{prot}_{metric}_CA_vs_nonCA.png"
+        plot_title = f"{prot} {metric}\n f0=10GHz, f1=28GHz \n" # Hardcoded for now
+    else:
+        fig.set_size_inches(11, 7)
+         # Set title and filename
+        filename = f"{prot}_{metric}_vs{versus}_CA_vs_nonCA.png"
+        plot_title = f"{prot} {metric} vs. {versus}"
+        
+    plt.ylabel(f"{metric}")
+    ax.set_xlabel('')
     plt.title(plot_title)
-    plt.show()
-
-def return_values(metric_bucket):
-    out_bucket = []
-    for sim in metric_bucket:
-        out_bucket.append(sim['mean'])
-
-    return out_bucket
-
-def delta_ci_interval(metric_bucket):
-    out_bucket = []
-    for sim in metric_bucket:
-        std_err = stats.sem(sim['mean'])
-        delta = std_err * stats.t.ppf((1 + 0.95) / 2, len(sim['mean']) - 1)
-        out_bucket.append(delta)
-
-    return out_bucket
-
-def lighten_color(color, amount=0.5):
-    import matplotlib.colors as mc
-    import colorsys
-    try:
-        c = mc.cnames[color]
-    except:
-        c = color
-    c = colorsys.rgb_to_hls(*mc.to_rgb(c))
-
-    return colorsys.hls_to_rgb(c[0], 1 - amount * (1 - c[1]), c[2])
-
-def check_constant(bucket):
-    return bucket[1:] == bucket[:-1]
+    plt.savefig(f"./slicing-plots/{filename}")
+   
 
 def group_by_params(metric_bucket):
     # Remove param specifying different runs
     for sim in metric_bucket:
-        sim['params'].pop('RngRun', None) 
-        sim['params'].pop('runSet', None) 
+        sim['params'].pop('RngRun', None)
+        sim['params'].pop('runSet', None)
     out_bucket = []
     # Group sims having same param
-    while(len(metric_bucket)> 0):
+    while(len(metric_bucket) > 0):
         temp_param = metric_bucket[0]['params']
         mean_bucket = []
         # If we have variance, save that as well
@@ -134,8 +113,8 @@ def group_by_params(metric_bucket):
                 mean_bucket.append(sim['mean'])
                 if('var' in metric_bucket[0]):
                     var_bucket.append(sim['var'])
-                waste_bucket.append(sim)  
-        # Create entry for same params, different runs	
+                waste_bucket.append(sim)
+        # Create entry for same params, different runs
         out_bucket.append({
             'mean': mean_bucket,
             'var': var_bucket,
@@ -214,7 +193,7 @@ def throughput_app(bearer_type, param_comb=None):
     ris = []
     for item in trace_data:
         g = (len(item['results'])*1024*8)/((item['params']['appEnd'] -
-                                          item['params']['appStart'])*1e6)  # computing overall throughput
+                                            item['params']['appStart'])*1e6)  # computing overall throughput
         # computing per user throughput
         if bearer_type == 'urllc':
             single_g = g/(item['params']['numUrllcUes'])
@@ -262,7 +241,7 @@ def delay_app(bearer_type, param_comb=None):
         pck_delay = (time_rx - time_tx)/1e6
         delay.append({
             # latency = mean of packet delay
-            'mean': pck_delay.mean(), 
+            'mean': pck_delay.mean(),
             'var': pck_delay.std(),  # Output both latency and jitter
             'params': item['params']
         })
@@ -300,8 +279,10 @@ def pkt_loss_app(bearer_type, param_comb=None):
     loss = []
     for index in range(len(trace_dl)):   # Amount of sim same for ul and dl
         sent = len(trace_ul[index]['results'])
-        dropped = sent - len(trace_dl[index]['results']) # Overall lost packets
-        dropped = dropped/len(trace_ul[index]['results'])   # Percentage of packets lost
+        # Overall lost packets
+        dropped = sent - len(trace_dl[index]['results'])
+        # Percentage of packets lost
+        dropped = dropped/len(trace_ul[index]['results'])
         loss.append({
             'mean': dropped,
             'params': trace_dl[index]['params']
@@ -309,11 +290,32 @@ def pkt_loss_app(bearer_type, param_comb=None):
 
     return loss
 
+
+# Small,  support functions
+
+def check_constant(bucket):
+    return bucket[1:] == bucket[:-1]
+
+
+def compute_means(metric_bucket):
+    # Save original data
+    out_bucket = copy.deepcopy(metric_bucket)
+
+    for index in range(len(metric_bucket)):
+        out_bucket[index]['mean'] = mean(metric_bucket[index]['mean'])
+        if(len(metric_bucket[index]['var']) > 0):
+            out_bucket[index]['var'] = mean(metric_bucket[index]['var'])
+    return out_bucket
+
+
+
 # Actual metrics computation
 # Load the SEM campaign
+
+"""
 campaign = sem.CampaignManager.load('./slicing-res')
 print('--SEM campaign succesfully loaded--')
-"""
+
 print('--Computing URLLC results--')
 urllc_packet_loss = pkt_loss_app('urllc')
 urllc_packet_loss =  print_metric(urllc_packet_loss, 'URLLC PACKET LOSS \n', 1)
@@ -335,8 +337,8 @@ embb_thr =  print_metric(embb_thr, 'EMBB THROUGHPUT \n', 1)
 plot_metric(throughput_app('urllc'), 'mode', 'Throughput', [0, 0, 0])
 plot_metric(delay_app('urllc'), 'mode', 'Delay', [0, 0, 0])
 plot_metric(pkt_loss_app('urllc'), 'mode', 'Packet loss', [0, 0, 0])
-"""
 
-plot_metric(throughput_app('embb'), 'mode', 'Throughput', [0, 0, 0])
-plot_metric(delay_app('embb'), 'mode', 'Delay', [0, 0, 0])
-plot_metric(pkt_loss_app('embb'), 'mode', 'Packet loss', [0, 0, 0])
+"""
+plot_metric(metric_bucket=pkt_loss_app('embb'), metric='packet loss', prot='eMBB', versus='rho')
+plot_metric(metric_bucket=throughput_app('embb'), metric='throughput', prot='eMBB', versus='rho')
+plot_metric(metric_bucket=delay_app('embb'), metric='delay', prot='eMBB', versus='rho')
