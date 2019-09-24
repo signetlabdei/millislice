@@ -1,12 +1,12 @@
 import sem
 import copy
+import os
 import numpy as np
 import matplotlib.pyplot as plt
-import scipy.stats as stats
-import seaborn as sns
 from statistics import mean
-from operator import add, sub
+import seaborn as sns
 import pandas as pd
+
 
 # Functions
 
@@ -37,8 +37,65 @@ def print_metric(metric_bucket, intro, just_mean=0):
         print(compute_means(out))
     return out
 
+def plot_all_metrics(prot, param_ca=None, param_no_ca=None, versus=None):
 
-def plot_metric(metric_bucket, metric, prot, versus=None):
+    # Load the desired datasets
+    # Select proper trace file
+    if prot == 'urllc':
+        trace_str_dl = 'test_urllc-dl-app-trace.txt'
+        trace_str_ul = 'test_urllc-ul-sink-app-trace.txt'
+        # Upper case for plot legend
+        prot = 'URLLC'
+    else:
+        trace_str_dl = 'test_eMBB-dl-app-trace.txt'
+        trace_str_ul = 'test_eMBB-ul-app-trace.txt'
+        # Upper case for plot legend
+        prot = 'eMBB'
+    
+    sub_path = ''
+
+    # Load results, specify params if given on input
+    if param_no_ca is not None:
+        trace_no_ca_dl = load_results(trace_name=trace_str_dl, param=param_no_ca)
+        trace_no_ca_ul = load_results(trace_name=trace_str_ul, param=param_no_ca)
+        # Subfoloder name
+        sub_path += print_dict(param_no_ca)
+        if param_ca is not None and param_ca is not param_no_ca:
+            trace_ca_dl = load_results(trace_name=trace_str_dl, param=param_ca)
+            trace_ca_ul = load_results(trace_name=trace_str_ul, param=param_ca)
+            # Combine the traces lists:
+            trace_dl = trace_no_ca_dl + trace_ca_dl
+            trace_ul = trace_no_ca_ul + trace_ca_ul
+            sub_path += 'versus_' + print_dict(param_ca)
+
+        else:
+            trace_dl = trace_no_ca_dl 
+            trace_ul = trace_no_ca_ul            
+    else:
+        trace_dl = load_results(trace_name=trace_str_dl)
+        trace_ul = load_results(trace_name=trace_str_ul)
+        sub_path = 'no_spec_params'
+
+
+    # Call lower level function
+    plot_metric(metric_bucket=pkt_loss_app(trace_dl, trace_ul), metric='packet loss', prot=prot, s_path=sub_path, vs=versus)
+    plot_metric(metric_bucket=throughput_app(trace_dl, bearer_type=prot), metric='throughput', s_path=sub_path, prot=prot, vs=versus)
+    plot_metric(metric_bucket=delay_app(trace_dl),  metric='delay', prot=prot, s_path=sub_path, vs=versus)
+
+def print_dict(param_dict):
+    out = ''
+    for key in param_dict.keys():
+        out += f"{key}_"
+        if isinstance(param_dict[key], float):
+            temp = '{:.2e}'.format(param_dict[key])
+            out += f"{temp}_"
+        else:
+            out += f"{param_dict[key]}_"
+
+
+    return out
+
+def plot_metric(metric_bucket, metric, prot, s_path, vs=None):
     """ 
     Plots metric mean, CI and all run samples
     Args:
@@ -55,12 +112,12 @@ def plot_metric(metric_bucket, metric, prot, versus=None):
     for res in metric_bucket:
         metric_data.append(res['mean'])
         mode_data.append(res['params']['mode'])
-        versus_data.append(res['params'][versus])
+        versus_data.append(res['params'][vs])
 
     frame = {
         'metric': metric_data,
         'mode': mode_data,
-        'versus': versus
+        'versus': vs
     }
 
     metric_frame = pd.DataFrame(data=frame)
@@ -69,29 +126,49 @@ def plot_metric(metric_bucket, metric, prot, versus=None):
     
     # Colors
     fig = plt.gcf()
-    # dark_palette = ['#324d96', '#a62b2d']
+    dark_palette = ['#465782', '#7a4e4f']
     light_palette = ['#90a5e0', '#c27a7c']
     sns.set_style('whitegrid', {'axes.facecolor': '#EAEAF2'})
     # Violin plot
     ax = sns.violinplot(data=metric_frame, y='metric', x='versus', hue='mode', palette=light_palette, split=True, inner='stick')
     #sns.stripplot(x="versus", y="metric", hue="mode", data=metric_frame, dodge=True, palette=dark_palette)
 
+    # Overlay mean value
+    # Obtain info regarding bounds
+    left, right = plt.xlim()
+    # Compute means
+    means_bucket = compute_means(group_by_params(metric_bucket))
+    if means_bucket[0]['params']['mode'] == 1:
+        no_ca_mean = means_bucket[0]['mean']
+        ca_mean = means_bucket[1]['mean']
+    else:
+        no_ca_mean = means_bucket[1]['mean']
+        ca_mean = means_bucket[0]['mean']
+    # Plot the values
+    plt.plot([left, right], [no_ca_mean, no_ca_mean], color=dark_palette[0], linestyle='--', linewidth=1)
+    plt.plot([left, right], [ca_mean, ca_mean], color=dark_palette[1], linestyle='--', linewidth=1)
+
+
     # Save, with the proper size
     if check_constant(versus_data):
         fig.set_size_inches(7, 7)
         # Set title and filename
         filename = f"{prot}_{metric}_CA_vs_nonCA.png"
-        plot_title = f"{prot} {metric}\n f0=10GHz, f1=28GHz \n" # Hardcoded for now
+        plot_title = f"{prot} {metric}"
     else:
         fig.set_size_inches(11, 7)
          # Set title and filename
-        filename = f"{prot}_{metric}_vs{versus}_CA_vs_nonCA.png"
-        plot_title = f"{prot} {metric} vs. {versus}"
+        filename = f"{prot}_{metric}_vs{vs}_CA_vs_nonCA.png"
+        plot_title = f"{prot} {metric} vs. {vs}"
         
-    plt.ylabel(f"{metric}")
+    plt.ylabel(f"{metric} \n", fontsize=11)
     ax.set_xlabel('')
     plt.title(plot_title)
-    plt.savefig(f"./slicing-plots/{filename}")
+
+    # Save, create dir if doesn't exist       
+    out_dir = f"./slicing-plots/{s_path}/"
+    os.makedirs(out_dir, exist_ok=True)
+    plt.savefig(out_dir + filename)
    
 
 def group_by_params(metric_bucket):
@@ -167,7 +244,7 @@ def load_results(trace_name, param=None):
     return res_bucket
 
 
-def throughput_app(bearer_type, param_comb=None):
+def throughput_app(trace_data, bearer_type, param_comb=None):
     """ 
     Computes the average throughput @ APP layer
     If parameters combination are provided, then only the simulations for
@@ -177,18 +254,6 @@ def throughput_app(bearer_type, param_comb=None):
         bearer_type (str): either urrlc or embb
     """
     print('--Computing per-user throughput--')
-
-    # Select proper trace file
-    if bearer_type == 'urllc':
-        trace_str = 'test_urllc-dl-app-trace.txt'
-    else:
-        trace_str = 'test_eMBB-dl-app-trace.txt'
-
-    # Load results, specify params if given on input
-    if param_comb is not None:
-        trace_data = load_results(trace_name=trace_str, param=param_comb)
-    else:
-        trace_data = load_results(trace_name=trace_str)
 
     ris = []
     for item in trace_data:
@@ -208,7 +273,7 @@ def throughput_app(bearer_type, param_comb=None):
     return ris
 
 
-def delay_app(bearer_type, param_comb=None):
+def delay_app(trace_data, param_comb=None):
     """ 
     Computes the average delay @ APP layer.
     If parameters combination are provided, then only the simulations for
@@ -218,18 +283,6 @@ def delay_app(bearer_type, param_comb=None):
         bearer_type (str): either urrlc or embb
     """
     print('--Computing average packet delay--')
-
-    # Select proper trace file
-    if bearer_type == 'urllc':
-        trace_str = 'test_urllc-dl-app-trace.txt'
-    else:
-        trace_str = 'test_eMBB-dl-app-trace.txt'
-
-    # Load results, specify params if given on input
-    if param_comb is not None:
-        trace_data = load_results(trace_name=trace_str, param=param_comb)
-    else:
-        trace_data = load_results(trace_name=trace_str)
 
     delay = []
     for item in trace_data:
@@ -249,7 +302,7 @@ def delay_app(bearer_type, param_comb=None):
     return delay
 
 
-def pkt_loss_app(bearer_type, param_comb=None):
+def pkt_loss_app(trace_dl, trace_ul, param_comb=None):
     """ 
     Computes the average delay @ APP layer.
     If parameters combination are provided, then only the simulations for
@@ -259,22 +312,6 @@ def pkt_loss_app(bearer_type, param_comb=None):
         bearer_type (str): either urrlc or embb
     """
     print('--Computing average packet loss--')
-
-    # Select proper trace file
-    if bearer_type == 'urllc':
-        trace_str_dl = 'test_urllc-dl-app-trace.txt'
-        trace_str_ul = 'test_urllc-ul-sink-app-trace.txt'
-    else:
-        trace_str_dl = 'test_eMBB-dl-app-trace.txt'
-        trace_str_ul = 'test_eMBB-ul-app-trace.txt'
-
-    # Load results, specify params if given on input
-    if param_comb is not None:
-        trace_dl = load_results(trace_name=trace_str_dl, param=param_comb)
-        trace_ul = load_results(trace_name=trace_str_ul, param=param_comb)
-    else:
-        trace_dl = load_results(trace_name=trace_str_dl)
-        trace_ul = load_results(trace_name=trace_str_ul)
 
     loss = []
     for index in range(len(trace_dl)):   # Amount of sim same for ul and dl
@@ -333,12 +370,15 @@ embb_thr = throughput_app('embb')
 embb_thr =  print_metric(embb_thr, 'EMBB THROUGHPUT \n', 1)
 """
 # Try plot
-"""
-plot_metric(throughput_app('urllc'), 'mode', 'Throughput', [0, 0, 0])
-plot_metric(delay_app('urllc'), 'mode', 'Delay', [0, 0, 0])
-plot_metric(pkt_loss_app('urllc'), 'mode', 'Packet loss', [0, 0, 0])
+print('Both CA and non CA using f0=10GHz, f1=28Ghz')
+print('Computing URLLC stats')
+plot_all_metrics(prot='urllc', param_ca={'f0': 10e9, 'f1':28e9, 'mode': 2}, param_no_ca={'f0': 10e9, 'mode': 1}, versus='rho')
+print('Computing eMBB stats')
+plot_all_metrics(prot='embb', param_ca={'f0': 10e9, 'f1':28e9, 'mode': 2}, param_no_ca={'f0': 10e9, 'mode': 1}, versus='rho')
 
-"""
-plot_metric(metric_bucket=pkt_loss_app('embb'), metric='packet loss', prot='eMBB', versus='rho')
-plot_metric(metric_bucket=throughput_app('embb'), metric='throughput', prot='eMBB', versus='rho')
-plot_metric(metric_bucket=delay_app('embb'), metric='delay', prot='eMBB', versus='rho')
+print('CA using f0=10GHz, f1=28Ghz; non CA using f0=28Ghz')
+print('Computing URLLC stats')
+plot_all_metrics(prot='urllc', param_ca={'f0': 10e9, 'f1':28e9, 'mode': 2}, param_no_ca={'f0': 28e9, 'mode': 1}, versus='rho')
+print('Computing eMBB stats')
+plot_all_metrics(prot='embb', param_ca={'f0': 10e9, 'f1':28e9, 'mode': 2}, param_no_ca={'f0': 28e9, 'mode': 1}, versus='rho')
+
