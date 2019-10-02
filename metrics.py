@@ -238,6 +238,7 @@ def load_results(trace_name, param=None):
         res_bucket.append({
             # Skip structure spec row
             'results': np.loadtxt(fname=res_path, skiprows=1),
+            'results_pd': pd.read_csv(filepath_or_buffer=res_path, skiprows=1),
             'params': res_istance['params']
         })
 

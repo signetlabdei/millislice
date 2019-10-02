@@ -4,8 +4,6 @@
 #include <ns3/mobility-module.h>
 #include <ns3/applications-module.h>
 #include <ns3/buildings-module.h>
-#include <ns3/rmcat-sender.h>
-#include <ns3/rmcat-receiver.h>
 #include <ns3/dash-module.h>
 #include <ns3/node-list.h>
 #include <ns3/lte-module.h>
@@ -29,7 +27,6 @@ public:
   static void SetupUdpApplication(Ptr<Node> node, Ipv4Address address, uint16_t port, uint16_t interPacketInterval, Ptr<OutputStreamWrapper> stream, double startTime, double endTime);
   static void SetupFtpModel3Application(Ptr<Node> clientNode, Ptr<Node> serverNode, Ipv4Address address, uint16_t port, double lambda, uint32_t fileSize, uint32_t sendSize, double startTime, double endTime, Ptr<OutputStreamWrapper> stream);
   static void SetupUdpPacketSink(Ptr<Node> node, uint16_t port, double startTime, double endTime, Ptr<OutputStreamWrapper> stream);
-  static void InstallRmcatApps(bool nada, Ptr<Node> sender, Ptr<Node> receiver, uint16_t port, float initBw, float minBw, float maxBw, float startTime, float stopTime);
   static void SetupDashApplication(Ptr<Node> senderNode, Ptr<Node> receiverNode, uint32_t port, uint8_t videoId, double startTime, double stopTime, Ptr<OutputStreamWrapper> stream);
   static void SetTracesPath(std::string filePath);
 
@@ -276,30 +273,6 @@ void SimulationConfig::StartFileTransfer(Ptr<FileTransferApplication> ftpApp)
   ftpApp->SendFile();
 }
 
-void SimulationConfig::InstallRmcatApps(bool nada, Ptr<Node> sender, Ptr<Node> receiver, uint16_t port, float initBw, float minBw, float maxBw, float startTime, float stopTime)
-{
-  Ptr<RmcatSender> sendApp = CreateObject<RmcatSender>();
-  Ptr<RmcatReceiver> recvApp = CreateObject<RmcatReceiver>();
-  sender->AddApplication(sendApp);
-  receiver->AddApplication(recvApp);
-
-  Ptr<Ipv4> ipv4 = receiver->GetObject<Ipv4>();
-  Ipv4Address receiverIp = ipv4->GetAddress(1, 0).GetLocal();
-  sendApp->Setup(receiverIp, port); // initBw, minBw, maxBw);
-
-  const auto fps = 25.;
-  auto innerCodec = new syncodecs::StatisticsCodec{fps};
-  auto codec = new syncodecs::ShapedPacketizer{innerCodec, DEFAULT_PACKET_SIZE};
-  sendApp->SetCodec(std::shared_ptr<syncodecs::Codec>{codec});
-
-  recvApp->Setup(port);
-
-  sendApp->SetStartTime(Seconds(startTime));
-  sendApp->SetStopTime(Seconds(stopTime));
-
-  recvApp->SetStartTime(Seconds(startTime));
-  recvApp->SetStopTime(Seconds(stopTime));
-}
 
 void SimulationConfig::SetupDashApplication(Ptr<Node> clientNode, Ptr<Node> serverNode, uint32_t port, uint8_t videoId, double startTime, double stopTime, Ptr<OutputStreamWrapper> stream)
 {

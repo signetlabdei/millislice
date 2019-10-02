@@ -26,8 +26,8 @@ for rate in urllc_rate_grid:
 
 
 # Set amount of simulation time
-sim_duration = 10
-runs = 32
+sim_duration = 0.31
+runs = 4
 
 params_grid = {
     'appEnd': sim_duration,
@@ -70,5 +70,3 @@ campaign.run_missing_simulations(sem.list_param_combinations(params_grid))
 # Get missing results for no CA and CC equal to 28GHz
 params_grid.update(mode=1, f0=28e9, f1=10e9)
 campaign.run_missing_simulations(sem.list_param_combinations(params_grid))
-
-#results = sem.CampaignManager.get_results_as_numpy_array()
