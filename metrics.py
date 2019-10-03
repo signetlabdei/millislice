@@ -235,8 +235,8 @@ def load_results(trace_name, param=None):
         res_path = campaign.db.get_result_files(res_id)[trace_name]
         # Save both results and relative params
         new_df = pd.read_csv(filepath_or_buffer=res_path, header=0, delimiter='\t')
-        # Improve data structure
-        new_df = sanitize_dataframe(new_df, 2) # Placeholder
+        # Improve data structure, keep just relevant data
+        new_df = sanitize_dataframe(new_df, res_istance['params']['maxStart']*1e9) # sec to ns ns in the traces
 
         new_entry = {
             'results': new_df,
@@ -251,7 +251,7 @@ def sanitize_dataframe(dataframe, treshold):
     # Remove trailing whitespaces from cols names
     dataframe = dataframe.rename(columns=lambda x: x.strip())
     # We want to keep trace just of packets transmitted after all apps started
-    dataframe = dataframe[dataframe['tx_time'] > treshold]  
+    dataframe = dataframe[dataframe['tx_time'] > treshold]   
 
     return dataframe
 

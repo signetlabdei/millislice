@@ -370,7 +370,7 @@ void CallbackSinks::RxSinkUdp(Ptr<OutputStreamWrapper> stream, Ptr<const Packet>
   int64_t nanosTimestamp = currentTimestamp.GetNanoSeconds();
 
   *stream->GetStream() << Simulator::Now().GetNanoSeconds() << "\t" << std::to_string(nanosTimestamp) << "\t" << packet->GetSize()
-                       << "\t" << std::to_string(currentSeqNmb) << "\t" << std::endl;
+                       << "\t" << std::to_string(currentSeqNmb) << std::endl;
 }
 
 void CallbackSinks::TxSinkUdp(Ptr<OutputStreamWrapper> stream, Ptr<const Packet> packet, const Address &to)
