@@ -39,3 +39,4 @@ build/
 /.project
 scratch/.vscode
 slicing-res/
+slicing-plots/

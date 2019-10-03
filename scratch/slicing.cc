@@ -110,6 +110,10 @@ int main(int argc, char *argv[])
 	Config::SetDefault("ns3::LteRlcUm::ReportBufferStatusTimer", TimeValue(MilliSeconds(bsrTimer)));
 	Config::SetDefault("ns3::LteRlcUmLowLat::SendBsrWhenPacketTx", BooleanValue(true));
 
+	Config::SetDefault("ns3::LteRlcUm::MaxTxBufferSize", UintegerValue (5e3 * 1024)); // 5 MB
+	Config::SetDefault("ns3::LteRlcUmLowLat::MaxTxBufferSize", UintegerValue (5e3 * 1024)); // 5 MB
+	Config::SetDefault("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (5e3 * 1024)); // 5 MB
+
 	//The available channel scenarios are 'RMa', 'UMa', 'UMi-StreetCanyon', 'InH-OfficeMixed', 'InH-OfficeOpen', 'InH-ShoppingMall'
 	Config::SetDefault("ns3::MmWave3gppPropagationLossModel::ChannelCondition", StringValue(condition));
 	Config::SetDefault("ns3::MmWave3gppPropagationLossModel::Scenario", StringValue("UMa"));
@@ -131,6 +135,8 @@ int main(int argc, char *argv[])
 	Config::SetDefault("ns3::MmWavePointToPointEpcHelper::X2LinkMtu", UintegerValue(10000));
 	Config::SetDefault("ns3::MmWavePointToPointEpcHelper::S1uLinkDelay", TimeValue(MicroSeconds(1000)));
 	Config::SetDefault("ns3::MmWavePointToPointEpcHelper::S1apLinkDelay", TimeValue(MilliSeconds(10))); // MME latency
+
+
 
 	int numCc;
 	bool splitDrb;
@@ -189,6 +195,8 @@ int main(int argc, char *argv[])
 		Config::SetDefault("ns3::MmWaveHelper::PathlossModel", StringValue("ns3::MmWave3gppPropagationLossModel"));
 	}
 	Config::SetDefault("ns3::MmWaveHelper::RlcAmEnabled", BooleanValue(useRlcAm));
+
+
 
 	switch (scheduler)
 	{
