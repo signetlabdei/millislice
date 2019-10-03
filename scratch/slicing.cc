@@ -6,6 +6,7 @@ using namespace ns3;
 using namespace mmwave;
 
 double vMin, vMax, rho;	//speed used if test-single-enb-moving scenario is selected
+double minStart, maxStart; // application starting times (or constant one)
 
 void SetupScenario(NodeContainer enbNodes, NodeContainer ueNodes, std::string scenario);
 
@@ -30,14 +31,15 @@ int main(int argc, char *argv[])
 	int mode = 1;		   // mode 1 = 1 CC, no isolation
 						   			// mode 2 = 2 CC, complete isolation
 	int scheduler = 1;	 // the MAC scheduler
-	double appStart = 0.3; // application start time
 	double appEnd = simTime;		   // application start time
 	bool urllcOn = true;   // if true install the ftp application
 	bool embbOn = true;	// if true install the dash application
 	bool useUdp = false;   // if true use UDP client apps
 
 	int embbUdpIPI = 1; //		 embb UDP interpacket interval
-	int urllcUdpIPI = 1000; //   urllc UDP interpacket interval
+	int urllcUdpIPI = 1000; //   urllc UDP interpacket interval	
+	minStart = 0.3; // application min start time (or constant one if set to deterministic)
+	maxStart = 0.5; // application max start time
 
 	// Propagation loss model
 	bool useBuildings = false;						 // if true use MmWave3gppBuildingsPropagationLossModel
@@ -69,7 +71,8 @@ int main(int argc, char *argv[])
 	cmd.AddValue("lambdaUrllc", "average number of file/s", lambdaUrllc);
 	cmd.AddValue("segmentSize", "segment size in bytes", segmentSize);
 	cmd.AddValue("fileSize", "file size in bytes", fileSize);
-	cmd.AddValue("appStart", "application start time", appStart);
+	cmd.AddValue("minStart", "application start time", minStart);
+	cmd.AddValue("maxStart", "application max start time", maxStart);
 	cmd.AddValue("appEnd", "application end time", appEnd);
 	cmd.AddValue("urllcOn", "if true install the ftp application", urllcOn);
 	cmd.AddValue("embbOn", "if true install the dash application", embbOn);
@@ -321,6 +324,11 @@ int main(int argc, char *argv[])
 		{
 			if (useUdp)
 			{
+				// RngStream used to sample the app's starting time
+				Ptr<RandomVariableStream> startRngStream = CreateObject<UniformRandomVariable>();
+				startRngStream->SetAttribute("Min", DoubleValue(minStart));
+				startRngStream->SetAttribute("Max", DoubleValue(maxStart));
+
 				SimulationConfig::SetupUdpPacketSink(ueEmbbNodes.Get(i), // node
 													 dlEmbbPort,		 // port
 													 0.01,				 // start time
@@ -332,7 +340,7 @@ int main(int argc, char *argv[])
 													  dlEmbbPort,				   // destination port
 													  embbUdpIPI,				   // embb rate
 													  ulEmbbStream,					// trace file
-													  appStart,					   // start time
+													  startRngStream,					   // start time
 													  appEnd);					   // stop time
 			}
 			else
@@ -341,7 +349,7 @@ int main(int argc, char *argv[])
 													   remoteHost,		   // server node
 													   dlEmbbPort,		   // port
 													   i + 1,			   // video ID
-													   appStart,		   // start time
+													   minStart,		   // start time
 													   appEnd,			   // stop time
 													   dlEmbbStream);	  // trace file
 			}
@@ -355,6 +363,11 @@ int main(int argc, char *argv[])
 		{
 			if (useUdp)
 			{
+				// RngStream used to sample the app's starting time
+				Ptr<RandomVariableStream> startRngStream = CreateObject<UniformRandomVariable>();
+				startRngStream->SetAttribute("Min", DoubleValue(minStart));
+				startRngStream->SetAttribute("Max", DoubleValue(maxStart));
+
 				SimulationConfig::SetupUdpPacketSink(ueUrllcNodes.Get(i), // node
 													 dlUrllcPort,		  // port
 													 0.01,				  // start time
@@ -366,7 +379,7 @@ int main(int argc, char *argv[])
 													  dlUrllcPort,					// destination port
 													  urllcUdpIPI,					// urllc rate
 													  ulUrllcStream,				// trace file
-													  appStart,						// start time
+													  startRngStream,						// start time
 													  appEnd);						// stop time
 			}
 			else
@@ -378,7 +391,7 @@ int main(int argc, char *argv[])
 															lambdaUrllc,				  // lambda
 															fileSize,					  // file size
 															segmentSize,				  // segments size OBS: this is the size of the packets that the application forwards to the socket. This is not the size of the packets that are actually going to be transmitted.
-															appStart,					  // start time
+															minStart,					  // start time
 															appEnd,						  // end time
 															dlUrllcStream);				  // trace file
 			}

@@ -31,7 +31,8 @@ runs = 4
 
 params_grid = {
     'appEnd': sim_duration,
-    'appStart': 0.3,
+    'minStart': 0.3,
+    'maxStart': 0.4,
     'bsrTimer': 2.0,
     'bw': 5e8,
     'ccRatio': 0.25,

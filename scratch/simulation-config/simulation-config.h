@@ -24,7 +24,7 @@ public:
   static void SetConstantPositionMobility(NodeContainer nodes, Vector position);
   static void SetConstantVelocityMobility(Ptr<Node> node, Vector position, Vector velocity);
   static void SetRandomWalkMobility(Ptr<Node> node, Vector position, double vMin, double vMax, double rho);
-  static void SetupUdpApplication(Ptr<Node> node, Ipv4Address address, uint16_t port, uint16_t interPacketInterval, Ptr<OutputStreamWrapper> stream, double startTime, double endTime);
+  static void SetupUdpApplication(Ptr<Node> node, Ipv4Address address, uint16_t port, uint16_t interPacketInterval, Ptr<OutputStreamWrapper> stream, Ptr<RandomVariableStream> startTimeRv, double endTime);
   static void SetupFtpModel3Application(Ptr<Node> clientNode, Ptr<Node> serverNode, Ipv4Address address, uint16_t port, double lambda, uint32_t fileSize, uint32_t sendSize, double startTime, double endTime, Ptr<OutputStreamWrapper> stream);
   static void SetupUdpPacketSink(Ptr<Node> node, uint16_t port, double startTime, double endTime, Ptr<OutputStreamWrapper> stream);
   static void SetupDashApplication(Ptr<Node> senderNode, Ptr<Node> receiverNode, uint32_t port, uint8_t videoId, double startTime, double stopTime, Ptr<OutputStreamWrapper> stream);
@@ -185,7 +185,7 @@ void SimulationConfig::SetRandomWalkMobility(Ptr<Node> node, Vector position, do
   BuildingsHelper::Install(node);
 }
 
-void SimulationConfig::SetupUdpApplication(Ptr<Node> node, Ipv4Address address, uint16_t port, uint16_t interPacketInterval, Ptr<OutputStreamWrapper> stream, double startTime, double endTime)
+void SimulationConfig::SetupUdpApplication(Ptr<Node> node, Ipv4Address address, uint16_t port, uint16_t interPacketInterval, Ptr<OutputStreamWrapper> stream, Ptr<RandomVariableStream> startTimeRv, double endTime)
 {
   ApplicationContainer app;
   UdpClientHelper client(address, port);
@@ -193,6 +193,8 @@ void SimulationConfig::SetupUdpApplication(Ptr<Node> node, Ipv4Address address, 
   client.SetAttribute("MaxPackets", UintegerValue(10000000));
 
   app.Add(client.Install(node));
+  // Sample starting time
+  double startTime = startTimeRv->GetValue();
   app.Start(Seconds(startTime));
   app.Stop(Seconds(endTime));
 
