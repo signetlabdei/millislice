@@ -368,7 +368,7 @@ void CallbackSinks::RxSinkUdp(Ptr<OutputStreamWrapper> stream, Ptr<const Packet>
   int64_t nanosTimestamp = currentTimestamp.GetNanoSeconds();
 
   *stream->GetStream() << Simulator::Now().GetNanoSeconds() << "\t" << std::to_string(nanosTimestamp) << "\t" << packet->GetSize()
-                       << "\t" << std::to_string(currentSeqNmb) << "\t" << std::to_string(packet->GetUid()) << "\t" << std::endl;
+                       << "\t" << std::to_string(currentSeqNmb) << "\t" << std::endl;
 }
 
 void CallbackSinks::TxSinkUdp(Ptr<OutputStreamWrapper> stream, Ptr<const Packet> packet, const Address &to)
@@ -379,10 +379,9 @@ void CallbackSinks::TxSinkUdp(Ptr<OutputStreamWrapper> stream, Ptr<const Packet>
   testPacket->RemoveHeader(seqTs);
   uint32_t currentSeqNmb = seqTs.GetSeq();
   // Get dest address info
-  Ipv4Address destIpv4 = Ipv4Address::ConvertFrom(to);
+  // Ipv4Address destIpv4 = Ipv4Address::ConvertFrom(to);
 
-  *stream->GetStream() << Simulator::Now().GetNanoSeconds() << "\t" << packet->GetSize() << "\t" << std::to_string(currentSeqNmb) << "\t"
-    << packet->GetUid()<< "\t" << destIpv4.Get() << std::endl;
+  *stream->GetStream() << Simulator::Now().GetNanoSeconds() << "\t" << packet->GetSize() << "\t" << std::to_string(currentSeqNmb) << std::endl;
 }
 
 std::pair<Box, std::list<Box>>

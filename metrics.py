@@ -92,7 +92,6 @@ def print_dict(param_dict):
         else:
             out += f"{param_dict[key]}_"
 
-
     return out
 
 def plot_metric(metric_bucket, metric, prot, s_path, vs=None):
@@ -235,14 +234,26 @@ def load_results(trace_name, param=None):
         res_id = res_istance['meta']['id']
         res_path = campaign.db.get_result_files(res_id)[trace_name]
         # Save both results and relative params
-        res_bucket.append({
-            # Skip structure spec row
-            'results': np.loadtxt(fname=res_path, skiprows=1),
-            'results_pd': pd.read_csv(filepath_or_buffer=res_path, skiprows=1),
+        new_df = pd.read_csv(filepath_or_buffer=res_path, header=0, delimiter='\t')
+        # Improve data structure
+        new_df = sanitize_dataframe(new_df, 2) # Placeholder
+
+        new_entry = {
+            'results': new_df,
             'params': res_istance['params']
-        })
+        }
+
+        res_bucket.append(new_entry)
 
     return res_bucket
+
+def sanitize_dataframe(dataframe, treshold):
+    # Remove trailing whitespaces from cols names
+    dataframe = dataframe.rename(columns=lambda x: x.strip())
+    # We want to keep trace just of packets transmitted after all apps started
+    dataframe = dataframe[dataframe['tx_time'] > treshold]  
+
+    return dataframe
 
 
 def throughput_app(trace_data, bearer_type, param_comb=None):
@@ -258,7 +269,7 @@ def throughput_app(trace_data, bearer_type, param_comb=None):
 
     ris = []
     for item in trace_data:
-        g = (len(item['results'])*1024*8)/((item['params']['appEnd'] -
+        g = (len(item['results'].index)*1024*8)/((item['params']['appEnd'] -
                                             item['params']['appStart'])*1e6)  # computing overall throughput
         # computing per user throughput
         if bearer_type == 'urllc':
@@ -288,9 +299,9 @@ def delay_app(trace_data, param_comb=None):
     delay = []
     for item in trace_data:
         # get time of rx
-        time_rx = item['results'][:, 0]
+        time_rx = item['results']['rx_time']
         # get time of tx
-        time_tx = item['results'][:, 2]
+        time_tx = item['results']['tx_time']
         # packet delay
         pck_delay = (time_rx - time_tx)/1e6
         delay.append({
@@ -316,11 +327,11 @@ def pkt_loss_app(trace_dl, trace_ul, param_comb=None):
 
     loss = []
     for index in range(len(trace_dl)):   # Amount of sim same for ul and dl
-        sent = len(trace_ul[index]['results'])
+        sent = len(trace_ul[index]['results'].index)
         # Overall lost packets
-        dropped = sent - len(trace_dl[index]['results'])
+        dropped = sent - len(trace_dl[index]['results'].index)
         # Percentage of packets lost
-        dropped = dropped/len(trace_ul[index]['results'])
+        dropped = dropped/len(trace_ul[index]['results'].index)
         loss.append({
             'mean': dropped,
             'params': trace_dl[index]['params']
@@ -348,28 +359,6 @@ def compute_means(metric_bucket):
 
 
 # Actual metrics computation
-# Load the SEM campaign
-
-"""
-campaign = sem.CampaignManager.load('./slicing-res')
-print('--SEM campaign succesfully loaded--')
-
-print('--Computing URLLC results--')
-urllc_packet_loss = pkt_loss_app('urllc')
-urllc_packet_loss =  print_metric(urllc_packet_loss, 'URLLC PACKET LOSS \n', 1)
-urllc_delay = delay_app('urllc')
-urllc_delay =  print_metric(urllc_delay, 'URLLC DELAY \n', 1)
-urllc_thr = throughput_app('urllc')
-print_metric(urllc_thr, 'URLLC THROUGHPUT \n', 1)
-
-print('--Computing EMBB results--')
-embb_packet_loss = pkt_loss_app('embb')
-embb_packet_loss =  print_metric(embb_packet_loss, 'EMBB PACKET LOSS \n', 1)
-embb_delay = delay_app('embb')
-embb_delay =  print_metric(embb_delay, 'EMBB DELAY \n', 1)
-embb_thr = throughput_app('embb')
-embb_thr =  print_metric(embb_thr, 'EMBB THROUGHPUT \n', 1)
-"""
 # Try plot
 print('Both CA and non CA using f0=10GHz, f1=28Ghz')
 print('Computing URLLC stats')

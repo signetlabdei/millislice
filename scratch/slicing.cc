@@ -297,8 +297,8 @@ int main(int argc, char *argv[])
 
 	// Create tracing streams
 	std::ostringstream dlTraceStructure, ulTraceStructure;
-	dlTraceStructure << "| Time of rx | \t | Time of tx | \t | Packet size | \t | Seq num | \t | Packet UID |\n";
-	ulTraceStructure << "| Time of tx | \t | Packet size | \t | Seq num | \t | Packet UID | \t | Dest address | \n" ;
+	dlTraceStructure << "rx_time \t tx_time \t pkt_size \t seq_num \n";
+	ulTraceStructure << "tx_time \t pkt_size \t seq_num \n" ;
 
 	AsciiTraceHelper asciiTraceHelper;
 	Ptr<OutputStreamWrapper> dlEmbbStream = asciiTraceHelper.CreateFileStream(filePath + "eMBB-dl-app-trace.txt");
@@ -385,7 +385,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	helper->EnableTraces();
+	// helper->EnableTraces();
 	BuildingsHelper::MakeMobilityModelConsistent();
 	PrintHelper::PrintGnuplottableBuildingListToFile(filePath + "buildings.txt");
 	PrintHelper::PrintGnuplottableNodeListToFile(filePath + "devs.txt");

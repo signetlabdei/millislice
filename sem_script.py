@@ -26,7 +26,7 @@ for rate in urllc_rate_grid:
 
 
 # Set amount of simulation time
-sim_duration = 0.31
+sim_duration = 0.7
 runs = 4
 
 params_grid = {
