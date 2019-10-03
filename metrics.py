@@ -51,6 +51,8 @@ def plot_all_metrics(prot, param_ca=None, param_no_ca=None, versus=None):
         trace_str_ul = 'test_eMBB-ul-app-trace.txt'
         # Upper case for plot legend
         prot = 'eMBB'
+
+    trace_str_rx_pckt = 'test_RxPacketTrace.txt' # Always same name
     
     sub_path = ''
 
@@ -58,26 +60,32 @@ def plot_all_metrics(prot, param_ca=None, param_no_ca=None, versus=None):
     if param_no_ca is not None:
         trace_no_ca_dl = load_results(trace_name=trace_str_dl, param=param_no_ca)
         trace_no_ca_ul = load_results(trace_name=trace_str_ul, param=param_no_ca)
+        trace_no_ca_rx_pckt = load_results(trace_name=trace_str_rx_pckt, param=param_no_ca)
         # Subfoloder name
         sub_path += print_dict(param_no_ca)
         if param_ca is not None and param_ca is not param_no_ca:
             trace_ca_dl = load_results(trace_name=trace_str_dl, param=param_ca)
             trace_ca_ul = load_results(trace_name=trace_str_ul, param=param_ca)
+            trace_ca_rx_pckt = load_results(trace_name=trace_str_rx_pckt, param=param_ca)
             # Combine the traces lists:
             trace_dl = trace_no_ca_dl + trace_ca_dl
             trace_ul = trace_no_ca_ul + trace_ca_ul
+            trace_rx_pckt = trace_no_ca_rx_pckt + trace_ca_rx_pckt
             sub_path += 'versus_' + print_dict(param_ca)
-
         else:
             trace_dl = trace_no_ca_dl 
-            trace_ul = trace_no_ca_ul            
+            trace_ul = trace_no_ca_ul 
+            trace_rx_pckt = trace_no_ca_rx_pckt   
+
     else:
         trace_dl = load_results(trace_name=trace_str_dl)
         trace_ul = load_results(trace_name=trace_str_ul)
+        trace_rx_pckt = load_results(trace_name=trace_str_rx_pckt)
         sub_path = 'no_spec_params'
 
 
     # Call lower level function
+    temp_bucket = band_allocation(trace_rx_pckt)
     plot_metric(metric_bucket=pkt_loss_app(trace_dl, trace_ul), metric='packet loss', prot=prot, s_path=sub_path, vs=versus)
     plot_metric(metric_bucket=throughput_app(trace_dl, bearer_type=prot), metric='throughput', s_path=sub_path, prot=prot, vs=versus)
     plot_metric(metric_bucket=delay_app(trace_dl),  metric='delay', prot=prot, s_path=sub_path, vs=versus)
@@ -202,7 +210,6 @@ def group_by_params(metric_bucket):
 
     return out_bucket
 
-
 def load_results(trace_name, param=None):
     """ 
     Loads the results from specifics file traces.
@@ -251,12 +258,32 @@ def sanitize_dataframe(dataframe, treshold):
     # Remove trailing whitespaces from cols names
     dataframe = dataframe.rename(columns=lambda x: x.strip())
     # We want to keep trace just of packets transmitted after all apps started
-    dataframe = dataframe[dataframe['tx_time'] > treshold]   
+    if 'tx_time' in dataframe.columns:
+        dataframe = dataframe[dataframe['tx_time'] > treshold]   
+    else:
+        dataframe = dataframe[dataframe['time'] > treshold/1e9] # Need secs here
 
     return dataframe
 
+def band_allocation(trace_data):
 
-def throughput_app(trace_data, bearer_type, param_comb=None):
+    print('--Computing band allocation metric--')
+
+    band_alloc = []
+
+    for item in trace_data:
+        used_sym = item['results']['frame'].sum()
+        print(used_sym)
+        avail_sym = item['results']['frame'].iloc[-1] - item['results']['frame'].iloc[0]
+        avail_sym = avail_sym*22*10 # Frames*subframes in a frame*symbols in a subframe
+        band_alloc.append({
+            'alloc': used_sym/avail_sym,
+            'params': item['params']
+        })
+
+    return band_alloc
+
+def throughput_app(trace_data, bearer_type):
     """ 
     Computes the average throughput @ APP layer
     If parameters combination are provided, then only the simulations for
@@ -285,7 +312,7 @@ def throughput_app(trace_data, bearer_type, param_comb=None):
     return ris
 
 
-def delay_app(trace_data, param_comb=None):
+def delay_app(trace_data):
     """ 
     Computes the average delay @ APP layer.
     If parameters combination are provided, then only the simulations for
@@ -314,7 +341,7 @@ def delay_app(trace_data, param_comb=None):
     return delay
 
 
-def pkt_loss_app(trace_dl, trace_ul, param_comb=None):
+def pkt_loss_app(trace_dl, trace_ul):
     """ 
     Computes the average delay @ APP layer.
     If parameters combination are provided, then only the simulations for

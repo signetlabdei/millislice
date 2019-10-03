@@ -406,7 +406,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	// helper->EnableTraces();
+	helper->EnableTraces();
 	BuildingsHelper::MakeMobilityModelConsistent();
 	PrintHelper::PrintGnuplottableBuildingListToFile(filePath + "buildings.txt");
 	PrintHelper::PrintGnuplottableNodeListToFile(filePath + "devs.txt");
