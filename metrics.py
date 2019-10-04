@@ -86,9 +86,10 @@ def plot_all_metrics(prot, param_ca=None, param_no_ca=None, versus=None):
 
     # Call lower level function
     temp_bucket = band_allocation(trace_rx_pckt)
-    plot_metric(metric_bucket=pkt_loss_app(trace_dl, trace_ul), metric='packet loss', prot=prot, s_path=sub_path, vs=versus)
-    plot_metric(metric_bucket=throughput_app(trace_dl, bearer_type=prot), metric='throughput', s_path=sub_path, prot=prot, vs=versus)
-    plot_metric(metric_bucket=delay_app(trace_dl),  metric='delay', prot=prot, s_path=sub_path, vs=versus)
+    plot_metric_box(temp_bucket, s_path=sub_path, metric='band allocation', title='Band allocation metric')
+    plot_metric_viol(metric_bucket=pkt_loss_app(trace_dl, trace_ul), metric='packet loss', prot=prot, s_path=sub_path, vs=versus)
+    plot_metric_viol(metric_bucket=throughput_app(trace_dl, bearer_type=prot), metric='throughput', s_path=sub_path, prot=prot, vs=versus)
+    plot_metric_viol(metric_bucket=delay_app(trace_dl),  metric='delay', prot=prot, s_path=sub_path, vs=versus)
 
 def print_dict(param_dict):
     out = ''
@@ -102,7 +103,53 @@ def print_dict(param_dict):
 
     return out
 
-def plot_metric(metric_bucket, metric, prot, s_path, vs=None):
+def plot_metric_box(metric_bucket, metric, title, s_path):
+    # Make sure figure is clean
+    plt.clf()
+    # Build dataframe
+    values = []
+    labels = []
+
+    for res in metric_bucket:
+        # Add in stats for primary CC
+        values.append(res['cc0'])
+        if res['params']['mode'] == 1: # If we are not using CA    
+            labels.append('CC0, no CA')
+        else:
+            labels.append('CC0, CA')
+            # Add in stats for secondary CC
+            values.append(res['cc1'])
+            labels.append('CC1, CA')
+
+    frame = {
+        'values': values,
+        'labels': labels
+    }
+
+    metric_frame = pd.DataFrame(data=frame)
+    # Actual plot
+    fig = plt.gcf()
+    light_palette = ['#90a5e0', '#90a5e0', '#c27a7c']
+    dark_palette = ['#465782','#465782', '#7a4e4f']
+    sns.set_style('whitegrid', {'axes.facecolor': '#EAEAF2'})
+    # Violin plotax
+    ax = sns.boxplot(data=metric_frame, y='values', x='labels', palette=light_palette)
+    ax = sns.swarmplot(data=metric_frame, y='values', x='labels', palette=dark_palette)
+
+    # Title, labels ecc.
+    fig.set_size_inches(6, 9)
+    filename = f"{metric}_CA_vs_nonCA.png"
+    plt.ylabel(f"{metric} \n", fontsize=12)
+    ax.set_xlabel('')
+    plt.title(title + '\n')
+
+    # Save, create dir if doesn't exist       
+    out_dir = f"./slicing-plots/{s_path}/"
+    os.makedirs(out_dir, exist_ok=True)
+    plt.savefig(out_dir + filename)
+
+
+def plot_metric_viol(metric_bucket, metric, prot, s_path, vs=None):
     """ 
     Plots metric mean, CI and all run samples
     Args:
@@ -136,7 +183,7 @@ def plot_metric(metric_bucket, metric, prot, s_path, vs=None):
     dark_palette = ['#465782', '#7a4e4f']
     light_palette = ['#90a5e0', '#c27a7c']
     sns.set_style('whitegrid', {'axes.facecolor': '#EAEAF2'})
-    # Violin plot
+    # Violin plotax
     ax = sns.violinplot(data=metric_frame, y='metric', x='versus', hue='mode', palette=light_palette, split=True, inner='stick')
     #sns.stripplot(x="versus", y="metric", hue="mode", data=metric_frame, dodge=True, palette=dark_palette)
 
