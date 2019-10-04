@@ -272,14 +272,27 @@ def band_allocation(trace_data):
     band_alloc = []
 
     for item in trace_data:
-        used_sym = item['results']['frame'].sum()
-        print(used_sym)
+        # Find out total amount symbols available
         avail_sym = item['results']['frame'].iloc[-1] - item['results']['frame'].iloc[0]
-        avail_sym = avail_sym*22*10 # Frames*subframes in a frame*symbols in a subframe
-        band_alloc.append({
-            'alloc': used_sym/avail_sym,
+        avail_sym = avail_sym*10*22 # Frames*subframes in a frame*symbols in a subframe
+        # Get info regarding first CC
+        item_cc0 = item['results'][item['results']['ccId'] == 0]
+        used_sym_cc0 = item_cc0['symbol#'].sum()
+        new_entry = {
+            'cc0': used_sym_cc0/avail_sym,
             'params': item['params']
-        })
+        }
+        # If we are using CA, get also info regarding secondary CC
+        if item['params']['mode'] == 2:
+            item_cc1 = item['results'][item['results']['ccId'] == 1]
+            used_sym_cc1 = item_cc1['symbol#'].sum()
+            new_entry['cc1'] = used_sym_cc1/avail_sym
+
+        # print('\n')
+        # print(new_entry)
+        # print('\n')
+
+        band_alloc.append(new_entry)
 
     return band_alloc
 
