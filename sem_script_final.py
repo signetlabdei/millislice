@@ -10,7 +10,7 @@ campaign = sem.CampaignManager.new(
 # Obtain IPIs from rates
 # eMMB
 embb_packet_size = 1024
-embb_rate_grid = list(range(60, 160, 20))
+embb_rate_grid = list(range(60, 140, 20))
 embb_IPI_grid = []
 for rate in embb_rate_grid:
     # Mbit/s to IPI in microseconds
@@ -26,7 +26,7 @@ for rate in urllc_rate_grid:
 
 
 # Set amount of simulation time
-sim_duration = 1
+sim_duration = 10
 runs = 30
 
 params_grid = {
@@ -59,7 +59,7 @@ params_grid = {
     'urllcOn': True,
     'urllcUdpIPI': urllc_IPI_grid,
     'useBuildings': False,  # Use MmWave3gppPropagationLossModel
-    'useRlcAm': False,  # Use RLC UM
+    'useRlcAm': [False, True],  # Use RLC UM
     'useUdp': True,
     'vMax': 10.0,
     'vMin': 1.0,

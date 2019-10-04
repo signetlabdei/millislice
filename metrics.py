@@ -9,11 +9,9 @@ import pandas as pd
 
 
 # Functions
-
+"""
 def print_metric(metric_bucket, intro, just_mean=0):
-    """
-    Print metrics and params that generated them
-    """
+
     print(intro)
     # Find out which param is changing, if not remove it
     params_to_rem = []
@@ -36,7 +34,7 @@ def print_metric(metric_bucket, intro, just_mean=0):
     else:
         print(compute_means(out))
     return out
-
+"""
 def plot_all_metrics(prot, param_ca=None, param_no_ca=None, versus=None):
 
     # Load the desired datasets
