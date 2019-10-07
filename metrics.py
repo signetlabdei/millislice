@@ -169,7 +169,7 @@ def plot_metric_viol(metric_bucket, metric, prot, s_path, vs=None):
     frame = {
         'metric': metric_data,
         'mode': mode_data,
-        'versus': vs
+        'versus': versus_data
     }
 
     metric_frame = pd.DataFrame(data=frame)
@@ -185,10 +185,40 @@ def plot_metric_viol(metric_bucket, metric, prot, s_path, vs=None):
     ax = sns.violinplot(data=metric_frame, y='metric', x='versus', hue='mode', palette=light_palette, split=True, inner='stick')
     #sns.stripplot(x="versus", y="metric", hue="mode", data=metric_frame, dodge=True, palette=dark_palette)
 
-    # Overlay mean value
+    # Save, with the proper size
+    if check_constant(versus_data):
+         # Overlay the mean values
+        overlay_means(metric_bucket, palette=dark_palette)
+
+        # Set graphical properties
+        fig.set_size_inches(5, 7)
+        # Set title and filename
+        filename = f"{prot}_{metric}_CA_vs_nonCA.png"
+        plot_title = f"{prot} {metric}"
+        ax.set_xlabel('')
+    else:
+        fig.set_size_inches(count_amount_uniques(versus_data)*4, 7)
+         # Set title and filename
+        filename = f"{prot}_{metric}_vs{vs}_CA_vs_nonCA.png"
+        plot_title = f"{prot} {metric} vs. {vs}"
+        ax.set_xlabel(f"{vs}", fontsize=11)
+        
+
+    plt.ylabel(f"{metric} \n", fontsize=11)
+    plt.title(plot_title)
+
+    # Save, create dir if doesn't exist       
+    out_dir = f"./slicing-plots/{s_path}/"
+    os.makedirs(out_dir, exist_ok=True)
+    plt.savefig(out_dir + filename)
+
+def overlay_means(metric_bucket, palette, vs=None):
+
+   # Overlay mean value
     # Obtain info regarding bounds
     left, right = plt.xlim()
     # Compute means
+
     means_bucket = compute_means(group_by_params(metric_bucket))
     if means_bucket[0]['params']['mode'] == 1:
         no_ca_mean = means_bucket[0]['mean']
@@ -196,31 +226,9 @@ def plot_metric_viol(metric_bucket, metric, prot, s_path, vs=None):
     else:
         no_ca_mean = means_bucket[1]['mean']
         ca_mean = means_bucket[0]['mean']
-    # Plot the values
-    plt.plot([left, right], [no_ca_mean, no_ca_mean], color=dark_palette[0], linestyle='--', linewidth=1)
-    plt.plot([left, right], [ca_mean, ca_mean], color=dark_palette[1], linestyle='--', linewidth=1)
 
-
-    # Save, with the proper size
-    if check_constant(versus_data):
-        fig.set_size_inches(7, 7)
-        # Set title and filename
-        filename = f"{prot}_{metric}_CA_vs_nonCA.png"
-        plot_title = f"{prot} {metric}"
-    else:
-        fig.set_size_inches(11, 7)
-         # Set title and filename
-        filename = f"{prot}_{metric}_vs{vs}_CA_vs_nonCA.png"
-        plot_title = f"{prot} {metric} vs. {vs}"
-        
-    plt.ylabel(f"{metric} \n", fontsize=11)
-    ax.set_xlabel('')
-    plt.title(plot_title)
-
-    # Save, create dir if doesn't exist       
-    out_dir = f"./slicing-plots/{s_path}/"
-    os.makedirs(out_dir, exist_ok=True)
-    plt.savefig(out_dir + filename)
+    plt.plot([left, right], [no_ca_mean, no_ca_mean], color=palette[0], linestyle='--', linewidth=1)
+    plt.plot([left, right], [ca_mean, ca_mean], color=palette[1], linestyle='--', linewidth=1)
    
 
 def group_by_params(metric_bucket):
@@ -430,6 +438,9 @@ def pkt_loss_app(trace_dl, trace_ul):
 def check_constant(bucket):
     return bucket[1:] == bucket[:-1]
 
+def count_amount_uniques(bucket):
+    return len(set(bucket))
+
 
 def compute_means(metric_bucket):
     # Save original data
@@ -449,11 +460,11 @@ print('Both CA and non CA using f0=10GHz, f1=28Ghz')
 print('Computing URLLC stats')
 plot_all_metrics(prot='urllc', param_ca={'f0': 10e9, 'f1':28e9, 'mode': 2}, param_no_ca={'f0': 10e9, 'mode': 1}, versus='rho')
 print('Computing eMBB stats')
-plot_all_metrics(prot='embb', param_ca={'f0': 10e9, 'f1':28e9, 'mode': 2}, param_no_ca={'f0': 10e9, 'mode': 1}, versus='rho')
-
+plot_all_metrics(prot='embb', param_ca={'f0': 10e9, 'f1':28e9, 'mode': 2}, param_no_ca={'f0': 10e9, 'mode': 1}, versus='embbUdpIPI')
+"""
 print('CA using f0=10GHz, f1=28Ghz; non CA using f0=28Ghz')
 print('Computing URLLC stats')
 plot_all_metrics(prot='urllc', param_ca={'f0': 10e9, 'f1':28e9, 'mode': 2}, param_no_ca={'f0': 28e9, 'mode': 1}, versus='rho')
 print('Computing eMBB stats')
 plot_all_metrics(prot='embb', param_ca={'f0': 10e9, 'f1':28e9, 'mode': 2}, param_no_ca={'f0': 28e9, 'mode': 1}, versus='rho')
-
+"""
