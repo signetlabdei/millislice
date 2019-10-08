@@ -188,7 +188,7 @@ def plot_metric_viol(metric_bucket, metric, prot, s_path, vs=None):
     # Save, with the proper size
     if check_constant(versus_data):
          # Overlay the mean values
-        overlay_means(metric_bucket, palette=dark_palette)
+        overlay_means(metric_bucket, palette=dark_palette, vs=vs, vs_data=versus_data)
 
         # Set graphical properties
         fig.set_size_inches(5, 7)
@@ -197,6 +197,10 @@ def plot_metric_viol(metric_bucket, metric, prot, s_path, vs=None):
         plot_title = f"{prot} {metric}"
         ax.set_xlabel('')
     else:
+        # Overlay the mean values
+        overlay_means(metric_bucket, palette=dark_palette, vs=vs, vs_data=versus_data)
+
+        # Set graphical properties
         fig.set_size_inches(count_amount_uniques(versus_data)*4, 7)
          # Set title and filename
         filename = f"{prot}_{metric}_vs{vs}_CA_vs_nonCA.png"
@@ -212,24 +216,41 @@ def plot_metric_viol(metric_bucket, metric, prot, s_path, vs=None):
     os.makedirs(out_dir, exist_ok=True)
     plt.savefig(out_dir + filename)
 
-def overlay_means(metric_bucket, palette, vs=None):
+def overlay_means(metric_bucket, palette, vs, vs_data):
 
    # Overlay mean value
     # Obtain info regarding bounds
-    left, right = plt.xlim()
+    left_orig, right_orig = plt.xlim()
     # Compute means
-
     means_bucket = compute_means(group_by_params(metric_bucket))
-    if means_bucket[0]['params']['mode'] == 1:
-        no_ca_mean = means_bucket[0]['mean']
-        ca_mean = means_bucket[1]['mean']
-    else:
-        no_ca_mean = means_bucket[1]['mean']
-        ca_mean = means_bucket[0]['mean']
+    # Get possible, different vs values
+    vs_uniques = list(set(vs_data))
+    vs_uniques.sort()
 
-    plt.plot([left, right], [no_ca_mean, no_ca_mean], color=palette[0], linestyle='--', linewidth=1)
-    plt.plot([left, right], [ca_mean, ca_mean], color=palette[1], linestyle='--', linewidth=1)
-   
+    for index in range(len(vs_uniques)):
+        just_right_means = find_elements(means_bucket, vs, vs_uniques[index])
+        if just_right_means[0]['params']['mode'] == 1:
+            no_ca_mean = just_right_means[0]['mean']
+            ca_mean = just_right_means[1]['mean']
+        else:
+            no_ca_mean = just_right_means[1]['mean']
+            ca_mean = just_right_means[0]['mean']
+
+        # Get plot limits
+        width = (right_orig - left_orig)/len(vs_uniques)
+        left = left_orig + index*width
+        right = left + width
+        plt.plot([left, right], [no_ca_mean, no_ca_mean], color=palette[0], linestyle='--', linewidth=1)
+        plt.plot([left, right], [ca_mean, ca_mean], color=palette[1], linestyle='--', linewidth=1)
+
+
+def find_elements(bucket, param, value):
+    out = []
+    for element in bucket:
+        temp = element['params'][param]
+        if temp == value:
+            out.append(element)
+    return out
 
 def group_by_params(metric_bucket):
     # Remove param specifying different runs
