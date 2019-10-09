@@ -229,12 +229,10 @@ def overlay_means(metric_bucket, palette, vs, vs_data):
 
     for index in range(len(vs_uniques)):
         just_right_means = find_elements(means_bucket, vs, vs_uniques[index])
-        if just_right_means[0]['params']['mode'] == 1:
-            no_ca_mean = just_right_means[0]['mean']
-            ca_mean = just_right_means[1]['mean']
-        else:
-            no_ca_mean = just_right_means[1]['mean']
-            ca_mean = just_right_means[0]['mean']
+
+        no_ca_mean = find_elements(just_right_means, 'mode', 1)[0]['mean']
+        ca_mean = find_elements(just_right_means, 'mode', 2)[0]['mean']
+
 
         # Get plot limits
         width = (right_orig - left_orig)/len(vs_uniques)
@@ -262,20 +260,15 @@ def group_by_params(metric_bucket):
     while(len(metric_bucket) > 0):
         temp_param = metric_bucket[0]['params']
         mean_bucket = []
-        # If we have variance, save that as well
-        var_bucket = []
         waste_bucket = []
         # Find sims with same params
         for sim in metric_bucket:
             if sim['params'] == temp_param:
                 mean_bucket.append(sim['mean'])
-                if('var' in metric_bucket[0]):
-                    var_bucket.append(sim['var'])
                 waste_bucket.append(sim)
         # Create entry for same params, different runs
         out_bucket.append({
             'mean': mean_bucket,
-            'var': var_bucket,
             'params': temp_param
         })
         # Remove elements that have been joined
@@ -324,7 +317,11 @@ def load_results(trace_name, param=None):
             'params': res_istance['params']
         }
 
-        res_bucket.append(new_entry)
+        if len(new_df) != 0:
+            res_bucket.append(new_entry)
+        else:
+            print('Empty trace found!')
+            print('Path of the resource: '+ res_path)
 
     return res_bucket
 
@@ -469,8 +466,6 @@ def compute_means(metric_bucket):
 
     for index in range(len(metric_bucket)):
         out_bucket[index]['mean'] = mean(metric_bucket[index]['mean'])
-        if(len(metric_bucket[index]['var']) > 0):
-            out_bucket[index]['var'] = mean(metric_bucket[index]['var'])
     return out_bucket
 
 
@@ -478,14 +473,44 @@ def compute_means(metric_bucket):
 # Actual metrics computation
 # Try plot
 print('Both CA and non CA using f0=10GHz, f1=28Ghz')
+
+print('Metrics vs ccRatio')
+ca_params = {'f0': 10e9, 'f1':28e9, 'mode': 2, 'embbUdpIPI': 82} # Rate eMBB = 100Mbit/s
+no_ca_params = {'f0': 10e9, 'mode': 1, 'embbUdpIPI': 82} # Rate eMBB = 100Mbit/s
+
 print('Computing URLLC stats')
-plot_all_metrics(prot='urllc', param_ca={'f0': 10e9, 'f1':28e9, 'mode': 2}, param_no_ca={'f0': 10e9, 'mode': 1}, versus='rho')
+plot_all_metrics(prot='urllc', param_ca=ca_params, param_no_ca=no_ca_params, versus='ccRatio')
 print('Computing eMBB stats')
-plot_all_metrics(prot='embb', param_ca={'f0': 10e9, 'f1':28e9, 'mode': 2}, param_no_ca={'f0': 10e9, 'mode': 1}, versus='embbUdpIPI')
-"""
+plot_all_metrics(prot='embb', param_ca=ca_params, param_no_ca=no_ca_params, versus='ccRatio')
+
+
+print('Metrics vs embbIPI')
+ca_params = {'f0': 10e9, 'f1':28e9, 'mode': 2, 'ccRatio': 0.5}
+no_ca_params = {'f0': 10e9, 'mode': 1, 'ccRatio': 0.5}
+
+plot_all_metrics(prot='urllc', param_ca=ca_params, param_no_ca=no_ca_params, versus='embbUdpIPI')
+print('Computing eMBB stats')
+plot_all_metrics(prot='embb', param_ca=ca_params, param_no_ca=no_ca_params, versus='embbUdpIPI')
+print('--------')
+
+
 print('CA using f0=10GHz, f1=28Ghz; non CA using f0=28Ghz')
+
+print('Metrics vs ccRatio')
+ca_params = {'f0': 10e9, 'f1':28e9, 'mode': 2, 'embbUdpIPI': 82} # Rate eMBB = 100Mbit/s
+no_ca_params = {'f0': 28e9, 'mode': 1, 'embbUdpIPI': 82} # Rate eMBB = 100Mbit/s
+
 print('Computing URLLC stats')
-plot_all_metrics(prot='urllc', param_ca={'f0': 10e9, 'f1':28e9, 'mode': 2}, param_no_ca={'f0': 28e9, 'mode': 1}, versus='rho')
+plot_all_metrics(prot='urllc', param_ca=ca_params, param_no_ca=no_ca_params, versus='ccRatio')
 print('Computing eMBB stats')
-plot_all_metrics(prot='embb', param_ca={'f0': 10e9, 'f1':28e9, 'mode': 2}, param_no_ca={'f0': 28e9, 'mode': 1}, versus='rho')
-"""
+plot_all_metrics(prot='embb', param_ca=ca_params, param_no_ca=no_ca_params, versus='ccRatio')
+
+
+print('Metrics vs embbIPI')
+ca_params = {'f0': 10e9, 'f1':28e9, 'mode': 2, 'ccRatio': 0.5}
+no_ca_params = {'f0': 28e9, 'mode': 1, 'ccRatio': 0.5}
+
+plot_all_metrics(prot='urllc', param_ca=ca_params, param_no_ca=no_ca_params, versus='embbUdpIPI')
+print('Computing eMBB stats')
+plot_all_metrics(prot='embb', param_ca=ca_params, param_no_ca=no_ca_params, versus='embbUdpIPI')
+print('--------')
