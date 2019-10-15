@@ -197,7 +197,7 @@ def plot_metric_viol(metric_bucket, metric, prot, s_path, vs=None):
         plot_title = f"{prot} {metric}"
         ax.set_xlabel('')
     else:
-        # Overlay the mean values
+        # Overlay the mean values, if traces are not empty
         overlay_means(metric_bucket, palette=dark_palette, vs=vs, vs_data=versus_data)
 
         # Set graphical properties
@@ -229,17 +229,16 @@ def overlay_means(metric_bucket, palette, vs, vs_data):
 
     for index in range(len(vs_uniques)):
         just_right_means = find_elements(means_bucket, vs, vs_uniques[index])
-
-        no_ca_mean = find_elements(just_right_means, 'mode', 1)[0]['mean']
-        ca_mean = find_elements(just_right_means, 'mode', 2)[0]['mean']
-
-
-        # Get plot limits
-        width = (right_orig - left_orig)/len(vs_uniques)
-        left = left_orig + index*width
-        right = left + width
-        plt.plot([left, right], [no_ca_mean, no_ca_mean], color=palette[0], linestyle='--', linewidth=1)
-        plt.plot([left, right], [ca_mean, ca_mean], color=palette[1], linestyle='--', linewidth=1)
+        # If no trace loaded for such param combination, do nothing
+        if(len(just_right_means) >= 2):
+            no_ca_mean = find_elements(just_right_means, 'mode', 1)[0]['mean']
+            ca_mean = find_elements(just_right_means, 'mode', 2)[0]['mean']
+            # Get plot limits and plot
+            width = (right_orig - left_orig)/len(vs_uniques)
+            left = left_orig + index*width
+            right = left + width
+            plt.plot([left, right], [no_ca_mean, no_ca_mean], color=palette[0], linestyle='--', linewidth=1)
+            plt.plot([left, right], [ca_mean, ca_mean], color=palette[1], linestyle='--', linewidth=1)
 
 
 def find_elements(bucket, param, value):
