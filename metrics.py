@@ -472,7 +472,7 @@ def compute_means(metric_bucket):
 # Actual metrics computation
 # Try plot
 print('Both CA and non CA using f0=10GHz, f1=28Ghz')
-
+'''
 print('Metrics vs ccRatio')
 ca_params = {'f0': 10e9, 'f1':28e9, 'mode': 2, 'embbUdpIPI': 82} # Rate eMBB = 100Mbit/s
 no_ca_params = {'f0': 10e9, 'mode': 1, 'embbUdpIPI': 82} # Rate eMBB = 100Mbit/s
@@ -481,7 +481,7 @@ print('Computing URLLC stats')
 plot_all_metrics(prot='urllc', param_ca=ca_params, param_no_ca=no_ca_params, versus='ccRatio')
 print('Computing eMBB stats')
 plot_all_metrics(prot='embb', param_ca=ca_params, param_no_ca=no_ca_params, versus='ccRatio')
-
+'''
 
 print('Metrics vs embbIPI')
 ca_params = {'f0': 10e9, 'f1':28e9, 'mode': 2, 'ccRatio': 0.5}
@@ -494,7 +494,7 @@ print('--------')
 
 
 print('CA using f0=10GHz, f1=28Ghz; non CA using f0=28Ghz')
-
+'''
 print('Metrics vs ccRatio')
 ca_params = {'f0': 10e9, 'f1':28e9, 'mode': 2, 'embbUdpIPI': 82} # Rate eMBB = 100Mbit/s
 no_ca_params = {'f0': 28e9, 'mode': 1, 'embbUdpIPI': 82} # Rate eMBB = 100Mbit/s
@@ -503,7 +503,7 @@ print('Computing URLLC stats')
 plot_all_metrics(prot='urllc', param_ca=ca_params, param_no_ca=no_ca_params, versus='ccRatio')
 print('Computing eMBB stats')
 plot_all_metrics(prot='embb', param_ca=ca_params, param_no_ca=no_ca_params, versus='ccRatio')
-
+'''
 
 print('Metrics vs embbIPI')
 ca_params = {'f0': 10e9, 'f1':28e9, 'mode': 2, 'ccRatio': 0.5}
