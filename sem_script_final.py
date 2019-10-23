@@ -10,7 +10,7 @@ campaign = sem.CampaignManager.new(
 # Obtain IPIs from rates
 # eMMB
 embb_packet_size = 1024
-embb_rate_grid = list(range(20, 180, 40))
+embb_rate_grid = list(range(60, 180, 40))
 embb_IPI_grid = []
 for rate in embb_rate_grid:
     # Mbit/s to IPI in microseconds
@@ -26,17 +26,17 @@ for rate in urllc_rate_grid:
 
 
 # Set amount of simulation time
-sim_duration = 10
+sim_duration = 8
 runs = 25
 
 params_grid = {
-    'appEnd': sim_duration,
+    'appEnd': sim_duration - 2,
     'minStart': 0.3,
     'maxStart': 0.4,
     'bsrTimer': 2.0,
     'bw': 5e8,
     'ccRatio': 0.5,
-    'condition': 'a',
+    'condition': 'l',
     'embbOn': True,
     'embbUdpIPI': embb_IPI_grid,
     'f0': 10e9,  # URLCC's CC
@@ -48,7 +48,7 @@ params_grid = {
     'numEmbbUes': 10,
     'numEnbs': 1,
     'numUrllcUes': 10,
-    'rho': 200,
+    'rho': 20,
     'reorderingTimer': 1.0,
     'runSet': list(range(runs)),
     'RngRun' : 1,
