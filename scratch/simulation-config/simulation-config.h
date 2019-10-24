@@ -41,7 +41,7 @@ public:
   static void RxSink(Ptr<OutputStreamWrapper> stream, Ptr<const Packet> packet, const Address &from = Address());
   static void TxSink(Ptr<OutputStreamWrapper> stream, Ptr<const Packet> packet, const Address &from = Address());
   // Specific UDP sinks, to enable increased telemetry and not break compatibility
-  static void RxSinkUdp(Ptr<OutputStreamWrapper> stream, Ptr<const Packet> packet, const Address &from = Address());
+  static void RxSinkUdp(Ptr<OutputStreamWrapper> stream, std::string context, Ptr<const Packet> packet, const Address &from = Address());
   static void TxSinkUdp(Ptr<OutputStreamWrapper> stream, Ptr<const Packet> packet, const Address &from = Address());
 };
 
@@ -212,7 +212,7 @@ void SimulationConfig::SetupUdpPacketSink(Ptr<Node> node, uint16_t port, double 
   app.Start(Seconds(startTime));
   app.Stop(Seconds(endTime));
 
-  app.Get(0)->TraceConnectWithoutContext("Rx", MakeBoundCallback(&CallbackSinks::RxSinkUdp, stream));
+  app.Get(0)->TraceConnect("Rx", std::to_string(node->GetId()), MakeBoundCallback(&CallbackSinks::RxSinkUdp, stream));
 }
 
 void SimulationConfig::SetupFtpModel3Application(Ptr<Node> clientNode, Ptr<Node> serverNode, Ipv4Address address, uint16_t port, double lambda, uint32_t fileSize, uint32_t sendSize, double startTime, double endTime, Ptr<OutputStreamWrapper> stream)
@@ -359,7 +359,7 @@ void CallbackSinks::TxSink(Ptr<OutputStreamWrapper> stream, Ptr<const Packet> pa
   *stream->GetStream() << "Tx\t" << Simulator::Now().GetSeconds() << "\t" << packet->GetSize() << std::endl;
 }
 
-void CallbackSinks::RxSinkUdp(Ptr<OutputStreamWrapper> stream, Ptr<const Packet> packet, const Address &from)
+void CallbackSinks::RxSinkUdp(Ptr<OutputStreamWrapper> stream, std::string context, Ptr<const Packet> packet, const Address &from)
 {
   // Get info about the packet
   Ptr<Packet> testPacket = packet->Copy(); // Need a non const reference to the packet
@@ -370,7 +370,7 @@ void CallbackSinks::RxSinkUdp(Ptr<OutputStreamWrapper> stream, Ptr<const Packet>
   int64_t nanosTimestamp = currentTimestamp.GetNanoSeconds();
 
   *stream->GetStream() << Simulator::Now().GetNanoSeconds() << "\t" << std::to_string(nanosTimestamp) << "\t" << packet->GetSize()
-                       << "\t" << std::to_string(currentSeqNmb) << std::endl;
+                       << "\t" << std::to_string(currentSeqNmb) << "\t" << context << std::endl;
 }
 
 void CallbackSinks::TxSinkUdp(Ptr<OutputStreamWrapper> stream, Ptr<const Packet> packet, const Address &to)

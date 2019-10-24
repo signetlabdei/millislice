@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
 	bool useRlcAm = true;  // choose RLC AM / UM
 	//double speed = 3.0; 		// UE speed
 	double bsrTimer = 2.0;
-	double reorderingTimer = 1.0;
+	double reorderingTimer = 1.0; 
 	int runSet = 1;
 	int mode = 1;		   // mode 1 = 1 CC, no isolation
 						   			// mode 2 = 2 CC, complete isolation
@@ -308,7 +308,7 @@ int main(int argc, char *argv[])
 
 	// Create tracing streams
 	std::ostringstream dlTraceStructure, ulTraceStructure;
-	dlTraceStructure << "rx_time \t tx_time \t pkt_size \t seq_num \n";
+	dlTraceStructure << "rx_time \t tx_time \t pkt_size \t seq_num \t node_id \n";
 	ulTraceStructure << "tx_time \t pkt_size \t seq_num \n" ;
 
 	AsciiTraceHelper asciiTraceHelper;
