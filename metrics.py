@@ -84,6 +84,9 @@ def plot_all_metrics(prot, param_ca=None, param_no_ca=None, versus=None):
 
     # Call lower level function
     plot_distr_bins(metric_frame=sinr_overall(trace_rx_pckt), metric='SINR(dB)', title='Distribution of the SINR of all users, for all simulation runs', s_path=sub_path)
+
+    throughput_app_det(trace_dl, prot, versus, s_path=sub_path)
+
     plot_metric_box(band_allocation(trace_rx_pckt), s_path=sub_path, metric='Band allocation', title='Band allocation metric')
     plot_metric_viol(metric_bucket=pkt_loss_app(trace_dl, trace_ul), metric='Packet loss', prot=prot, s_path=sub_path, unit='', vs=versus)
     plot_metric_viol(metric_bucket=throughput_app(trace_dl, bearer_type=prot), metric='Throughput', s_path=sub_path, prot=prot, unit='[Mbit/s]', vs=versus)
@@ -101,6 +104,21 @@ def print_dict(param_dict):
 
     return out
 
+def plot_line(metric_frame, metric, title, s_path):
+    plt.clf()
+    sns.set_style('whitegrid', {'axes.facecolor': '#EAEAF2'})
+    color = '#7a4e4f'
+
+    sns.lineplot(data=metric_frame, x='x', y='y')
+
+    #f, axes = plt.subplots(1, 2)
+    plt.xlabel(f"{metric} \n", fontsize=11)
+    plt.title(title + '\n') 
+
+    out_dir = f"./slicing-plots/{s_path}"
+    # os.makedirs(out_dir, exist_ok=True)
+    plt.savefig(out_dir)
+
 def plot_distr_bins(metric_frame, metric, title, s_path):
     # Make sure figure is clean
     plt.clf()
@@ -113,7 +131,7 @@ def plot_distr_bins(metric_frame, metric, title, s_path):
     plt.title(title + '\n') 
 
     # Save, create dir if doesn't exist       
-    out_dir = f"./slicing-plots/{s_path}/"
+    out_dir = f"./slicing-plots/{s_path}/detailed/"
     os.makedirs(out_dir, exist_ok=True)
     plt.savefig(out_dir + metric)
 
@@ -399,6 +417,47 @@ def band_allocation(trace_data):
 
     return band_alloc
 
+def throughput_app_det(trace_data, bearer_type, vs, s_path):
+
+    out = []
+    # Compute and plot overall throughput in the worst case
+    versus_data = []
+    for sim in trace_data:
+        versus_data.append(sim['params'][vs])
+
+    versus_data = list(set(versus_data))
+
+    for vs_value in versus_data:
+        # Keep just traces using such value of the vs param
+        temp_trace_data = []
+        for item in trace_data:
+            if (item['params'][vs] == vs_value):
+                temp_trace_data.append(item)
+
+        # Compute overall throughput, pick the one with the worst average
+        thr_bucket = throughput_app(temp_trace_data, bearer_type)
+        mean_frame = []
+        for item in thr_bucket:
+            mean_frame.append(item['mean'])
+
+        temp_frame = pd.DataFrame({
+            'value': mean_frame
+        })
+
+        choosen_one = trace_data[temp_frame['value'].idxmax()]
+        # Compute throughput versus time
+        choosen_one['results']['rx_time'] = (choosen_one['results']['rx_time']/10e8).round(2)
+        packets_rx = choosen_one['results'].groupby(['rx_time']).count()
+
+        # Fix col names
+        packets_rx['rx_time'] = packets_rx.index.values
+        packets_rx.rename(columns={'rx_time':'x', 'tx_time':'y'}, inplace=True)
+        packets_rx.drop(columns=['pkt_size', 'seq_num', 'node_id'], inplace=True)
+
+        plot_line(packets_rx, 'throughput', 'title', s_path + '/detailed/' + bearer_type + '_' + vs + '_' + str(vs_value))
+
+    return out
+
 def throughput_app(trace_data, bearer_type):
     """ 
     Computes the average throughput @ APP layer
@@ -517,9 +576,9 @@ plot_all_metrics(prot='embb', param_ca=ca_params, param_no_ca=no_ca_params, vers
 '''
 
 print('Metrics vs embbIPI')
-ca_params = {'f0': 10e9, 'f1':28e9, 'mode': 2, 'ccRatio': 0.5}
-no_ca_params = {'f0': 10e9, 'mode': 1, 'ccRatio': 0.5}
-
+print('Computing URLLC stats')
+ca_params = {'f0': 10e9, 'f1':28e9, 'mode': 2}
+no_ca_params = {'f0': 10e9, 'mode': 1}
 plot_all_metrics(prot='urllc', param_ca=ca_params, param_no_ca=no_ca_params, versus='embbUdpIPI')
 print('Computing eMBB stats')
 plot_all_metrics(prot='embb', param_ca=ca_params, param_no_ca=no_ca_params, versus='embbUdpIPI')
@@ -539,8 +598,9 @@ plot_all_metrics(prot='embb', param_ca=ca_params, param_no_ca=no_ca_params, vers
 '''
 
 print('Metrics vs embbIPI')
-ca_params = {'f0': 10e9, 'f1':28e9, 'mode': 2, 'ccRatio': 0.5}
-no_ca_params = {'f0': 28e9, 'mode': 1, 'ccRatio': 0.5}
+print('Computing URLLC stats')
+ca_params = {'f0': 10e9, 'f1':28e9, 'mode': 2}
+no_ca_params = {'f0': 28e9, 'mode': 1}
 
 plot_all_metrics(prot='urllc', param_ca=ca_params, param_no_ca=no_ca_params, versus='embbUdpIPI')
 print('Computing eMBB stats')
