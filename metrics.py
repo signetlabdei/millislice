@@ -104,19 +104,29 @@ def print_dict(param_dict):
 
     return out
 
-def plot_line(metric_frame, metric, title, s_path):
+def plot_line(metric_frame, metric, title, s_path, overlays=None):
     plt.clf()
+    fig = plt.gcf()
     sns.set_style('whitegrid', {'axes.facecolor': '#EAEAF2'})
     color = '#7a4e4f'
 
-    sns.lineplot(data=metric_frame, x='x', y='y')
+    sns.lineplot(data=metric_frame, x='x', y='y', color=color)
+
+    # Plot overlays if available
+    if overlays is not None:
+        for item in overlays['x']:
+            plt.axvline(x=item, color=[0,0,0], linewidth=0.7)
+        for item in overlays['y']:
+            plt.axhline(y=item, color=color, linestyle='dashed', linewidth=1)
 
     #f, axes = plt.subplots(1, 2)
-    plt.xlabel(f"{metric} \n", fontsize=11)
+    plt.ylabel(f"{metric} \n", fontsize=11)
     plt.title(title + '\n') 
 
     out_dir = f"./slicing-plots/{s_path}"
     # os.makedirs(out_dir, exist_ok=True)
+    fig.set_size_inches(8, 6)
+
     plt.savefig(out_dir)
 
 def plot_distr_bins(metric_frame, metric, title, s_path):
@@ -444,17 +454,28 @@ def throughput_app_det(trace_data, bearer_type, vs, s_path):
             'value': mean_frame
         })
 
-        choosen_one = trace_data[temp_frame['value'].idxmax()]
+        choosen_one = trace_data[temp_frame['value'].idxmin()]['results']
         # Compute throughput versus time
-        choosen_one['results']['rx_time'] = (choosen_one['results']['rx_time']/10e8).round(2)
-        packets_rx = choosen_one['results'].groupby(['rx_time']).count()
+        choosen_one['rx_time'] = (choosen_one['rx_time']/10e8).round(2)
+        packets_rx = choosen_one.groupby(['rx_time']).count()
 
         # Fix col names
-        packets_rx['rx_time'] = packets_rx.index.values
-        packets_rx.rename(columns={'rx_time':'x', 'tx_time':'y'}, inplace=True)
+        packets_rx['x'] = packets_rx.index.values
+        packets_rx.rename(columns={'tx_time':'y'}, inplace=True)
+        # Packets every 0.1s --> Mbit/s
+        packets_rx['y'] = packets_rx['y']*1024*8/1e5 # 10e6 for bit to Mbit, then 0.1 to 1 s
         packets_rx.drop(columns=['pkt_size', 'seq_num', 'node_id'], inplace=True)
 
-        plot_line(packets_rx, 'throughput', 'title', s_path + '/detailed/' + bearer_type + '_' + vs + '_' + str(vs_value))
+        temp_title = 'Throughput of whole system vs time [s]'
+        temp_path =  s_path + '/detailed/' + bearer_type + '_' + vs + '_' + str(vs_value)
+
+        # Overlay mean throughput and appEnd 
+        overlays = {
+            'x': [temp_trace_data[0]['params']['appEnd']],
+            'y': [temp_frame['value'].min()]
+        }
+
+        plot_line(packets_rx, 'Throughput [Mbit/s]', temp_title , temp_path, overlays)
 
     return out
 
