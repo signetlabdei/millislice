@@ -86,9 +86,9 @@ def plot_all_metrics(prot, param_ca=None, param_no_ca=None, versus=None):
     plot_distr_bins(metric_frame=sinr_overall(trace_rx_pckt), metric='SINR(dB)', title='Distribution of the SINR of all users, for all simulation runs', s_path=sub_path)
     throughput_app_det(trace_dl, prot, versus, s_path=sub_path)
     plot_metric_box(band_allocation(trace_rx_pckt), s_path=sub_path, metric='Band allocation', title='Band allocation metric')
-    plot_metric_viol(metric_bucket=pkt_loss_app(trace_dl, trace_ul), metric='Packet loss', prot=prot, s_path=sub_path, unit='', vs=versus)
-    plot_metric_viol(metric_bucket=throughput_app(trace_dl, bearer_type=prot), metric='Throughput', s_path=sub_path, prot=prot, unit='[Mbit/s]', vs=versus)
-    plot_metric_viol(metric_bucket=delay_app(trace_dl),  metric='Delay', prot=prot, s_path=sub_path, unit='[ms]', vs=versus)
+    plot_metrics_generic(metric_bucket=pkt_loss_app(trace_dl, trace_ul), metric='Packet loss', prot=prot, s_path=sub_path, unit='', vs=versus)
+    plot_metrics_generic(metric_bucket=throughput_app(trace_dl, bearer_type=prot), metric='Throughput', s_path=sub_path, prot=prot, unit='[Mbit/s]', vs=versus)
+    plot_metrics_generic(metric_bucket=delay_app(trace_dl),  metric='Delay', prot=prot, s_path=sub_path, unit='[ms]', vs=versus)
 
 def print_dict(param_dict):
     out = ''
@@ -103,33 +103,40 @@ def print_dict(param_dict):
     return out
 
 def plot_line(metric_frame, metric, title, s_path, overlays=None):
-    plt.clf()
-    fig = plt.gcf()
+
+    fig, ax = plt.subplots(constrained_layout=True)
     sns.set_style('whitegrid', {'axes.facecolor': '#EAEAF2'})
     color = '#7a4e4f'
 
     sns.lineplot(data=metric_frame, x='x', y='y', color=color)
 
+    x_handles = []
+    y_handles = []
+
     # Plot overlays if available
     if overlays is not None:
         for item in overlays['x']:
-            plt.axvline(x=item, color=[0,0,0], linewidth=0.7)
+            ax.axvline(x=item, color=[0,0,0], linewidth=0.7, label='appEnd')
         for item in overlays['y']:
-            plt.axhline(y=item, color=color, linestyle='dashed', linewidth=1)
+            ax.axhline(y=item, color=color, linestyle='dashed', linewidth=1, label='Average value of whole system')
 
     #f, axes = plt.subplots(1, 2)
     plt.ylabel(f"{metric} \n", fontsize=11)
     plt.title(title + '\n') 
+
+    ax.legend(loc='best')
 
     out_dir = f"./slicing-plots/{s_path}"
     # os.makedirs(out_dir, exist_ok=True)
     fig.set_size_inches(8, 6)
 
     plt.savefig(out_dir)
+    plt.close(fig)
 
 def plot_distr_bins(metric_frame, metric, title, s_path):
     # Make sure figure is clean
-    plt.clf()
+    fig, ax = plt.subplots(constrained_layout=True)
+
     sns.set_style('whitegrid', {'axes.facecolor': '#EAEAF2'})
 
     color = '#7a4e4f'
@@ -138,14 +145,18 @@ def plot_distr_bins(metric_frame, metric, title, s_path):
     plt.xlabel(f"{metric} \n", fontsize=11)
     plt.title(title + '\n') 
 
+    fig.set_size_inches(8, 6)
+
     # Save, create dir if doesn't exist       
     out_dir = f"./slicing-plots/{s_path}/detailed/"
     os.makedirs(out_dir, exist_ok=True)
     plt.savefig(out_dir + metric)
 
+    plt.close(fig)
+
 def plot_metric_box(metric_bucket, metric, title, s_path):
     # Make sure figure is clean
-    plt.clf()
+    fig, ax = plt.subplots(constrained_layout=True)
     # Build dataframe
     values = []
     labels = []
@@ -168,16 +179,16 @@ def plot_metric_box(metric_bucket, metric, title, s_path):
 
     metric_frame = pd.DataFrame(data=frame)
     # Actual plot
-    fig = plt.gcf()
+    
+
     light_palette = ['#90a5e0', '#90a5e0', '#c27a7c']
     dark_palette = ['#465782','#465782', '#7a4e4f']
     sns.set_style('whitegrid', {'axes.facecolor': '#EAEAF2'})
-    # Violin plotax
     ax = sns.boxplot(data=metric_frame, y='values', x='labels', palette=light_palette)
     ax = sns.swarmplot(data=metric_frame, y='values', x='labels', palette=dark_palette)
 
     # Title, labels ecc.
-    fig.set_size_inches(6, 9)
+    fig.set_size_inches(5, 7)
     filename = f"{metric}_CA_vs_nonCA.png"
     plt.ylabel(f"{metric} \n", fontsize=12)
     ax.set_xlabel('')
@@ -188,8 +199,9 @@ def plot_metric_box(metric_bucket, metric, title, s_path):
     os.makedirs(out_dir, exist_ok=True)
     plt.savefig(out_dir + filename)
 
+    plt.close(fig)
 
-def plot_metric_viol(metric_bucket, metric, prot, s_path, unit, vs=None):
+def plot_metrics_generic(metric_bucket, metric, prot, s_path, unit, vs=None):
     """ 
     Plots metric mean, CI and all run samples
     Args:
@@ -219,44 +231,58 @@ def plot_metric_viol(metric_bucket, metric, prot, s_path, unit, vs=None):
     metric_frame['mode'] =  metric_frame['mode'].replace(2, 'CA')
     
     # Colors
-    fig = plt.gcf()
+    # fig, (box_ax, viol_ax) = plt.subplots(2, 1, constrained_layout=True, sharex=True, sharey=True)
+    fig, ax = plt.subplots(constrained_layout=True)
+
     dark_palette = ['#465782', '#7a4e4f']
     light_palette = ['#90a5e0', '#c27a7c']
     sns.set_style('whitegrid', {'axes.facecolor': '#EAEAF2'})
+
+
     # Violin plotax
-    ax = sns.violinplot(data=metric_frame, y='metric', x='versus', hue='mode', palette=light_palette, split=True, inner='stick')
-    #sns.stripplot(x="versus", y="metric", hue="mode", data=metric_frame, dodge=True, palette=dark_palette)
+    # sns.violinplot(data=metric_frame, y='metric', x='versus', hue='mode', palette=light_palette, split=True, inner='stick', ax=viol_ax)
+    # Boxplot
+    
+    sns.boxplot(data=metric_frame, y='metric', x='versus', hue='mode', palette=light_palette, ax=ax)
+    strip_handle = sns.stripplot(x="versus", y="metric", hue="mode", data=metric_frame, dodge=True, palette=dark_palette, ax=ax)
+
+    # Remove legend duplicate
+    handles, labels = strip_handle.get_legend_handles_labels()
+    plt.legend(handles[0:2], labels[0:2])
 
     # Save, with the proper size
     if check_constant(versus_data):
          # Overlay the mean values
-        overlay_means(metric_bucket, palette=dark_palette, vs=vs, vs_data=versus_data)
+        # overlay_means(metric_bucket, palette=dark_palette, vs=vs, vs_data=versus_data)
 
         # Set graphical properties
-        fig.set_size_inches(5, 7)
+        fig.set_size_inches(4, 8)
         # Set title and filename
         filename = f"{prot}_{metric}_CA_vs_nonCA.png"
         plot_title = f"{prot} {metric}"
-        ax.set_xlabel('')
     else:
         # Overlay the mean values, if traces are not empty
-        overlay_means(metric_bucket, palette=dark_palette, vs=vs, vs_data=versus_data)
+        # overlay_means(metric_bucket, palette=dark_palette, vs=vs, vs_data=versus_data)
 
         # Set graphical properties
-        fig.set_size_inches(count_amount_uniques(versus_data)*4, 7)
+        fig.set_size_inches(count_amount_uniques(versus_data)*2.5, 7.5)
          # Set title and filename
         filename = f"{prot}_{metric}_vs{vs}_CA_vs_nonCA.png"
         plot_title = f"{prot} {metric} vs. {vs}"
-        ax.set_xlabel(f"{vs}", fontsize=11)
+        ax.set_xlabel(f"{vs}", fontsize=12)
+        # viol_ax.set_xlabel(f"{vs}", fontsize=11)
+        # box_ax.set_xlabel(f"{vs}", fontsize=11)
         
 
-    plt.ylabel(f"{metric} {unit} \n", fontsize=11)
-    plt.title(plot_title + '\n')
+    ax.set_ylabel(f"{metric} {unit} \n", fontsize=12)
+    fig.suptitle(plot_title + '\n', fontsize=12)
 
     # Save, create dir if doesn't exist       
     out_dir = f"./slicing-plots/{s_path}/"
     os.makedirs(out_dir, exist_ok=True)
     plt.savefig(out_dir + filename)
+
+    plt.close('fig')
 
 def overlay_means(metric_bucket, palette, vs, vs_data):
 
