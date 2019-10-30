@@ -84,9 +84,7 @@ def plot_all_metrics(prot, param_ca=None, param_no_ca=None, versus=None):
 
     # Call lower level function
     plot_distr_bins(metric_frame=sinr_overall(trace_rx_pckt), metric='SINR(dB)', title='Distribution of the SINR of all users, for all simulation runs', s_path=sub_path)
-
     throughput_app_det(trace_dl, prot, versus, s_path=sub_path)
-
     plot_metric_box(band_allocation(trace_rx_pckt), s_path=sub_path, metric='Band allocation', title='Band allocation metric')
     plot_metric_viol(metric_bucket=pkt_loss_app(trace_dl, trace_ul), metric='Packet loss', prot=prot, s_path=sub_path, unit='', vs=versus)
     plot_metric_viol(metric_bucket=throughput_app(trace_dl, bearer_type=prot), metric='Throughput', s_path=sub_path, prot=prot, unit='[Mbit/s]', vs=versus)
@@ -430,11 +428,13 @@ def band_allocation(trace_data):
 def throughput_app_det(trace_data, bearer_type, vs, s_path):
 
     out = []
-    # Compute and plot overall throughput in the worst case
     versus_data = []
+    # Compute and plot overall throughput in the worst case
+    
     for sim in trace_data:
         versus_data.append(sim['params'][vs])
 
+    # Obtain unique values
     versus_data = list(set(versus_data))
 
     for vs_value in versus_data:
@@ -444,7 +444,7 @@ def throughput_app_det(trace_data, bearer_type, vs, s_path):
             if (item['params'][vs] == vs_value):
                 temp_trace_data.append(item)
 
-        # Compute overall throughput, pick the one with the worst average
+        # Compute overall mean throughputs, pick the one with the worst average across the runs
         thr_bucket = throughput_app(temp_trace_data, bearer_type)
         mean_frame = []
         for item in thr_bucket:
@@ -454,7 +454,7 @@ def throughput_app_det(trace_data, bearer_type, vs, s_path):
             'value': mean_frame
         })
 
-        choosen_one = trace_data[temp_frame['value'].idxmin()]['results']
+        choosen_one = copy.deepcopy(trace_data[temp_frame['value'].idxmin()]['results'])
         # Compute throughput versus time
         choosen_one['rx_time'] = (choosen_one['rx_time']/10e8).round(2)
         packets_rx = choosen_one.groupby(['rx_time']).count()
