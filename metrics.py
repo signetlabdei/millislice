@@ -185,7 +185,7 @@ def plot_metric_box(metric_bucket, metric, title, s_path):
     dark_palette = ['#465782','#465782', '#7a4e4f']
     sns.set_style('whitegrid', {'axes.facecolor': '#EAEAF2'})
     ax = sns.boxplot(data=metric_frame, y='values', x='labels', palette=light_palette)
-    ax = sns.swarmplot(data=metric_frame, y='values', x='labels', palette=dark_palette)
+    ax = sns.stripplot(data=metric_frame, y='values', x='labels', palette=dark_palette)
 
     # Title, labels ecc.
     fig.set_size_inches(5, 7)
@@ -238,11 +238,21 @@ def plot_metrics_generic(metric_bucket, metric, prot, s_path, unit, vs=None):
     light_palette = ['#90a5e0', '#c27a7c']
     sns.set_style('whitegrid', {'axes.facecolor': '#EAEAF2'})
 
+      # Save, with the proper size
+    if check_constant(versus_data):
+        filename = f"{prot}_{metric}_CA_vs_nonCA.png"
+        plot_title = f"{prot} {metric}"
+    else:
+        filename = f"{prot}_{metric}_vs{vs}_CA_vs_nonCA.png"
+        # viol_ax.set_xlabel(f"{vs}", fontsize=11)
+        # box_ax.set_xlabel(f"{vs}", fontsize=11)
+
 
     # Violin plotax
     # sns.violinplot(data=metric_frame, y='metric', x='versus', hue='mode', palette=light_palette, split=True, inner='stick', ax=viol_ax)
+
+    vs = sanitize_versus(metric_bucket=metric_frame, vs=vs)
     # Boxplot
-    
     sns.boxplot(data=metric_frame, y='metric', x='versus', hue='mode', palette=light_palette, ax=ax)
     strip_handle = sns.stripplot(x="versus", y="metric", hue="mode", data=metric_frame, dodge=True, palette=dark_palette, ax=ax)
 
@@ -258,7 +268,6 @@ def plot_metrics_generic(metric_bucket, metric, prot, s_path, unit, vs=None):
         # Set graphical properties
         fig.set_size_inches(4, 8)
         # Set title and filename
-        filename = f"{prot}_{metric}_CA_vs_nonCA.png"
         plot_title = f"{prot} {metric}"
     else:
         # Overlay the mean values, if traces are not empty
@@ -267,7 +276,6 @@ def plot_metrics_generic(metric_bucket, metric, prot, s_path, unit, vs=None):
         # Set graphical properties
         fig.set_size_inches(count_amount_uniques(versus_data)*2.5, 7.5)
          # Set title and filename
-        filename = f"{prot}_{metric}_vs{vs}_CA_vs_nonCA.png"
         plot_title = f"{prot} {metric} vs. {vs}"
         ax.set_xlabel(f"{vs}", fontsize=12)
         # viol_ax.set_xlabel(f"{vs}", fontsize=11)
@@ -308,6 +316,11 @@ def overlay_means(metric_bucket, palette, vs, vs_data):
             plt.plot([left, right], [no_ca_mean, no_ca_mean], color=palette[0], linestyle='--', linewidth=1)
             plt.plot([left, right], [ca_mean, ca_mean], color=palette[1], linestyle='--', linewidth=1)
 
+
+def sanitize_versus(metric_bucket, vs):
+    if(vs == 'embbUdpIPI'):
+        metric_bucket['versus'] = round(1024*8/(metric_bucket['versus'])) # packet_size*bits in a bye/rate
+        return 'UDP sources datarate [Mbit/s]'  
 
 def find_elements(bucket, param, value):
     out = []
@@ -400,6 +413,9 @@ def sanitize_dataframe(dataframe, treshold):
         dataframe = dataframe[dataframe['tx_time'] > treshold]   
     else:
         dataframe = dataframe[dataframe['time'] > treshold/1e9] # Need secs here
+
+    # Go from IPI to source gen datarate
+    # dataframe = dataframe[]
 
     return dataframe
 
