@@ -209,6 +209,8 @@ def plot_metrics_generic(metric_bucket, metric, prot, s_path, unit, vs=None):
     """
     # Make sure figure is clean
     plt.clf()
+    # Avoid having strange ticks formatting
+    plt.ticklabel_format(useOffset=False)
 
     # Build dataframe
     metric_data = []
