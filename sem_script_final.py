@@ -26,7 +26,7 @@ for rate in urllc_rate_grid:
 
 
 # Set amount of simulation time
-sim_duration = 8
+sim_duration = 7
 runs = 25
 
 params_grid = {
@@ -36,7 +36,7 @@ params_grid = {
     'bsrTimer': 2.0,
     'bw': 5e8,
     'ccRatio': 0.5,
-    'condition': 'l',
+    'condition': 'a',
     'embbOn': True,
     'embbUdpIPI': embb_IPI_grid,
     'f0': 10e9,  # URLCC's CC
@@ -48,7 +48,7 @@ params_grid = {
     'numEmbbUes': 10,
     'numEnbs': 1,
     'numUrllcUes': 10,
-    'rho': 20,
+    'rho': 200,
     'reorderingTimer': 1.0,
     'runSet': list(range(runs)),
     'RngRun' : 1,

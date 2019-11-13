@@ -209,8 +209,7 @@ def plot_metrics_generic(metric_bucket, metric, prot, s_path, unit, vs=None):
     """
     # Make sure figure is clean
     plt.clf()
-    # Avoid having strange ticks formatting
-    plt.ticklabel_format(useOffset=False)
+
 
     # Build dataframe
     metric_data = []
@@ -235,6 +234,8 @@ def plot_metrics_generic(metric_bucket, metric, prot, s_path, unit, vs=None):
     # Colors
     # fig, (box_ax, viol_ax) = plt.subplots(2, 1, constrained_layout=True, sharex=True, sharey=True)
     fig, ax = plt.subplots(constrained_layout=True)
+    # Avoid having strange ticks formatting
+    plt.ticklabel_format(useOffset=False, style='plain')
 
     dark_palette = ['#465782', '#7a4e4f']
     light_palette = ['#90a5e0', '#c27a7c']
