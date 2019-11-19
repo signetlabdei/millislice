@@ -541,11 +541,6 @@ def throughput_app(trace_data, bearer_type):
                                             item['params']['maxStart'])*1e6)  # computing overall throughput
         # computing per user throughput
         if bearer_type == 'urllc':
-            print('Overall throughput:')
-            print(g)
-            print('Amount of users:')
-            print(item['params']['numUrllcUes'])
-
             single_g = g/(item['params']['numUrllcUes'])
         else:
             single_g = g/(item['params']['numEmbbUes'])
