@@ -540,7 +540,7 @@ def throughput_app(trace_data, bearer_type):
         g = (len(item['results'].index)*1024*8)/((item['params']['appEnd'] -
                                             item['params']['maxStart'])*1e6)  # computing overall throughput
         # computing per user throughput
-        if bearer_type == 'urllc':
+        if bearer_type == 'URLLC':
             single_g = g/(item['params']['numUrllcUes'])
         else:
             single_g = g/(item['params']['numEmbbUes'])
