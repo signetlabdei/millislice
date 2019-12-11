@@ -863,7 +863,7 @@ MmWaveSlicingDrbComponentCarrierManager::ComputeAggregateRLCLoad()
     uint32_t partialSum = 0;
     for(auto elem : lc_elem.second)
     {
-      partialSum =+ elem.second;
+      partialSum += elem.second;
     }
     aggrLoad[lc_elem.first] = partialSum;
   } 
