@@ -841,8 +841,33 @@ MmWaveSlicingDrbComponentCarrierManager::GenerateUpdateLog()
         logString << "RNTI: " << elem.first << " " << "QueueSize: " << elem.second << std::endl;
       }
     } 
+    // Log aggregate 
+    logString << std::endl << "Aggregate load: " << std::endl;
+
+    std::map <uint16_t, uint32_t>  aggrMap = ComputeAggregateRLCLoad();
+    for(auto agg_elem : aggrMap)
+    {
+      logString << "LC ID: " << agg_elem.first << "Total load: " << agg_elem.second << std::endl;
+    } 
+
     logString << "---------------------" << std::endl;
     return logString.str();
+}
+
+std::map <uint16_t, uint32_t> 
+MmWaveSlicingDrbComponentCarrierManager::ComputeAggregateRLCLoad()
+{
+  std::map <uint16_t, uint32_t> aggrLoad;
+  for(auto lc_elem : m_flowsBufferStatusMap)
+  {
+    uint32_t partialSum = 0;
+    for(auto elem : lc_elem.second)
+    {
+      partialSum =+ elem.second;
+    }
+    aggrLoad[lc_elem.first] = partialSum;
+  } 
+  return aggrLoad;
 }
 
 void 
@@ -867,6 +892,14 @@ MmWaveSlicingDrbComponentCarrierManager::UpdateBufferStatusMap(LteMacSapProvider
     // Is it working?
     NS_LOG_WARN (MmWaveSlicingDrbComponentCarrierManager::GenerateUpdateLog ());
   }
+}
+
+uint8_t 
+MmWaveSlicingDrbComponentCarrierManager::BlindPriorityBSRScheduler()
+{
+  // Get aggregate load of the RLCs for the various LC IDs
+
+  return 0;
 }
 
 void

@@ -257,7 +257,14 @@ protected:
   // This function has the purpose of, once provided with a BSR, update the info regarding such user and LCID
   void UpdateBufferStatusMap(LteMacSapProvider::ReportBufferStatusParameters params);
 
+  // Looks at the current load of the various RLCs and decides on which carrier to send the BSR
+  uint8_t BlindPriorityBSRScheduler(); // If there are URLLC packets, send no other packet on such CC
+
+  // Just logging function, in order to debug
   std::string GenerateUpdateLog();
+
+  // Return a map associating LC IDs and aggregate load of the respectives RLCs buffers
+  std::map <uint16_t, uint32_t> ComputeAggregateRLCLoad();
 
   // Inherited methods
   virtual void DoReportBufferStatus (LteMacSapProvider::ReportBufferStatusParameters params);
