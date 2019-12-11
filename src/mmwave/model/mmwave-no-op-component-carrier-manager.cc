@@ -803,6 +803,8 @@ NS_OBJECT_ENSURE_REGISTERED (MmWaveSlicingDrbComponentCarrierManager);
 
 MmWaveSlicingDrbComponentCarrierManager::MmWaveSlicingDrbComponentCarrierManager ()
 {
+  // Initialize the needed maps (?)
+
   NS_LOG_FUNCTION (this);
 
 }
@@ -823,6 +825,26 @@ MmWaveSlicingDrbComponentCarrierManager::GetTypeId ()
   return tid;
 }
 
+void 
+MmWaveSlicingDrbComponentCarrierManager::UpdateBufferStatusMap(LteMacSapProvider::ReportBufferStatusParameters params)
+{
+  NS_LOG_FUNCTION (this);
+
+  // Exclude flows reserved for non-DRBs
+  if (params.lcid != 0 || params.lcid != 1)
+  {
+    // Is this combination of flow/user already tracked? If not, start tracking
+    if(m_flowsBufferStatusMap.find(params.lcid) == m_flowsBufferStatusMap.end())
+    {
+      std::map <uint16_t, uint32_t> newLcidMap = {{ params.rnti, params.txQueueSize }};
+      m_flowsBufferStatusMap.insert(std::pair <uint16_t, std::map <uint16_t, uint32_t> >(params.lcid, newLcidMap));
+    }
+    else // There exists already a map containing info for such LC ID, update info or insert new entry if user not there already
+    {
+      m_flowsBufferStatusMap.find(params.lcid)->second[params.rnti] = params.txQueueSize + params.retxQueueSize;
+    }
+  }
+}
 
 void
 MmWaveSlicingDrbComponentCarrierManager::DoReportBufferStatus (LteMacSapProvider::ReportBufferStatusParameters params)
@@ -830,6 +852,10 @@ MmWaveSlicingDrbComponentCarrierManager::DoReportBufferStatus (LteMacSapProvider
   NS_LOG_FUNCTION (this);
 
   NS_ASSERT_MSG(m_enabledComponentCarrier.find(params.rnti)!=m_enabledComponentCarrier.end(), " UE with provided RNTI not found. RNTI:"<<params.rnti);
+
+
+  // Test map update process
+  UpdateBufferStatusMap(params);
 
   uint32_t numberOfCarriersForUe = m_enabledComponentCarrier.find (params.rnti)->second;
   if (params.lcid == 0 || params.lcid == 1 || numberOfCarriersForUe == 1)

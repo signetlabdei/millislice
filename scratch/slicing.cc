@@ -179,7 +179,7 @@ int main(int argc, char *argv[])
 	Config::SetDefault("ns3::MmWaveHelper::NumberOfComponentCarriers", UintegerValue(numCc));
 	if (splitDrb)
 	{
-		Config::SetDefault("ns3::MmWaveHelper::EnbComponentCarrierManager", StringValue("ns3::MmWaveSplitDrbComponentCarrierManager"));
+		Config::SetDefault("ns3::MmWaveHelper::EnbComponentCarrierManager", StringValue("ns3::MmWaveSlicingDrbComponentCarrierManager"));
 	}
 	else
 	{

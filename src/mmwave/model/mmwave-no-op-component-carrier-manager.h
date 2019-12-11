@@ -250,10 +250,12 @@ public:
   static TypeId GetTypeId ();
 
 protected:
-  // Map associating each user to its RLC Buffer Status
+  
+// Map associating LC IDs and map of RNITs and statuses of the buffer
+  std::map <uint16_t, std::map <uint16_t, uint32_t> > m_flowsBufferStatusMap; // Map associating LCIDs and map of users and their buffers
 
-  typedef std::map <uint16_t, uint32_t > m_uesBufferStatusMap; // Map associating RNTIs and status of the buffer
-  std::map <uint16_t, m_uesBufferStatusMap > m_flowsBufferStatusMap; // Map associating LCIDs and map of users and their buffers
+  // This function has the purpose of, once provided with a BSR, update the info regarding such user and LCID
+  void UpdateBufferStatusMap(LteMacSapProvider::ReportBufferStatusParameters params);
 
   // Inherited methods
   virtual void DoReportBufferStatus (LteMacSapProvider::ReportBufferStatusParameters params);
