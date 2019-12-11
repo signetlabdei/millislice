@@ -699,7 +699,7 @@ MmWaveSplitDrbComponentCarrierManager::DoReportBufferStatus (LteMacSapProvider::
 {
   NS_LOG_FUNCTION (this);
 
-  NS_ASSERT_MSG( m_enabledComponentCarrier.find(params.rnti)!=m_enabledComponentCarrier.end(), " UE with provided RNTI not found. RNTI:"<<params.rnti);
+  NS_ASSERT_MSG(m_enabledComponentCarrier.find(params.rnti)!=m_enabledComponentCarrier.end(), " UE with provided RNTI not found. RNTI:"<<params.rnti);
 
   uint32_t numberOfCarriersForUe = m_enabledComponentCarrier.find (params.rnti)->second;
   if (params.lcid == 0 || params.lcid == 1 || numberOfCarriersForUe == 1)
@@ -712,7 +712,7 @@ MmWaveSplitDrbComponentCarrierManager::DoReportBufferStatus (LteMacSapProvider::
     {
       uint8_t cc = 0;
       uint8_t qci = m_rlcLcInstantiated.find(params.rnti)->second.find(params.lcid)->second.qci;
-      if( m_qciCcMap.find (qci) != m_qciCcMap.end() )
+      if( m_qciCcMap.find (qci) != m_qciCcMap.end() )       
       {
         cc = m_qciCcMap.at (qci);
         NS_LOG_INFO ("RNTI " << params.rnti << " lcid " << (uint32_t) params.lcid << " " << (uint16_t)qci << " CC " << (uint16_t)cc);
@@ -796,6 +796,76 @@ MmWaveSplitDrbComponentCarrierManager::DoUlReceiveMacCe (MacCeListElement_s bsr,
     }
 }
 
+///////////////////////////////////////////////////
+// Slicing Carrier Manager
+
+NS_OBJECT_ENSURE_REGISTERED (MmWaveSlicingDrbComponentCarrierManager);
+
+MmWaveSlicingDrbComponentCarrierManager::MmWaveSlicingDrbComponentCarrierManager ()
+{
+  NS_LOG_FUNCTION (this);
+
+}
+
+MmWaveSlicingDrbComponentCarrierManager::~MmWaveSlicingDrbComponentCarrierManager ()
+{
+  NS_LOG_FUNCTION (this);
+}
+
+TypeId
+MmWaveSlicingDrbComponentCarrierManager::GetTypeId ()
+{
+  static TypeId tid = TypeId ("ns3::MmWaveSlicingDrbComponentCarrierManager")
+                .SetParent<MmWaveNoOpComponentCarrierManager> ()
+                .SetGroupName("Lte")
+                .AddConstructor<MmWaveSlicingDrbComponentCarrierManager> ()
+                ;
+  return tid;
+}
+
+
+void
+MmWaveSlicingDrbComponentCarrierManager::DoReportBufferStatus (LteMacSapProvider::ReportBufferStatusParameters params)
+{
+  NS_LOG_FUNCTION (this);
+
+  NS_ASSERT_MSG(m_enabledComponentCarrier.find(params.rnti)!=m_enabledComponentCarrier.end(), " UE with provided RNTI not found. RNTI:"<<params.rnti);
+
+  uint32_t numberOfCarriersForUe = m_enabledComponentCarrier.find (params.rnti)->second;
+  if (params.lcid == 0 || params.lcid == 1 || numberOfCarriersForUe == 1)
+    {
+      NS_LOG_INFO("Buffer status forwarded to the primary carrier.");
+      auto ueManager = m_ccmRrcSapUser->GetUeManager (params.rnti);
+      m_macSapProvidersMap.at (ueManager->GetComponentCarrierId ())->ReportBufferStatus (params);
+    }
+  else
+    {
+      uint8_t cc = 0;
+      uint8_t qci = m_rlcLcInstantiated.find(params.rnti)->second.find(params.lcid)->second.qci;
+      if( m_qciCcMap.find (qci) != m_qciCcMap.end() )       
+      {
+        cc = m_qciCcMap.at (qci);
+        NS_LOG_INFO ("RNTI " << params.rnti << " lcid " << (uint32_t) params.lcid << " " << (uint16_t)qci << " CC " << (uint16_t)cc);
+      }
+
+      if (cc == 0)
+      {
+        m_macSapProvidersMap.find (cc)->second->ReportBufferStatus (params);
+      }
+      else
+      {
+        LteMacSapProvider::ReportBufferStatusParameters newParams = params;
+        newParams.statusPduSize = 0;
+        m_macSapProvidersMap.find (cc)->second->ReportBufferStatus (newParams);
+
+        params.txQueueSize = 0;
+        params.txQueueHolDelay = 0;
+        params.retxQueueSize = 0;
+        params.retxQueueHolDelay = 0;
+        m_macSapProvidersMap.find (0)->second->ReportBufferStatus (params);
+      }
+    }
+  }
 } // end of namespace mmwave
 
 } // end of namespace ns3

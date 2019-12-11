@@ -211,6 +211,9 @@ protected:
 
 }; // end of class MmWaveBaRrComponentCarrierManager
 
+// Extend MmWaveNoOpComponentCarrierManager as MmWaveSplitDrbComponentCarrierManager
+// to make a different CCManager
+
 class MmWaveSplitDrbComponentCarrierManager : public MmWaveNoOpComponentCarrierManager
 {
 public:
@@ -230,6 +233,32 @@ protected:
   virtual void DoUlReceiveMacCe (MacCeListElement_s bsr, uint8_t componentCarrierId);
 
 }; // end of class MmWaveSplitDrbComponentCarrierManager
+
+// Extend MmWaveNoOpComponentCarrierManager as MmWaveSlicingDrbComponentCarrierManager
+// to make a different CCManager, suited to Slicing needs
+
+class MmWaveSlicingDrbComponentCarrierManager : public MmWaveNoOpComponentCarrierManager
+{
+public:
+
+  MmWaveSlicingDrbComponentCarrierManager ();
+  virtual ~MmWaveSlicingDrbComponentCarrierManager ();
+  /**
+   * \brief Get the type ID.
+   * \return the object TypeId
+   */
+  static TypeId GetTypeId ();
+
+protected:
+  // Map associating each user to its RLC Buffer Status
+
+  typedef std::map <uint16_t, uint32_t > m_uesBufferStatusMap; // Map associating RNTIs and status of the buffer
+  std::map <uint16_t, m_uesBufferStatusMap > m_flowsBufferStatusMap; // Map associating LCIDs and map of users and their buffers
+
+  // Inherited methods
+  virtual void DoReportBufferStatus (LteMacSapProvider::ReportBufferStatusParameters params);
+
+}; // end of class MmWaveSlicingDrbComponentCarrierManager
 
 } // end of namespace mmwave
 
