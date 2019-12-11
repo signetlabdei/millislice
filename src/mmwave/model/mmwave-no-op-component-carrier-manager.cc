@@ -806,6 +806,7 @@ MmWaveSlicingDrbComponentCarrierManager::MmWaveSlicingDrbComponentCarrierManager
   // Initialize the needed maps (?)
 
   NS_LOG_FUNCTION (this);
+  LogComponentEnable ("MmWaveNoOpComponentCarrierManager", LOG_LEVEL_WARN);
 
 }
 
@@ -825,13 +826,32 @@ MmWaveSlicingDrbComponentCarrierManager::GetTypeId ()
   return tid;
 }
 
+std::string 
+MmWaveSlicingDrbComponentCarrierManager::GenerateUpdateLog()
+{
+    std::ostringstream logString;
+    logString << "---------------------" << std::endl;
+    logString << Simulator::Now () << std::endl;
+
+    for(auto lc_elem : m_flowsBufferStatusMap)
+    {
+      logString << "LC ID: " << lc_elem.first << std::endl;
+      for(auto elem : lc_elem.second)
+      {
+        logString << "RNTI: " << elem.first << " " << "QueueSize: " << elem.second << std::endl;
+      }
+    } 
+    logString << "---------------------" << std::endl;
+    return logString.str();
+}
+
 void 
 MmWaveSlicingDrbComponentCarrierManager::UpdateBufferStatusMap(LteMacSapProvider::ReportBufferStatusParameters params)
 {
   NS_LOG_FUNCTION (this);
 
   // Exclude flows reserved for non-DRBs
-  if (params.lcid != 0 || params.lcid != 1)
+  if (params.lcid != 0 && params.lcid != 1)
   {
     // Is this combination of flow/user already tracked? If not, start tracking
     if(m_flowsBufferStatusMap.find(params.lcid) == m_flowsBufferStatusMap.end())
@@ -843,6 +863,9 @@ MmWaveSlicingDrbComponentCarrierManager::UpdateBufferStatusMap(LteMacSapProvider
     {
       m_flowsBufferStatusMap.find(params.lcid)->second[params.rnti] = params.txQueueSize + params.retxQueueSize;
     }
+
+    // Is it working?
+    NS_LOG_WARN (MmWaveSlicingDrbComponentCarrierManager::GenerateUpdateLog ());
   }
 }
 

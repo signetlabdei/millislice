@@ -257,6 +257,8 @@ protected:
   // This function has the purpose of, once provided with a BSR, update the info regarding such user and LCID
   void UpdateBufferStatusMap(LteMacSapProvider::ReportBufferStatusParameters params);
 
+  std::string GenerateUpdateLog();
+
   // Inherited methods
   virtual void DoReportBufferStatus (LteMacSapProvider::ReportBufferStatusParameters params);
 

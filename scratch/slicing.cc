@@ -213,8 +213,6 @@ int main(int argc, char *argv[])
 	Ptr<mmwave::MmWaveHelper> helper = CreateObject<mmwave::MmWaveHelper>();
 	helper->SetCcPhyParams(ccMap);
 
-	NS_LOG_UNCOND("Test log");
-
 	if (splitDrb)
 	{
 		// Create the DRB - CC map
