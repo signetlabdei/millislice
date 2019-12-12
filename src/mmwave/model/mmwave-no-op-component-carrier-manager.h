@@ -260,8 +260,8 @@ protected:
   void UpdateBufferStatusMap(LteMacSapProvider::ReportBufferStatusParameters params);
 
   // Looks at the current load of the various RLCs and decides on which carrier to send the BSR
-  // Return map associating CCs and load to set for each of them
- std::map <uint8_t, uint32_t>  BlindPriorityBSRScheduler(LteMacSapProvider::ReportBufferStatusParameters params); 
+  // Return map associating CCs and BSR to send to them (with according load)
+ std::map <uint8_t, LteMacSapProvider::ReportBufferStatusParameters>  BlindPriorityBSRScheduler(LteMacSapProvider::ReportBufferStatusParameters params); 
 
   // Just logging function, in order to debug
   std::string GenerateUpdateLog();

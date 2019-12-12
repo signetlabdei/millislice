@@ -674,8 +674,6 @@ NS_OBJECT_ENSURE_REGISTERED (MmWaveSplitDrbComponentCarrierManager);
 MmWaveSplitDrbComponentCarrierManager::MmWaveSplitDrbComponentCarrierManager ()
 {
   NS_LOG_FUNCTION (this);
-  LogComponentEnable ("MmWaveNoOpComponentCarrierManager", LOG_LEVEL_LOGIC);
-
 }
 
 MmWaveSplitDrbComponentCarrierManager::~MmWaveSplitDrbComponentCarrierManager ()
@@ -900,35 +898,32 @@ MmWaveSlicingDrbComponentCarrierManager::UpdateBufferStatusMap(LteMacSapProvider
   }
 }
 
-std::map <uint8_t, uint32_t> 
+std::map <uint8_t, LteMacSapProvider::ReportBufferStatusParameters> 
 MmWaveSlicingDrbComponentCarrierManager::BlindPriorityBSRScheduler(LteMacSapProvider::ReportBufferStatusParameters params)
 {
-  std::map <uint8_t, uint32_t>  choosenCcs;
+  std::map <uint8_t, LteMacSapProvider::ReportBufferStatusParameters> choosenCcs;
 
   // Get aggregate load of the RLCs for the various LC IDs
   std::map <uint16_t, uint32_t> aggrMap = ComputeAggregateRLCLoad ();
 
-  uint32_t numberOfCarriersForUe = m_enabledComponentCarrier.find (params.rnti)->second;
-  if (params.lcid == 0 || params.lcid == 1 || numberOfCarriersForUe == 1)
+  uint8_t qci = m_rlcLcInstantiated.find(params.rnti)->second.find(params.lcid)->second.qci;
+  if( m_qciCcMap.find (qci) != m_qciCcMap.end())       
   {
-    auto ueManager = m_ccmRrcSapUser->GetUeManager (params.rnti);
-    // choosenCc = ueManager->GetComponentCarrierId ();
-  }
-  else
-  {
-    uint8_t qci = m_rlcLcInstantiated.find(params.rnti)->second.find(params.lcid)->second.qci;
-    if( m_qciCcMap.find (qci) != m_qciCcMap.end())       
+    choosenCcs[m_qciCcMap.at (qci)] = LteMacSapProvider::ReportBufferStatusParameters (params); // Preferred CC
+    for(auto elem : aggrMap)
     {
-      choosenCcs[m_qciCcMap.at (qci)] = 0; // Preferred CC
-      for(auto elem : aggrMap)
+      uint8_t secQci =  m_rlcLcInstantiated.find(params.rnti)->second.find(elem.first)->second.qci;
+      if(elem.first != m_qciCcMap.at (secQci) && elem.second <= m_qciTresholdsMap.find(secQci)->second) // For non-preferred CCs, if load smaller than treshold: use them as well
       {
-        uint8_t secQci =  m_rlcLcInstantiated.find(params.rnti)->second.find(elem.first)->second.qci;
-        if(elem.first != m_qciCcMap.at (secQci) && elem.second <= m_qciTresholdsMap.find(secQci)->second) // For non-preferred CCs, if load smaller than treshold: use them as well
-        {
-          // Add such CC to the set of carriers we can distribute this flow upon
-          choosenCcs[m_qciCcMap.at (secQci)] = 0;
-        }
+        // Add such CC to the set of carriers we can distribute this flow upon
+        choosenCcs[m_qciCcMap.at (secQci)] = LteMacSapProvider::ReportBufferStatusParameters (params);
       }
+    }
+    // Spread the data among such CCs
+    for(auto elem : choosenCcs)
+    {
+      elem.second.retxQueueSize = params.retxQueueSize/(choosenCcs.size());
+      elem.second.txQueueSize = params.txQueueSize/(choosenCcs.size());
     }
   }
   return choosenCcs;
@@ -941,12 +936,8 @@ MmWaveSlicingDrbComponentCarrierManager::DoReportBufferStatus (LteMacSapProvider
 
   NS_ASSERT_MSG(m_enabledComponentCarrier.find(params.rnti)!=m_enabledComponentCarrier.end(), " UE with provided RNTI not found. RNTI:"<<params.rnti);
 
-
   // Update buffers map
   UpdateBufferStatusMap(params);
-  // Choose which CCs to use
-  std::map <uint8_t, uint32_t> ccToUseMap = BlindPriorityBSRScheduler(params);
-
 
   uint32_t numberOfCarriersForUe = m_enabledComponentCarrier.find (params.rnti)->second;
   if ( params.txQueueSize != 0 || params.retxQueueSize != 0 || params.statusPduSize != 0 )
@@ -959,14 +950,10 @@ MmWaveSlicingDrbComponentCarrierManager::DoReportBufferStatus (LteMacSapProvider
     }
     else
     {
-      uint8_t cc = 0;
-      uint8_t qci = m_rlcLcInstantiated.find(params.rnti)->second.find(params.lcid)->second.qci;
-      if( m_qciCcMap.find (qci) != m_qciCcMap.end() )       
-      {
-        cc = m_qciCcMap.at (qci);
-        NS_LOG_INFO ("RNTI " << params.rnti << " lcid " << (uint32_t) params.lcid << " " << (uint16_t)qci << " CC " << (uint16_t)cc);
-      }
+      // Pick which CCs to use
+      std::map <uint8_t, LteMacSapProvider::ReportBufferStatusParameters> ccToUseMap = BlindPriorityBSRScheduler(params);
 
+      uint8_t cc = 0;
       if (cc == 0)
       {
         m_macSapProvidersMap.find (cc)->second->ReportBufferStatus (params);
@@ -976,13 +963,14 @@ MmWaveSlicingDrbComponentCarrierManager::DoReportBufferStatus (LteMacSapProvider
         LteMacSapProvider::ReportBufferStatusParameters newParams = params;
         newParams.statusPduSize = 0;
         m_macSapProvidersMap.find (cc)->second->ReportBufferStatus (newParams);
-
         params.txQueueSize = 0;
         params.txQueueHolDelay = 0;
         params.retxQueueSize = 0;
         params.retxQueueHolDelay = 0;
         m_macSapProvidersMap.find (0)->second->ReportBufferStatus (params);
       }
+
+
     }
   }
 }
