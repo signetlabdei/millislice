@@ -10,7 +10,7 @@ campaign = sem.CampaignManager.new(
 # Obtain IPIs from rates
 # eMMB
 embb_packet_size = 1024
-embb_rate_grid = list(range(60, 180, 40))
+embb_rate_grid = list(range(100, 101, 1))
 embb_IPI_grid = []
 for rate in embb_rate_grid:
     # Mbit/s to IPI in microseconds
@@ -26,21 +26,22 @@ for rate in urllc_rate_grid:
 
 
 # Set amount of simulation time
-sim_duration = 7
-runs = 25
+sim_duration = 4
+runs = 10
 
 params_grid = {
-    'appEnd': sim_duration - 2,
+    'appEnd': sim_duration - 1,
     'minStart': 0.3,
     'maxStart': 0.4,
-    'bsrTimer': 2.0,
+    'bsrTimer': 1.0,
     'bw': 5e8,
     'ccRatio': 0.5,
     'condition': 'a',
+    'ccMan': 0,
     'embbOn': True,
     'embbUdpIPI': embb_IPI_grid,
-    'f0': 10e9,  # URLCC's CC
-    'f1': 28e9,  # eMBB's CC
+    'f0': 28e9,  # eMBB's CC
+    'f1': 10e9,  # URLLC's CC
     'filePath': 'test_',
     'fileSize': 512000,
     'lambdaUrllc': 0.2,
@@ -68,6 +69,7 @@ params_grid = {
 print(params_grid)
 campaign.run_missing_simulations(sem.list_param_combinations(params_grid))
 
-# Get missing results for no CA and CC equal to 28GHz
-params_grid.update(mode=1, f0=28e9, f1=10e9)
+# Get missing results for CA, Slciing CC Manager
+params_grid.update(mode=2, ccMan=1)
 campaign.run_missing_simulations(sem.list_param_combinations(params_grid))
+

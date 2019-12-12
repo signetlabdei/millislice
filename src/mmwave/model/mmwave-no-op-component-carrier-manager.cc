@@ -808,7 +808,7 @@ MmWaveSlicingDrbComponentCarrierManager::MmWaveSlicingDrbComponentCarrierManager
   // Initialize the needed maps (?)
 
   NS_LOG_FUNCTION (this);
-  LogComponentEnable ("MmWaveNoOpComponentCarrierManager", LOG_LEVEL_WARN);
+  LogComponentEnable ("MmWaveNoOpComponentCarrierManager", LOG_LEVEL_LOGIC);
 
   m_qciTresholdsMap = {{9, std::numeric_limits<uint8_t>::max()}, {81, 0}}; // Never send URLLC onto worse carrier
 
@@ -861,6 +861,8 @@ MmWaveSlicingDrbComponentCarrierManager::GenerateUpdateLog()
 std::map <uint16_t, uint32_t> 
 MmWaveSlicingDrbComponentCarrierManager::ComputeAggregateRLCLoad()
 {
+  NS_LOG_FUNCTION(this);
+
   std::map <uint16_t, uint32_t> aggrLoad;
   for(auto lc_elem : m_flowsBufferStatusMap)
   {
@@ -901,20 +903,29 @@ MmWaveSlicingDrbComponentCarrierManager::UpdateBufferStatusMap(LteMacSapProvider
 std::map <uint8_t, LteMacSapProvider::ReportBufferStatusParameters> 
 MmWaveSlicingDrbComponentCarrierManager::BlindPriorityBSRScheduler(LteMacSapProvider::ReportBufferStatusParameters params)
 {
+  NS_LOG_FUNCTION(this);
+
   std::map <uint8_t, LteMacSapProvider::ReportBufferStatusParameters> choosenCcs;
 
   // Get aggregate load of the RLCs for the various LC IDs
   std::map <uint16_t, uint32_t> aggrMap = ComputeAggregateRLCLoad ();
-
   uint8_t qci = m_rlcLcInstantiated.find(params.rnti)->second.find(params.lcid)->second.qci;
   if( m_qciCcMap.find (qci) != m_qciCcMap.end())       
   {
+    NS_LOG_LOGIC("Primary QCI and CC:");
+    NS_LOG_LOGIC(std::to_string(qci));
+    NS_LOG_LOGIC(std::to_string(m_qciCcMap.at (qci)));
     choosenCcs[m_qciCcMap.at (qci)] = LteMacSapProvider::ReportBufferStatusParameters (params); // Preferred CC
+    NS_LOG_LOGIC("Size of aggrMap:");
+    NS_LOG_LOGIC(aggrMap.size());
     for(auto elem : aggrMap)
     {
       uint8_t secQci =  m_rlcLcInstantiated.find(params.rnti)->second.find(elem.first)->second.qci;
-      if(elem.first != m_qciCcMap.at (secQci) && elem.second <= m_qciTresholdsMap.find(secQci)->second) // For non-preferred CCs, if load smaller than treshold: use them as well
+      if(qci != secQci && elem.second >= m_qciTresholdsMap.find(secQci)->second) // For non-preferred CCs, if load smaller than treshold: use them as well
       {
+        NS_LOG_LOGIC("Secondary QCI and CC:");
+        NS_LOG_LOGIC(std::to_string(secQci));
+        NS_LOG_LOGIC(std::to_string(m_qciCcMap.at (secQci)));
         // Add such CC to the set of carriers we can distribute this flow upon
         choosenCcs[m_qciCcMap.at (secQci)] = LteMacSapProvider::ReportBufferStatusParameters (params);
       }
@@ -922,6 +933,8 @@ MmWaveSlicingDrbComponentCarrierManager::BlindPriorityBSRScheduler(LteMacSapProv
     // Spread the data among such CCs
     for(auto elem : choosenCcs)
     {
+      NS_LOG_LOGIC("ChoosenCC:");
+      NS_LOG_LOGIC(std::to_string(elem.first));
       elem.second.retxQueueSize = params.retxQueueSize/(choosenCcs.size());
       elem.second.txQueueSize = params.txQueueSize/(choosenCcs.size());
     }
@@ -933,7 +946,6 @@ void
 MmWaveSlicingDrbComponentCarrierManager::DoReportBufferStatus (LteMacSapProvider::ReportBufferStatusParameters params)
 {
   NS_LOG_FUNCTION (this);
-
   NS_ASSERT_MSG(m_enabledComponentCarrier.find(params.rnti)!=m_enabledComponentCarrier.end(), " UE with provided RNTI not found. RNTI:"<<params.rnti);
 
   // Update buffers map
@@ -963,9 +975,11 @@ MmWaveSlicingDrbComponentCarrierManager::DoReportBufferStatus (LteMacSapProvider
         }
         else
         {
-          LteMacSapProvider::ReportBufferStatusParameters dataParams, controlParams = elem.second;
+          LteMacSapProvider::ReportBufferStatusParameters dataParams = elem.second;
           dataParams.statusPduSize = 0;
           m_macSapProvidersMap.find (cc)->second->ReportBufferStatus (dataParams);
+
+          LteMacSapProvider::ReportBufferStatusParameters controlParams = elem.second;
           controlParams.txQueueSize = 0;
           controlParams.txQueueHolDelay = 0;
           controlParams.retxQueueSize = 0;
