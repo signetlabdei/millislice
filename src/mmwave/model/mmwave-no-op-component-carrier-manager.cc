@@ -953,24 +953,26 @@ MmWaveSlicingDrbComponentCarrierManager::DoReportBufferStatus (LteMacSapProvider
       // Pick which CCs to use
       std::map <uint8_t, LteMacSapProvider::ReportBufferStatusParameters> ccToUseMap = BlindPriorityBSRScheduler(params);
 
-      uint8_t cc = 0;
-      if (cc == 0)
+      // Send BSRs to such CCs
+      for(auto elem : ccToUseMap)
       {
-        m_macSapProvidersMap.find (cc)->second->ReportBufferStatus (params);
+        uint8_t cc = elem.first;
+        if (cc == 0)
+        {
+          m_macSapProvidersMap.find (cc)->second->ReportBufferStatus (elem.second);
+        }
+        else
+        {
+          LteMacSapProvider::ReportBufferStatusParameters dataParams, controlParams = elem.second;
+          dataParams.statusPduSize = 0;
+          m_macSapProvidersMap.find (cc)->second->ReportBufferStatus (dataParams);
+          controlParams.txQueueSize = 0;
+          controlParams.txQueueHolDelay = 0;
+          controlParams.retxQueueSize = 0;
+          controlParams.retxQueueHolDelay = 0;
+          m_macSapProvidersMap.find (0)->second->ReportBufferStatus (controlParams);
+        }
       }
-      else
-      {
-        LteMacSapProvider::ReportBufferStatusParameters newParams = params;
-        newParams.statusPduSize = 0;
-        m_macSapProvidersMap.find (cc)->second->ReportBufferStatus (newParams);
-        params.txQueueSize = 0;
-        params.txQueueHolDelay = 0;
-        params.retxQueueSize = 0;
-        params.retxQueueHolDelay = 0;
-        m_macSapProvidersMap.find (0)->second->ReportBufferStatus (params);
-      }
-
-
     }
   }
 }
