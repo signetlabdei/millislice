@@ -28,8 +28,9 @@ int main(int argc, char *argv[])
 	double bsrTimer = 2.0;
 	double reorderingTimer = 1.0; 
 	int runSet = 1;
-	int mode = 1;		   // mode 1 = 1 CC, no isolation
-						   			// mode 2 = 2 CC, complete isolation
+	int mode = 1;		   // mode 1 = 1 CC, no isolation; mode 2 = 2 CC, complete isolation
+	int ccMan = 0;			// ccMan = 0 uses SplitDrb CC manager, 1 uses Slicing one
+						   		
 	int scheduler = 1;	 // the MAC scheduler
 	double appEnd = simTime;		   // application start time
 	bool urllcOn = true;   // if true install the ftp application
@@ -67,6 +68,7 @@ int main(int argc, char *argv[])
 	cmd.AddValue("bsrTimer", "BSR timer [ms]", bsrTimer);
 	cmd.AddValue("reorderingTimer", "reordering timer [ms]", reorderingTimer);
 	cmd.AddValue("useRlcAm", "Use rlc am", useRlcAm);
+	cmd.AddValue("ccMan", "0 uses SplitDrb CC manager, 1 uses Slicing one", ccMan);
 	cmd.AddValue("mode", "mode 1 = 1 CC, no isolation, mode 2 = 2 CC, complete isolation", mode);
 	cmd.AddValue("lambdaUrllc", "average number of file/s", lambdaUrllc);
 	cmd.AddValue("segmentSize", "segment size in bytes", segmentSize);
@@ -179,7 +181,14 @@ int main(int argc, char *argv[])
 	Config::SetDefault("ns3::MmWaveHelper::NumberOfComponentCarriers", UintegerValue(numCc));
 	if (splitDrb)
 	{
-		Config::SetDefault("ns3::MmWaveHelper::EnbComponentCarrierManager", StringValue("ns3::MmWaveSlicingDrbComponentCarrierManager"));
+		if(ccMan == 0)
+		{
+			Config::SetDefault("ns3::MmWaveHelper::EnbComponentCarrierManager", StringValue("ns3::MmWaveSplitDrbComponentCarrierManager"));
+		}
+		else if(ccMan == 1)
+		{
+			Config::SetDefault("ns3::MmWaveHelper::EnbComponentCarrierManager", StringValue("ns3::MmWaveSlicingDrbComponentCarrierManager"));
+		}	
 	}
 	else
 	{

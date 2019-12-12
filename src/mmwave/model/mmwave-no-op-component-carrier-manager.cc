@@ -913,7 +913,7 @@ MmWaveSlicingDrbComponentCarrierManager::BlindPriorityBSRScheduler(LteMacSapProv
     uint8_t qci = m_rlcLcInstantiated.find(params.rnti)->second.find(params.lcid)->second.qci;
     if( m_qciCcMap.find (qci) != m_qciCcMap.end())       
     {
-      choosenCc = m_qciCcMap.at (qci);
+      choosenCc = m_qciCcMap.at (qci); // Preferred flow
     }
   }
   return choosenCc;
