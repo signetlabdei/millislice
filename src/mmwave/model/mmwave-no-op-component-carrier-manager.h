@@ -252,13 +252,16 @@ public:
 protected:
   
 // Map associating LC IDs and map of RNITs and statuses of the buffer
-  std::map <uint16_t, std::map <uint16_t, uint32_t> > m_flowsBufferStatusMap; // Map associating LCIDs and map of users and their buffers
+  std::map <uint16_t, std::map <uint16_t, uint32_t> > m_flowsBufferStatusMap; 
+  std::map <uint8_t, uint32_t> m_qciTresholdsMap;
+
 
   // This function has the purpose of, once provided with a BSR, update the info regarding such user and LCID
   void UpdateBufferStatusMap(LteMacSapProvider::ReportBufferStatusParameters params);
 
   // Looks at the current load of the various RLCs and decides on which carrier to send the BSR
-  uint8_t BlindPriorityBSRScheduler(LteMacSapProvider::ReportBufferStatusParameters params); // If there are URLLC packets, send no other packet on such CC
+  // Return map associating CCs and load to set for each of them
+ std::map <uint8_t, uint32_t>  BlindPriorityBSRScheduler(LteMacSapProvider::ReportBufferStatusParameters params); 
 
   // Just logging function, in order to debug
   std::string GenerateUpdateLog();

@@ -674,6 +674,7 @@ NS_OBJECT_ENSURE_REGISTERED (MmWaveSplitDrbComponentCarrierManager);
 MmWaveSplitDrbComponentCarrierManager::MmWaveSplitDrbComponentCarrierManager ()
 {
   NS_LOG_FUNCTION (this);
+  LogComponentEnable ("MmWaveNoOpComponentCarrierManager", LOG_LEVEL_LOGIC);
 
 }
 
@@ -702,13 +703,15 @@ MmWaveSplitDrbComponentCarrierManager::DoReportBufferStatus (LteMacSapProvider::
   NS_ASSERT_MSG(m_enabledComponentCarrier.find(params.rnti)!=m_enabledComponentCarrier.end(), " UE with provided RNTI not found. RNTI:"<<params.rnti);
 
   uint32_t numberOfCarriersForUe = m_enabledComponentCarrier.find (params.rnti)->second;
-  if (params.lcid == 0 || params.lcid == 1 || numberOfCarriersForUe == 1)
+  if ( params.txQueueSize != 0 || params.retxQueueSize != 0 || params.statusPduSize != 0 )
+  {
+    if (params.lcid == 0 || params.lcid == 1 || numberOfCarriersForUe == 1)
     {
       NS_LOG_INFO("Buffer status forwarded to the primary carrier.");
       auto ueManager = m_ccmRrcSapUser->GetUeManager (params.rnti);
       m_macSapProvidersMap.at (ueManager->GetComponentCarrierId ())->ReportBufferStatus (params);
     }
-  else
+    else
     {
       uint8_t cc = 0;
       uint8_t qci = m_rlcLcInstantiated.find(params.rnti)->second.find(params.lcid)->second.qci;
@@ -735,6 +738,7 @@ MmWaveSplitDrbComponentCarrierManager::DoReportBufferStatus (LteMacSapProvider::
         m_macSapProvidersMap.find (0)->second->ReportBufferStatus (params);
       }
     }
+  }
 }
 
 
@@ -807,6 +811,8 @@ MmWaveSlicingDrbComponentCarrierManager::MmWaveSlicingDrbComponentCarrierManager
 
   NS_LOG_FUNCTION (this);
   LogComponentEnable ("MmWaveNoOpComponentCarrierManager", LOG_LEVEL_WARN);
+
+  m_qciTresholdsMap = {{9, std::numeric_limits<uint8_t>::max()}, {81, 0}}; // Never send URLLC onto worse carrier
 
 }
 
@@ -894,10 +900,10 @@ MmWaveSlicingDrbComponentCarrierManager::UpdateBufferStatusMap(LteMacSapProvider
   }
 }
 
-uint8_t 
+std::map <uint8_t, uint32_t> 
 MmWaveSlicingDrbComponentCarrierManager::BlindPriorityBSRScheduler(LteMacSapProvider::ReportBufferStatusParameters params)
 {
-  uint8_t choosenCc;
+  std::map <uint8_t, uint32_t>  choosenCcs;
 
   // Get aggregate load of the RLCs for the various LC IDs
   std::map <uint16_t, uint32_t> aggrMap = ComputeAggregateRLCLoad ();
@@ -906,17 +912,26 @@ MmWaveSlicingDrbComponentCarrierManager::BlindPriorityBSRScheduler(LteMacSapProv
   if (params.lcid == 0 || params.lcid == 1 || numberOfCarriersForUe == 1)
   {
     auto ueManager = m_ccmRrcSapUser->GetUeManager (params.rnti);
-    choosenCc = ueManager->GetComponentCarrierId ();
+    // choosenCc = ueManager->GetComponentCarrierId ();
   }
   else
   {
     uint8_t qci = m_rlcLcInstantiated.find(params.rnti)->second.find(params.lcid)->second.qci;
     if( m_qciCcMap.find (qci) != m_qciCcMap.end())       
     {
-      choosenCc = m_qciCcMap.at (qci); // Preferred flow
+      choosenCcs[m_qciCcMap.at (qci)] = 0; // Preferred CC
+      for(auto elem : aggrMap)
+      {
+        uint8_t secQci =  m_rlcLcInstantiated.find(params.rnti)->second.find(elem.first)->second.qci;
+        if(elem.first != m_qciCcMap.at (secQci) && elem.second <= m_qciTresholdsMap.find(secQci)->second) // For non-preferred CCs, if load smaller than treshold: use them as well
+        {
+          // Add such CC to the set of carriers we can distribute this flow upon
+          choosenCcs[m_qciCcMap.at (secQci)] = 0;
+        }
+      }
     }
   }
-  return choosenCc;
+  return choosenCcs;
 }
 
 void
@@ -927,8 +942,11 @@ MmWaveSlicingDrbComponentCarrierManager::DoReportBufferStatus (LteMacSapProvider
   NS_ASSERT_MSG(m_enabledComponentCarrier.find(params.rnti)!=m_enabledComponentCarrier.end(), " UE with provided RNTI not found. RNTI:"<<params.rnti);
 
 
-  // Test map update process
+  // Update buffers map
   UpdateBufferStatusMap(params);
+  // Choose which CCs to use
+  std::map <uint8_t, uint32_t> ccToUseMap = BlindPriorityBSRScheduler(params);
+
 
   uint32_t numberOfCarriersForUe = m_enabledComponentCarrier.find (params.rnti)->second;
   if ( params.txQueueSize != 0 || params.retxQueueSize != 0 || params.statusPduSize != 0 )
