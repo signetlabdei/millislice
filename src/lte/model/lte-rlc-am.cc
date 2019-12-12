@@ -2756,6 +2756,7 @@ LteRlcAm::DoReportBufferStatus (void)
   else
     {
       NS_LOG_INFO ("ReportBufferStatus don't needed");
+      m_macSapProvider->ReportBufferStatus (r);
     }
 }
 

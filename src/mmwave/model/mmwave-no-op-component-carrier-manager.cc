@@ -895,11 +895,28 @@ MmWaveSlicingDrbComponentCarrierManager::UpdateBufferStatusMap(LteMacSapProvider
 }
 
 uint8_t 
-MmWaveSlicingDrbComponentCarrierManager::BlindPriorityBSRScheduler()
+MmWaveSlicingDrbComponentCarrierManager::BlindPriorityBSRScheduler(LteMacSapProvider::ReportBufferStatusParameters params)
 {
-  // Get aggregate load of the RLCs for the various LC IDs
+  uint8_t choosenCc;
 
-  return 0;
+  // Get aggregate load of the RLCs for the various LC IDs
+  std::map <uint16_t, uint32_t> aggrMap = ComputeAggregateRLCLoad ();
+
+  uint32_t numberOfCarriersForUe = m_enabledComponentCarrier.find (params.rnti)->second;
+  if (params.lcid == 0 || params.lcid == 1 || numberOfCarriersForUe == 1)
+  {
+    auto ueManager = m_ccmRrcSapUser->GetUeManager (params.rnti);
+    choosenCc = ueManager->GetComponentCarrierId ();
+  }
+  else
+  {
+    uint8_t qci = m_rlcLcInstantiated.find(params.rnti)->second.find(params.lcid)->second.qci;
+    if( m_qciCcMap.find (qci) != m_qciCcMap.end())       
+    {
+      choosenCc = m_qciCcMap.at (qci);
+    }
+  }
+  return choosenCc;
 }
 
 void
@@ -914,13 +931,15 @@ MmWaveSlicingDrbComponentCarrierManager::DoReportBufferStatus (LteMacSapProvider
   UpdateBufferStatusMap(params);
 
   uint32_t numberOfCarriersForUe = m_enabledComponentCarrier.find (params.rnti)->second;
-  if (params.lcid == 0 || params.lcid == 1 || numberOfCarriersForUe == 1)
+  if ( params.txQueueSize != 0 || params.retxQueueSize != 0 || params.statusPduSize != 0 )
+  {
+    if (params.lcid == 0 || params.lcid == 1 || numberOfCarriersForUe == 1)
     {
       NS_LOG_INFO("Buffer status forwarded to the primary carrier.");
       auto ueManager = m_ccmRrcSapUser->GetUeManager (params.rnti);
       m_macSapProvidersMap.at (ueManager->GetComponentCarrierId ())->ReportBufferStatus (params);
     }
-  else
+    else
     {
       uint8_t cc = 0;
       uint8_t qci = m_rlcLcInstantiated.find(params.rnti)->second.find(params.lcid)->second.qci;
@@ -948,6 +967,7 @@ MmWaveSlicingDrbComponentCarrierManager::DoReportBufferStatus (LteMacSapProvider
       }
     }
   }
+}
 } // end of namespace mmwave
 
 } // end of namespace ns3
