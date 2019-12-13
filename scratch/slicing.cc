@@ -7,6 +7,7 @@ using namespace mmwave;
 
 double vMin, vMax, rho;	//speed used if test-single-enb-moving scenario is selected
 double minStart, maxStart; // application starting times (or constant one)
+int ccMan;
 
 void SetupScenario(NodeContainer enbNodes, NodeContainer ueNodes, std::string scenario);
 
@@ -29,7 +30,7 @@ int main(int argc, char *argv[])
 	double reorderingTimer = 1.0; 
 	int runSet = 1;
 	int mode = 1;		   // mode 1 = 1 CC, no isolation; mode 2 = 2 CC, complete isolation
-	int ccMan = 1;			// ccMan = 0 uses SplitDrb CC manager, 1 uses Slicing one
+	ccMan = 1;			// ccMan = 0 uses SplitDrb CC manager, 1 uses Slicing one
 						   		
 	int scheduler = 1;	 // the MAC scheduler
 	double appEnd = simTime;		   // application start time

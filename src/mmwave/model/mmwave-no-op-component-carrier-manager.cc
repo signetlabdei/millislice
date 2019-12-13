@@ -810,7 +810,7 @@ MmWaveSlicingDrbComponentCarrierManager::MmWaveSlicingDrbComponentCarrierManager
   NS_LOG_FUNCTION (this);
   LogComponentEnable ("MmWaveNoOpComponentCarrierManager", LOG_LEVEL_LOGIC);
 
-  m_qciTresholdsMap = {{9, std::numeric_limits<uint8_t>::max()}, {81, 0}}; // Never send URLLC onto worse carrier
+  m_qciTresholdsMap = {{9, std::numeric_limits<uint8_t>::max()}, {81, 1025}}; // Never send URLLC onto worse carrier
 
 }
 
