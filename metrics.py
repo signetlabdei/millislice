@@ -86,9 +86,13 @@ def plot_all_metrics(prot, param_ca=None, param_no_ca=None, versus=None):
     plot_distr_bins(metric_frame=sinr_overall(trace_rx_pckt), metric='SINR(dB)', title='Distribution of the SINR of all users, for all simulation runs', s_path=sub_path)
     throughput_app_det(trace_dl, prot, versus, s_path=sub_path)
     plot_metric_box(band_allocation(trace_rx_pckt), s_path=sub_path, metric='Band allocation', title='Band allocation metric')
-    plot_metrics_generic(metric_bucket=pkt_loss_app(trace_dl, trace_ul), metric='Packet loss', prot=prot, s_path=sub_path, unit='', vs=versus)
-    plot_metrics_generic(metric_bucket=throughput_app(trace_dl, bearer_type=prot), metric='Throughput', s_path=sub_path, prot=prot, unit='[Mbit/s]', vs=versus)
-    plot_metrics_generic(metric_bucket=delay_app(trace_dl),  metric='Delay', prot=prot, s_path=sub_path, unit='[ms]', vs=versus)
+
+    info = {'prot':prot, 'metric':'Packet loss', 'unit':''}
+    plot_lines_versus(metric_bucket=pkt_loss_app(trace_dl, trace_ul), s_path=sub_path, info=info, versus=versus)
+    info = {'prot':prot, 'metric':'Throughput', 'unit':'[Mbit/s]'}
+    plot_lines_versus(metric_bucket=throughput_app(trace_dl, bearer_type=prot), info=info, s_path=sub_path, versus=versus)
+    info = {'prot':prot, 'metric':'Delay', 'unit':'[ms]'}
+    plot_lines_versus(metric_bucket=delay_app(trace_dl), info=info, s_path=sub_path, versus=versus)
 
 def print_dict(param_dict):
     out = ''
@@ -101,6 +105,63 @@ def print_dict(param_dict):
             out += f"{param_dict[key]}_"
 
     return out
+
+def plot_lines_versus(metric_bucket, info, s_path, versus):
+
+    fig, ax = plt.subplots(constrained_layout=True)
+    sns.set_style('whitegrid', {'axes.facecolor': '#EAEAF2'})
+
+    metric_data = []
+    mode_data = []
+    ccman_data = []
+    versus_data = []
+
+    for res in metric_bucket:
+        metric_data.append(res['mean'])
+        mode_data.append(res['params']['mode'])
+        ccman_data.append(res['params']['ccMan'])
+        versus_data.append(res['params'][versus])
+
+    frame = {
+        'metric': metric_data,
+        'mode': mode_data,
+        'versus': versus_data,
+        'ccMan': ccman_data
+    }
+
+    metric_frame = pd.DataFrame(data=frame)
+    metric_frame['mode'] =  metric_frame['mode'].replace(1, 'no CA, ')
+    metric_frame['mode'] =  metric_frame['mode'].replace(2, 'CA, ')
+    metric_frame['ccMan'] =  metric_frame['ccMan'].replace(0, 'SplitDrb')
+    metric_frame['ccMan'] =  metric_frame['ccMan'].replace(1, 'SlicingDrb')
+
+    metric_frame['CC strategy'] = metric_frame['mode'] + metric_frame['ccMan']
+    metric_frame['CC strategy'] =  metric_frame['CC strategy'].replace('no CA, SlicingDrb', 'no CA')
+
+    filename = f"{info['prot']}_{info['metric']}_vs{versus}.png"
+
+    versus = sanitize_versus(metric_bucket=metric_frame, vs=versus)
+
+    g = sns.lineplot(data=metric_frame, x='versus', err_style='bars', y='metric', hue='CC strategy')
+
+    # Set graphical properties
+    fig.set_size_inches(count_amount_uniques(versus_data)*2.5, 7.5)
+    # Set title and filename
+    ax.set_xlabel(f"{versus}", fontsize=12)
+    plot_title = f"{info['metric']} {info['prot']} vs. {versus}"
+    ax.set_ylabel(f"{info['metric']} {info['unit']} \n", fontsize=12)
+    fig.suptitle(plot_title + '\n', fontsize=12)
+
+    #Ylim
+    g.set(ylim=(0, None))
+
+    # Save, create dir if doesn't exist       
+    out_dir = f"./slicing-plots/{s_path}/"
+    os.makedirs(out_dir, exist_ok=True)
+    plt.savefig(out_dir + filename)
+
+    plt.close('fig')
+
 
 def plot_line(metric_frame, metric, title, s_path, overlays=None):
 
@@ -209,7 +270,6 @@ def plot_metrics_generic(metric_bucket, metric, prot, s_path, unit, vs=None):
     """
     # Make sure figure is clean
     plt.clf()
-
 
     # Build dataframe
     metric_data = []
@@ -323,7 +383,10 @@ def overlay_means(metric_bucket, palette, vs, vs_data):
 def sanitize_versus(metric_bucket, vs):
     if(vs == 'embbUdpIPI'):
         metric_bucket['versus'] = round(1024*8/(metric_bucket['versus'])) # packet_size*bits in a bye/rate
-        return 'UDP sources datarate [Mbit/s]'  
+        return 'eMBB sources rate [Mbit/s]'  
+    if(vs == 'urllcUdpIPI'):
+        metric_bucket['versus'] = round(1024*8/(metric_bucket['versus'])) # packet_size*bits in a bye/rate
+        return 'URLLC sources rate [Mbit/s]'
 
 def find_elements(bucket, param, value):
     out = []
@@ -651,22 +714,10 @@ plot_all_metrics(prot='embb', param_ca=ca_params, param_no_ca=no_ca_params, vers
 print('--------')
 '''
 
-print('CA using f0=28GHz, f1=10Ghz; non CA using f0=28Ghz and  SplitDrbCCManager')
+print('CA using f0=28GHz, f1=10Ghz; non CA using f0=28Ghz')
 
 print('Metrics vs ccMan')
-ca_params = {'f0': 28e9, 'f1':10e9, 'mode': 2, 'ccMan':0}
-no_ca_params = {'f0': 28e9, 'mode': 1}
-
-print('Computing URLLC stats')
-plot_all_metrics(prot='urllc', param_ca=ca_params, param_no_ca=no_ca_params, versus='embbUdpIPI')
-print('Computing eMBB stats')
-plot_all_metrics(prot='embb', param_ca=ca_params, param_no_ca=no_ca_params, versus='embbUdpIPI')
-print('--------')
-
-print('CA using f0=28GHz, f1=10Ghz; non CA using f0=28Ghz and  SlicingDrbCCManager')
-
-print('Metrics vs ccMan')
-ca_params = {'f0': 28e9, 'f1':10e9, 'mode': 2, 'ccMan':1}
+ca_params = {'f0': 28e9, 'f1':10e9, 'mode': 2}
 no_ca_params = {'f0': 28e9, 'mode': 1}
 
 print('Computing URLLC stats')
