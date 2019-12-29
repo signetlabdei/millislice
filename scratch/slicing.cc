@@ -67,7 +67,7 @@ int main(int argc, char *argv[])
 	cmd.AddValue("runSet", "Run number", runSet);
 	cmd.AddValue("bw", "Total bandwidth", bw);
 	cmd.AddValue("ccRatio", "bandwidth CC0 / bandwidth CC1", ccRatio);
-	cmd.AddValue("urllcTres", "Tres of max URLLC packets that allow using its carrier for other flows");
+	cmd.AddValue("urllcTres", "Tres of max URLLC packets that allow using its carrier for other flows", urllcTres);
 	cmd.AddValue("bsrTimer", "BSR timer [ms]", bsrTimer);
 	cmd.AddValue("reorderingTimer", "reordering timer [ms]", reorderingTimer);
 	cmd.AddValue("useRlcAm", "Use rlc am", useRlcAm);
@@ -192,7 +192,7 @@ int main(int argc, char *argv[])
 		{
 			Config::SetDefault("ns3::MmWaveHelper::EnbComponentCarrierManager", StringValue("ns3::MmWaveSlicingDrbComponentCarrierManager"));
 			// Set the URLLC tres
-			Config::SetDefault("ns3::MmWaveNoOpComponentCarrierManager::MmWaveSlicingDrbComponentCarrierManager", UintegerValue (urllcTres*1024));
+			Config::SetDefault("ns3::MmWaveSlicingDrbComponentCarrierManager::urllcTres", UintegerValue (urllcTres*1024));
 
 		}	
 	}
