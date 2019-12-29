@@ -142,11 +142,13 @@ def plot_lines_versus(metric_bucket, info, s_path, versus):
     }
 
     metric_frame = group_cc_strat(pd.DataFrame(data=frame))
+    print(metric_frame.to_string())
 
     filename = f"{info['prot']}_{info['metric']}_vs{versus}.png"
 
-    versus = sanitize_versus(metric_bucket=metric_frame, vs=versus)
-
+    temp = sanitize_versus(metric_bucket=metric_frame, vs=versus)
+    if temp is not None:
+        versus = temp
     g = sns.lineplot(data=metric_frame, x='versus', y='metric', hue='CC strategy') #  err_style='bars'
 
     # Set graphical properties
@@ -158,7 +160,7 @@ def plot_lines_versus(metric_bucket, info, s_path, versus):
     fig.suptitle(plot_title + '\n', fontsize=12)
 
     #Ylim
-    g.set(ylim=(0, None))
+    #g.set(ylim=(0, None))
 
     # Save, create dir if doesn't exist       
     out_dir = f"./slicing-plots/{s_path}/"
@@ -239,7 +241,6 @@ def plot_metric_box(metric_frame, metric, title, s_path, versus):
     leg.legendHandles[0].set_visible(False)
     # Plot cc0 on foreground
     sns.barplot(x='versus', y='band_alloc_cc0', hue='CC strategy', data=metric_frame, palette=sns.color_palette('muted'))
-
 
     # Title, labels ecc.
     fig.set_size_inches(5, 7)
@@ -708,17 +709,7 @@ plot_all_metrics(prot='urllc', param_ca=ca_params, param_no_ca=no_ca_params, ver
 print('Computing eMBB stats')
 plot_all_metrics(prot='embb', param_ca=ca_params, param_no_ca=no_ca_params, versus='ccRatio')
 
-
-print('Metrics vs embbIPI')
-print('Computing URLLC stats')
-ca_params = {'f0': 10e9, 'f1':28e9, 'mode': 2}
-no_ca_params = {'f0': 10e9, 'mode': 1}
-plot_all_metrics(prot='urllc', param_ca=ca_params, param_no_ca=no_ca_params, versus='embbUdpIPI')
-print('Computing eMBB stats')
-plot_all_metrics(prot='embb', param_ca=ca_params, param_no_ca=no_ca_params, versus='embbUdpIPI')
-print('--------')
 '''
-
 print('CA using f0=28GHz, f1=10Ghz; non CA using f0=28Ghz')
 
 print('Metrics vs ccMan')
@@ -726,7 +717,7 @@ ca_params = {'f0': 28e9, 'f1':10e9, 'mode': 2}
 no_ca_params = {'f0': 28e9, 'mode': 1}
 
 print('Computing URLLC stats')
-plot_all_metrics(prot='urllc', param_ca=ca_params, param_no_ca=no_ca_params, versus='embbUdpIPI')
+plot_all_metrics(prot='urllc', param_ca=ca_params, param_no_ca=no_ca_params, versus='urllcTres')
 print('Computing eMBB stats')
-plot_all_metrics(prot='embb', param_ca=ca_params, param_no_ca=no_ca_params, versus='embbUdpIPI')
+plot_all_metrics(prot='embb', param_ca=ca_params, param_no_ca=no_ca_params, versus='urllcTres')
 print('--------')
