@@ -27,6 +27,8 @@
 #include "mmwave-no-op-component-carrier-manager.h"
 #include <ns3/log.h>
 #include <ns3/random-variable-stream.h>
+#include <ns3/object-map.h>
+#include <ns3/object-factory.h>
 
 namespace ns3 {
 
@@ -826,8 +828,18 @@ MmWaveSlicingDrbComponentCarrierManager::GetTypeId ()
                 .SetParent<MmWaveNoOpComponentCarrierManager> ()
                 .SetGroupName("Lte")
                 .AddConstructor<MmWaveSlicingDrbComponentCarrierManager> ()
-                ;
+                .AddAttribute ("urllcTres",
+									  "Tres of max URLLC bytes that allow using its carrier for other flows",
+									  UintegerValue (1025),
+									  MakeUintegerAccessor (&MmWaveSlicingDrbComponentCarrierManager::setUrllcTres),
+									  MakeUintegerChecker<uint32_t> ());
   return tid;
+}
+
+void 
+MmWaveSlicingDrbComponentCarrierManager::setUrllcTres(uint32_t tres)
+{
+  m_qciTresholdsMap[81] = tres;
 }
 
 std::string 

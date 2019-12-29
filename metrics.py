@@ -142,7 +142,7 @@ def plot_lines_versus(metric_bucket, info, s_path, versus):
 
     versus = sanitize_versus(metric_bucket=metric_frame, vs=versus)
 
-    g = sns.lineplot(data=metric_frame, x='versus', err_style='bars', y='metric', hue='CC strategy')
+    g = sns.lineplot(data=metric_frame, x='versus', y='metric', hue='CC strategy') #  err_style='bars'
 
     # Set graphical properties
     fig.set_size_inches(count_amount_uniques(versus_data)*2.5, 7.5)

@@ -251,10 +251,14 @@ public:
 
 protected:
   
-// Map associating LC IDs and map of RNITs and statuses of the buffer
+  // Dummies just to simplify attributes creation...placholder
+  uint32_t urllcTres;
+
+  // Map associating LC IDs and map of RNITs and statuses of the buffer
   std::map <uint16_t, std::map <uint16_t, uint32_t> > m_flowsBufferStatusMap; 
   std::map <uint8_t, uint32_t> m_qciTresholdsMap;
 
+  void setUrllcTres(uint32_t tres);
 
   // This function has the purpose of, once provided with a BSR, update the info regarding such user and LCID
   void UpdateBufferStatusMap(LteMacSapProvider::ReportBufferStatusParameters params);

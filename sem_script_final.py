@@ -10,7 +10,7 @@ campaign = sem.CampaignManager.new(
 # Obtain IPIs from rates
 # eMMB
 embb_packet_size = 1024
-embb_rate_grid = list(range(100, 101, 1))
+embb_rate_grid = list(range(100, 110, 10))
 embb_IPI_grid = []
 for rate in embb_rate_grid:
     # Mbit/s to IPI in microseconds
@@ -24,13 +24,16 @@ for rate in urllc_rate_grid:
     temp_IPI = urllc_packet_size*8/(rate)
     urllc_IPI_grid.append(int(round(temp_IPI)))
 
+# URLLC tresholds
+urllc_tres_grid = list(range(1, 6, 2))
+
 
 # Set amount of simulation time
-sim_duration = 7
-runs = 25
+sim_duration = 0.85
+runs = 4
 
 params_grid = {
-    'appEnd': sim_duration - 2,
+    'appEnd': 0.7,
     'minStart': 0.3,
     'maxStart': 0.4,
     'bsrTimer': 1.0,
@@ -58,6 +61,7 @@ params_grid = {
     'scheduler': 1,  # Round Robin Scheduler
     'simTime': sim_duration,  # Low just for testing purposes, then at least 10
     'urllcOn': True,
+    'urllcTres': urllc_tres_grid,
     'urllcUdpIPI': urllc_IPI_grid,
     'useBuildings': False,  # Use MmWave3gppPropagationLossModel
     'useRlcAm': True,  # Use RLC UM
@@ -69,7 +73,7 @@ params_grid = {
 print(params_grid)
 campaign.run_missing_simulations(sem.list_param_combinations(params_grid))
 
-# Get missing results for CA, Slciing CC Manager
+# Get missing results for CA, Slcing CC Manager
 params_grid.update(mode=2, ccMan=1)
 campaign.run_missing_simulations(sem.list_param_combinations(params_grid))
 

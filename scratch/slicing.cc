@@ -31,6 +31,7 @@ int main(int argc, char *argv[])
 	int runSet = 1;
 	int mode = 1;		   // mode 1 = 1 CC, no isolation; mode 2 = 2 CC, complete isolation
 	ccMan = 1;			// ccMan = 0 uses SplitDrb CC manager, 1 uses Slicing one
+	int urllcTres = 2;
 						   		
 	int scheduler = 1;	 // the MAC scheduler
 	double appEnd = simTime;		   // application start time
@@ -66,6 +67,7 @@ int main(int argc, char *argv[])
 	cmd.AddValue("runSet", "Run number", runSet);
 	cmd.AddValue("bw", "Total bandwidth", bw);
 	cmd.AddValue("ccRatio", "bandwidth CC0 / bandwidth CC1", ccRatio);
+	cmd.AddValue("urllcTres", "Tres of max URLLC packets that allow using its carrier for other flows");
 	cmd.AddValue("bsrTimer", "BSR timer [ms]", bsrTimer);
 	cmd.AddValue("reorderingTimer", "reordering timer [ms]", reorderingTimer);
 	cmd.AddValue("useRlcAm", "Use rlc am", useRlcAm);
@@ -189,6 +191,9 @@ int main(int argc, char *argv[])
 		else if(ccMan == 1)
 		{
 			Config::SetDefault("ns3::MmWaveHelper::EnbComponentCarrierManager", StringValue("ns3::MmWaveSlicingDrbComponentCarrierManager"));
+			// Set the URLLC tres
+			Config::SetDefault("ns3::MmWaveNoOpComponentCarrierManager::MmWaveSlicingDrbComponentCarrierManager", UintegerValue (urllcTres*1024));
+
 		}	
 	}
 	else
