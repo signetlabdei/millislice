@@ -85,7 +85,8 @@ def plot_all_metrics(prot, param_ca=None, param_no_ca=None, versus=None):
     # Call lower level function
     plot_distr_bins(metric_frame=sinr_overall(trace_rx_pckt), metric='SINR(dB)', title='Distribution of the SINR of all users, for all simulation runs', s_path=sub_path)
     throughput_app_det(trace_dl, prot, versus, s_path=sub_path)
-    plot_metric_box(band_allocation(trace_rx_pckt), s_path=sub_path, metric='Band allocation', title='Band allocation metric')
+
+    plot_metric_box(band_allocation(trace_rx_pckt, versus=versus), s_path=sub_path, metric='Band allocation', title='Band allocation metric', versus=versus)
 
     info = {'prot':prot, 'metric':'Packet loss', 'unit':''}
     plot_lines_versus(metric_bucket=pkt_loss_app(trace_dl, trace_ul), s_path=sub_path, info=info, versus=versus)
@@ -105,6 +106,17 @@ def print_dict(param_dict):
             out += f"{param_dict[key]}_"
 
     return out
+
+def group_cc_strat(metric_frame):
+    metric_frame['mode'] =  metric_frame['mode'].replace(1, 'no CA, ')
+    metric_frame['mode'] =  metric_frame['mode'].replace(2, 'CA, ')
+    metric_frame['ccMan'] =  metric_frame['ccMan'].replace(0, 'SplitDrb')
+    metric_frame['ccMan'] =  metric_frame['ccMan'].replace(1, 'SlicingDrb')
+
+    metric_frame['CC strategy'] = metric_frame['mode'] + metric_frame['ccMan']
+    metric_frame['CC strategy'] =  metric_frame['CC strategy'].replace('no CA, SlicingDrb', 'no CA')
+
+    return metric_frame
 
 def plot_lines_versus(metric_bucket, info, s_path, versus):
 
@@ -129,14 +141,7 @@ def plot_lines_versus(metric_bucket, info, s_path, versus):
         'ccMan': ccman_data
     }
 
-    metric_frame = pd.DataFrame(data=frame)
-    metric_frame['mode'] =  metric_frame['mode'].replace(1, 'no CA, ')
-    metric_frame['mode'] =  metric_frame['mode'].replace(2, 'CA, ')
-    metric_frame['ccMan'] =  metric_frame['ccMan'].replace(0, 'SplitDrb')
-    metric_frame['ccMan'] =  metric_frame['ccMan'].replace(1, 'SlicingDrb')
-
-    metric_frame['CC strategy'] = metric_frame['mode'] + metric_frame['ccMan']
-    metric_frame['CC strategy'] =  metric_frame['CC strategy'].replace('no CA, SlicingDrb', 'no CA')
+    metric_frame = group_cc_strat(pd.DataFrame(data=frame))
 
     filename = f"{info['prot']}_{info['metric']}_vs{versus}.png"
 
@@ -215,44 +220,32 @@ def plot_distr_bins(metric_frame, metric, title, s_path):
 
     plt.close(fig)
 
-def plot_metric_box(metric_bucket, metric, title, s_path):
+def plot_metric_box(metric_frame, metric, title, s_path, versus):
     # Make sure figure is clean
     fig, ax = plt.subplots(constrained_layout=True)
-    # Build dataframe
-    values = []
-    labels = []
 
-    for res in metric_bucket:
-        # Add in stats for primary CC
-        values.append(res['cc0'])
-        if res['params']['mode'] == 1: # If we are not using CA    
-            labels.append('CC0, no CA')
-        else:
-            labels.append('CC0, CA')
-            # Add in stats for secondary CC
-            values.append(res['cc1'])
-            labels.append('CC1, CA')
-
-    frame = {
-        'values': values,
-        'labels': labels
-    }
-
-    metric_frame = pd.DataFrame(data=frame)
-    # Actual plot
-    
+    # Clean up and group by ccMan strategy
+    metric_frame = group_cc_strat(metric_frame)
+    sanitize_versus(metric_frame, vs=versus)
 
     light_palette = ['#90a5e0', '#90a5e0', '#c27a7c']
     dark_palette = ['#465782','#465782', '#7a4e4f']
     sns.set_style('whitegrid', {'axes.facecolor': '#EAEAF2'})
-    ax = sns.boxplot(data=metric_frame, y='values', x='labels', palette=light_palette)
-    ax = sns.stripplot(data=metric_frame, y='values', x='labels', palette=dark_palette)
+
+    # Plot sum as background
+    metric_frame['band_alloc_cc1'] = metric_frame['band_alloc_cc1'] + metric_frame['band_alloc_cc0']
+    ax_bckg = sns.barplot(x='versus', y='band_alloc_cc1', hue='CC strategy', data=metric_frame, palette=sns.color_palette('pastel'))
+    leg = ax_bckg.get_legend()
+    leg.legendHandles[0].set_visible(False)
+    # Plot cc0 on foreground
+    sns.barplot(x='versus', y='band_alloc_cc0', hue='CC strategy', data=metric_frame, palette=sns.color_palette('muted'))
+
 
     # Title, labels ecc.
     fig.set_size_inches(5, 7)
     filename = f"{metric}_CA_vs_nonCA.png"
     plt.ylabel(f"{metric} \n", fontsize=12)
-    ax.set_xlabel('')
+    #ax.set_xlabel('')
     plt.title(title + '\n')
 
     # Save, create dir if doesn't exist       
@@ -502,11 +495,15 @@ def sinr_overall(trace_data):
     return pd.DataFrame(data=snr_frame)
 
 
-def band_allocation(trace_data):
+def band_allocation(trace_data, versus):
 
     print('--Computing band allocation metric--')
 
-    band_alloc = []
+    ccMan_data = []
+    mode_data = []
+    cc0_data = []
+    cc1_data = []
+    versus_data = []
 
     for item in trace_data:
         # Find out total amount symbols available
@@ -515,23 +512,31 @@ def band_allocation(trace_data):
         # Get info regarding first CC
         item_cc0 = item['results'][item['results']['ccId'] == 0]
         used_sym_cc0 = item_cc0['symbol#'].sum()
-        new_entry = {
-            'cc0': used_sym_cc0/avail_sym,
-            'params': item['params']
-        }
+
+        versus_data.append(item['params'][versus])
+        mode_data.append(item['params']['mode'])
+        ccMan_data.append(item['params']['ccMan'])
         # If we are using CA, get also info regarding secondary CC
         if item['params']['mode'] == 2:
             item_cc1 = item['results'][item['results']['ccId'] == 1]
             used_sym_cc1 = item_cc1['symbol#'].sum()
-            new_entry['cc1'] = used_sym_cc1/avail_sym
+            # Normalize usage for stacked 
+            cc0_data.append((used_sym_cc0/avail_sym)*item['params']['ccRatio'])
+            cc1_data.append((used_sym_cc1/avail_sym)*(1-item['params']['ccRatio']))
+            
+        else:
+            cc1_data.append(0)
+            cc0_data.append(used_sym_cc0/avail_sym) 
 
-        # print('\n')
-        # print(new_entry)
-        # print('\n')
+    frame = {
+        'band_alloc_cc0': cc0_data,
+        'band_alloc_cc1': cc1_data,
+        'ccMan': ccMan_data,
+        'mode': mode_data,
+        'versus': versus_data
+    }
 
-        band_alloc.append(new_entry)
-
-    return band_alloc
+    return pd.DataFrame(data=frame)
 
 def throughput_app_det(trace_data, bearer_type, vs, s_path):
 
