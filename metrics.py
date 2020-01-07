@@ -85,7 +85,8 @@ def plot_all_metrics(prot, param_ca=None, param_no_ca=None, versus=None):
     # Call lower level function
     plot_distr_bins(metric_frame=sinr_overall(trace_rx_pckt), metric='SINR(dB)', title='Distribution of the SINR of all users, for all simulation runs', s_path=sub_path)
     throughput_app_det(trace_dl, prot, versus, s_path=sub_path)
-    plot_metric_box(band_allocation(trace_rx_pckt, versus=versus), s_path=sub_path, metric='Band allocation', title='Band allocation metric', versus=versus)
+    m_title = 'Band allocation \n (percentage of total system bw)'
+    plot_metric_box(band_allocation(trace_rx_pckt, versus=versus), s_path=sub_path, metric='Band allocation', title=m_title, versus=versus)
 
     # Specific metric plots
     info = {'prot':prot, 'metric':'Packet loss', 'unit':''}
@@ -223,7 +224,7 @@ def plot_metric_box(metric_frame, metric, title, s_path, versus):
 
     # Clean up and group by ccMan strategy
     metric_frame = group_cc_strat(metric_frame)
-    sanitize_versus(metric_frame, vs=versus)
+    x_label = sanitize_versus(metric_frame, vs=versus)
 
     light_palette = ['#90a5e0', '#90a5e0', '#c27a7c']
     dark_palette = ['#465782','#465782', '#7a4e4f']
@@ -231,16 +232,22 @@ def plot_metric_box(metric_frame, metric, title, s_path, versus):
 
     # Plot sum as background
     metric_frame['band_alloc_cc1'] = metric_frame['band_alloc_cc1'] + metric_frame['band_alloc_cc0']
-    ax_bckg = sns.barplot(x='versus', y='band_alloc_cc1', hue='CC strategy', data=metric_frame, palette=sns.color_palette('pastel'))
-    handles, labels = ax_bckg.get_legend_handles_labels()
-    ax_bckg.legend(handles=handles[3:], labels=labels[3:])
+    sns.barplot(x='versus', y='band_alloc_cc1', hue='CC strategy', data=metric_frame, palette=sns.color_palette('pastel'))
     # Plot cc0 on foreground
-    sns.barplot(x='versus', y='band_alloc_cc0', hue='CC strategy', data=metric_frame, palette=sns.color_palette('muted'))
+    ax_bckg = sns.barplot(x='versus', y='band_alloc_cc0', hue='CC strategy', data=metric_frame, palette=sns.color_palette('muted'))
+    handles, labels = ax_bckg.get_legend_handles_labels()
+    for dummy in range(0, 3):
+        labels[dummy] = 'CC1 - ' +  labels[dummy] 
+        labels[3 + dummy] = 'CC0 - ' +  labels[3 + dummy]
+    ax_bckg.legend(handles=handles, labels=labels, ncol=2, loc='best')
 
+    # ax_bckg.legend(handles=handles[3:], labels=labels[3:])
+    
     # Title, labels ecc.
-    fig.set_size_inches(5, 7)
+    fig.set_size_inches(6, 8.5)
     filename = f"{metric}_CA_vs_nonCA.png"
     plt.ylabel(f"{metric} \n", fontsize=12)
+    plt.xlabel(f"{x_label}", fontsize=12)
     #ax.set_xlabel('')
     plt.title(title + '\n')
 
