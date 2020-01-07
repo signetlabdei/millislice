@@ -5,12 +5,12 @@ ns_res_path = './slicing-res'
 
 # Create the actual simulation campagins
 campaign = sem.CampaignManager.new(
-    ns_path, ns_script, ns_res_path, check_repo=False, optimized=True, runner_type='LptRunner')
+    ns_path, ns_script, ns_res_path, check_repo=False, optimized=True, runner_type='ParallelRunner')
 
 # Obtain IPIs from rates
 # eMMB
 embb_packet_size = 1024
-embb_rate_grid = list(range(100, 120, 20))
+embb_rate_grid = list(range(100, 160, 20))
 embb_IPI_grid = []
 for rate in embb_rate_grid:
     # Mbit/s to IPI in microseconds
@@ -24,23 +24,27 @@ for rate in urllc_rate_grid:
     temp_IPI = urllc_packet_size*8/(rate)
     urllc_IPI_grid.append(int(round(temp_IPI)))
 
+# URLLC tresholds
+urllc_tres_grid = list(range(1, 2, 1))
+
 
 # Set amount of simulation time
-sim_duration = 0.5
-runs = 8
-
+sim_duration = 0.55
+runs = 4
+ 
 params_grid = {
-    'appEnd': sim_duration,
+    'appEnd': 0.45,
     'minStart': 0.3,
     'maxStart': 0.4,
-    'bsrTimer': 2.0,
+    'bsrTimer': 1.0,
     'bw': 5e8,
-    'ccRatio': 0.25,
+    'ccRatio': 0.5,
     'condition': 'a',
+    'ccMan': 0,
     'embbOn': True,
     'embbUdpIPI': embb_IPI_grid,
-    'f0': 10e9,  # URLCC's CC
-    'f1': 28e9,  # eMBB's CC
+    'f0': 28e9,  # eMBB's CC
+    'f1': 10e9,  # URLLC's CC
     'filePath': 'test_',
     'fileSize': 512000,
     'lambdaUrllc': 0.2,
@@ -57,9 +61,10 @@ params_grid = {
     'scheduler': 1,  # Round Robin Scheduler
     'simTime': sim_duration,  # Low just for testing purposes, then at least 10
     'urllcOn': True,
+    'urllcTres': urllc_tres_grid,
     'urllcUdpIPI': urllc_IPI_grid,
     'useBuildings': False,  # Use MmWave3gppPropagationLossModel
-    'useRlcAm': False,  # Use RLC UM
+    'useRlcAm': True,  # Use RLC UM
     'useUdp': True,
     'vMax': 10.0,
     'vMin': 1.0,
@@ -68,6 +73,7 @@ params_grid = {
 print(params_grid)
 campaign.run_missing_simulations(sem.list_param_combinations(params_grid))
 
-# Get missing results for no CA and CC equal to 28GHz
-params_grid.update(mode=1, f0=28e9, f1=10e9)
+# Get missing results for CA, Slcing CC Manager
+params_grid.update(mode=2, ccMan=1)
 campaign.run_missing_simulations(sem.list_param_combinations(params_grid))
+

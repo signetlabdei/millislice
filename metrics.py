@@ -85,9 +85,9 @@ def plot_all_metrics(prot, param_ca=None, param_no_ca=None, versus=None):
     # Call lower level function
     plot_distr_bins(metric_frame=sinr_overall(trace_rx_pckt), metric='SINR(dB)', title='Distribution of the SINR of all users, for all simulation runs', s_path=sub_path)
     throughput_app_det(trace_dl, prot, versus, s_path=sub_path)
-
     plot_metric_box(band_allocation(trace_rx_pckt, versus=versus), s_path=sub_path, metric='Band allocation', title='Band allocation metric', versus=versus)
 
+    # Specific metric plots
     info = {'prot':prot, 'metric':'Packet loss', 'unit':''}
     plot_lines_versus(metric_bucket=pkt_loss_app(trace_dl, trace_ul), s_path=sub_path, info=info, versus=versus)
     info = {'prot':prot, 'metric':'Throughput', 'unit':'[Mbit/s]'}
@@ -142,18 +142,16 @@ def plot_lines_versus(metric_bucket, info, s_path, versus):
     }
 
     metric_frame = group_cc_strat(pd.DataFrame(data=frame))
-    print(metric_frame.to_string())
-
     filename = f"{info['prot']}_{info['metric']}_vs{versus}.png"
 
     temp = sanitize_versus(metric_bucket=metric_frame, vs=versus)
     if temp is not None:
         versus = temp
-    g = sns.lineplot(data=metric_frame, x='versus', y='metric', hue='CC strategy') #  err_style='bars'
 
-    # Set graphical properties
+    g = sns.lineplot(data=metric_frame, x='versus', y='metric', err_style='bars', hue='CC strategy')
+
+    # Set graphical properties, title and filename
     fig.set_size_inches(count_amount_uniques(versus_data)*2.5, 7.5)
-    # Set title and filename
     ax.set_xlabel(f"{versus}", fontsize=12)
     plot_title = f"{info['metric']} {info['prot']} vs. {versus}"
     ax.set_ylabel(f"{info['metric']} {info['unit']} \n", fontsize=12)
@@ -168,7 +166,6 @@ def plot_lines_versus(metric_bucket, info, s_path, versus):
     plt.savefig(out_dir + filename)
 
     plt.close('fig')
-
 
 def plot_line(metric_frame, metric, title, s_path, overlays=None):
 
@@ -204,11 +201,9 @@ def plot_line(metric_frame, metric, title, s_path, overlays=None):
 def plot_distr_bins(metric_frame, metric, title, s_path):
     # Make sure figure is clean
     fig, ax = plt.subplots(constrained_layout=True)
-
     sns.set_style('whitegrid', {'axes.facecolor': '#EAEAF2'})
 
-    color = '#7a4e4f'
-    sns.distplot(metric_frame, kde=False, color=color, norm_hist=True)
+    sns.distplot(metric_frame, kde=False, norm_hist=True)
 
     plt.xlabel(f"{metric} \n", fontsize=11)
     plt.title(title + '\n') 
@@ -237,8 +232,8 @@ def plot_metric_box(metric_frame, metric, title, s_path, versus):
     # Plot sum as background
     metric_frame['band_alloc_cc1'] = metric_frame['band_alloc_cc1'] + metric_frame['band_alloc_cc0']
     ax_bckg = sns.barplot(x='versus', y='band_alloc_cc1', hue='CC strategy', data=metric_frame, palette=sns.color_palette('pastel'))
-    leg = ax_bckg.get_legend()
-    leg.legendHandles[0].set_visible(False)
+    handles, labels = ax_bckg.get_legend_handles_labels()
+    ax_bckg.legend(handles=handles[3:], labels=labels[3:])
     # Plot cc0 on foreground
     sns.barplot(x='versus', y='band_alloc_cc0', hue='CC strategy', data=metric_frame, palette=sns.color_palette('muted'))
 
@@ -381,6 +376,8 @@ def sanitize_versus(metric_bucket, vs):
     if(vs == 'urllcUdpIPI'):
         metric_bucket['versus'] = round(1024*8/(metric_bucket['versus'])) # packet_size*bits in a bye/rate
         return 'URLLC sources rate [Mbit/s]'
+    if(vs == 'ccRatio'):
+        return 'Ratio of bw allocated to CC0'
 
 def find_elements(bucket, param, value):
     out = []
@@ -717,7 +714,7 @@ ca_params = {'f0': 28e9, 'f1':10e9, 'mode': 2}
 no_ca_params = {'f0': 28e9, 'mode': 1}
 
 print('Computing URLLC stats')
-plot_all_metrics(prot='urllc', param_ca=ca_params, param_no_ca=no_ca_params, versus='urllcTres')
+plot_all_metrics(prot='urllc', param_ca=ca_params, param_no_ca=no_ca_params, versus='embbUdpIPI')
 print('Computing eMBB stats')
-plot_all_metrics(prot='embb', param_ca=ca_params, param_no_ca=no_ca_params, versus='urllcTres')
+plot_all_metrics(prot='embb', param_ca=ca_params, param_no_ca=no_ca_params, versus='embbUdpIPI')
 print('--------')

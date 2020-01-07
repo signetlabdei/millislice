@@ -1,0 +1,5 @@
+Waf: Entering directory `/home/mattpag/UniPD/Network Simulation/ns3-mmwave-slicing/build/optimized'
+Waf: Leaving directory `/home/mattpag/UniPD/Network Simulation/ns3-mmwave-slicing/build/optimized'
+Build commands will be stored in build/optimized/compile_commands.json
+'build' finished successfully (0.625s)
+Interrupted 

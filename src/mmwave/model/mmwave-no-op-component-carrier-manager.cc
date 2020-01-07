@@ -812,7 +812,7 @@ MmWaveSlicingDrbComponentCarrierManager::MmWaveSlicingDrbComponentCarrierManager
   NS_LOG_FUNCTION (this);
   LogComponentEnable ("MmWaveNoOpComponentCarrierManager", LOG_LEVEL_LOGIC);
 
-  m_qciTresholdsMap = {{9, std::numeric_limits<uint8_t>::max()}, {81, 1025}}; // Never send URLLC onto worse carrier
+  m_qciTresholdsMap = {{9, 0}, {81, 1025}}; // Never send URLLC onto worse carrier
 
 }
 
@@ -840,7 +840,9 @@ void
 MmWaveSlicingDrbComponentCarrierManager::setUrllcTres(uint32_t tres)
 {
   m_qciTresholdsMap[81] = tres;
-}
+  NS_LOG_LOGIC("Tres changed to ");
+  NS_LOG_LOGIC(std::to_string(tres));
+  }
 
 std::string 
 MmWaveSlicingDrbComponentCarrierManager::GenerateUpdateLog()
@@ -933,7 +935,7 @@ MmWaveSlicingDrbComponentCarrierManager::BlindPriorityBSRScheduler(LteMacSapProv
     for(auto elem : aggrMap)
     {
       uint8_t secQci =  m_rlcLcInstantiated.find(params.rnti)->second.find(elem.first)->second.qci;
-      if(qci != secQci && elem.second >= m_qciTresholdsMap.find(secQci)->second) // For non-preferred CCs, if load smaller than treshold: use them as well
+      if(qci != secQci && elem.second < m_qciTresholdsMap.find(secQci)->second) // For non-preferred CCs, if load smaller than treshold: use them as well
       {
         NS_LOG_LOGIC("Secondary QCI and CC:");
         NS_LOG_LOGIC(std::to_string(secQci));
@@ -943,6 +945,7 @@ MmWaveSlicingDrbComponentCarrierManager::BlindPriorityBSRScheduler(LteMacSapProv
       }
     }
     // Spread the data among such CCs
+    NS_LOG_LOGIC("BSR will be spread upon the following CCs:");
     for(auto elem : choosenCcs)
     {
       NS_LOG_LOGIC("ChoosenCC:");
