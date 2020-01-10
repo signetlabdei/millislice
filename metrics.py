@@ -239,7 +239,7 @@ def plot_metric_box(metric_frame, metric, title, s_path, versus):
     for dummy in range(0, 3):
         labels[dummy] = 'CC1 - ' +  labels[dummy] 
         labels[3 + dummy] = 'CC0 - ' +  labels[3 + dummy]
-    ax_bckg.legend(handles=handles, labels=labels, ncol=2, loc='best')
+    ax_bckg.legend(handles=handles[1:], labels=labels[1:], ncol=2, loc='best')
 
     # ax_bckg.legend(handles=handles[3:], labels=labels[3:])
     
@@ -698,12 +698,10 @@ def compute_means(metric_bucket):
         out_bucket[index]['mean'] = mean(metric_bucket[index]['mean'])
     return out_bucket
 
-
-
 # Actual metrics computation
 # Try plot
-print('Both CA and non CA using f0=10GHz, f1=28Ghz')
 '''
+print('Both CA and non CA using f0=10GHz, f1=28Ghz')
 print('Metrics vs ccRatio')
 ca_params = {'f0': 10e9, 'f1':28e9, 'mode': 2, 'embbUdpIPI': 82} # Rate eMBB = 100Mbit/s
 no_ca_params = {'f0': 10e9, 'mode': 1, 'embbUdpIPI': 82} # Rate eMBB = 100Mbit/s
@@ -714,9 +712,7 @@ print('Computing eMBB stats')
 plot_all_metrics(prot='embb', param_ca=ca_params, param_no_ca=no_ca_params, versus='ccRatio')
 
 '''
-print('CA using f0=28GHz, f1=10Ghz; non CA using f0=28Ghz')
-
-print('Metrics vs ccMan')
+print('CA using f0=28GHz, f1=10Ghz; non CA using f0=28GhzL: vs eMBB rates')
 ca_params = {'f0': 28e9, 'f1':10e9, 'mode': 2}
 no_ca_params = {'f0': 28e9, 'mode': 1}
 
@@ -724,4 +720,14 @@ print('Computing URLLC stats')
 plot_all_metrics(prot='urllc', param_ca=ca_params, param_no_ca=no_ca_params, versus='embbUdpIPI')
 print('Computing eMBB stats')
 plot_all_metrics(prot='embb', param_ca=ca_params, param_no_ca=no_ca_params, versus='embbUdpIPI')
-print('--------')
+print('---------')
+
+print('CA using f0=28GHz, f1=10Ghz; non CA using f0=28GhzL: vs URLLC rates')
+ca_params = {'f0': 28e9, 'f1':10e9, 'mode': 2}
+no_ca_params = {'f0': 28e9, 'mode': 1}
+
+print('Computing URLLC stats')
+plot_all_metrics(prot='urllc', param_ca=ca_params, param_no_ca=no_ca_params, versus='urllcUdpIPI')
+print('Computing eMBB stats')
+plot_all_metrics(prot='embb', param_ca=ca_params, param_no_ca=no_ca_params, versus='urllcUdpIPI')
+print('---------')

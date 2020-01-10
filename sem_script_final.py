@@ -1,4 +1,6 @@
 import sem
+import numpy as np
+
 ns_path = './'
 ns_script = 'slicing'
 ns_res_path = './slicing-res'
@@ -18,7 +20,7 @@ for rate in embb_rate_grid:
     embb_IPI_grid.append(int(round(temp_IPI)))
 # URLLC
 urllc_packet_size = 1024
-urllc_rate_grid = list(range(0.5, 2.5, 0.5))
+urllc_rate_grid = list(np.arange(0.5, 2.5, 0.5))
 urllc_IPI_grid = []
 for rate in urllc_rate_grid:
     temp_IPI = urllc_packet_size*8/(rate)
@@ -70,9 +72,10 @@ params_grid = {
     'vMin': 1.0,
 }
 
-print(params_grid)
-campaign.run_missing_simulations(sem.list_param_combinations(params_grid))
+# Temporarily limit number of max cores used
+sem.parallelrunner.MAX_PARALLEL_PROCESSES=4
 
+campaign.run_missing_simulations(sem.list_param_combinations(params_grid))
 # Get missing results for CA, Slcing CC Manager
 params_grid.update(mode=2, ccMan=1)
 campaign.run_missing_simulations(sem.list_param_combinations(params_grid))
