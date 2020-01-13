@@ -9,7 +9,26 @@ import pandas as pd
 
 # Functions
 
-def plot_all_metrics(param_ca=None, param_no_ca=None, versus=None, fewer_images=False):
+def plot_forall_static(static, param_ca, param_no_ca, versus, fewer_images=False):
+    # Get list of values of params that are supposed to be static
+    campaign = sem.CampaignManager.load('./slicing-res')
+    loaded_params = campaign.db.get_all_values_of_all_params()
+    # For now, just one..
+    static_values = loaded_params[static]
+    for val in static_values:
+        # Use lower level functions to plot
+        fig = plot_all_metrics(param_no_ca=param_no_ca, param_ca=param_ca, versus=versus,
+                            fewer_images=fewer_images)
+
+        metric_bucket_dummy = {'versus':val}
+        static_formatted = sanitize_versus(vs=static, metric_bucket=metric_bucket_dummy)
+        fig.suptitle(f"System performance, for {static_formatted} = {metric_bucket_dummy['versus']}", fontsize=16)
+        plt.show()
+        plt.close('fig')
+
+        
+
+def plot_all_metrics(param_ca, param_no_ca, versus=None, fewer_images=False):
 
     fig, ax = plt.subplots(constrained_layout=True, nrows=2, ncols=3)
     #with sns.axes_style("darkgrid"):
@@ -82,13 +101,10 @@ def plot_all_metrics(param_ca=None, param_no_ca=None, versus=None, fewer_images=
         plot_lines_versus(metric_bucket=delay_app(trace_dl), 
                             info=info, s_path=sub_path, versus=versus, fig=fig, ax=ax[sub_col, 2])
         
-        
         print('---------')
 
     if fewer_images:
-        sns.set_style('whitegrid', {'axes.facecolor': '#EAEAF2'})
-        plt.show()
-        plt.close('fig')
+        return fig
 
 def print_dict(param_dict):
     out = ''
@@ -162,10 +178,11 @@ def plot_lines_versus(metric_bucket, info, s_path, versus, fig=None, ax=None):
         plt.close('fig')
     else:
         fig.set_size_inches(count_amount_uniques(versus_data)*2*3, 6)
-        ax.grid()
+        ax.grid(color='#b3b3b3')
         ax.set_facecolor('#f5f5fa')
+        ax.title.set_text(plot_title + '\n')
         for spine in ax.spines.values():
-            spine.set_edgecolor('#858585')
+            spine.set_edgecolor('#b3b3b3')
         # fig.set_figheight(7)
         # fig.set_figwidth(count_amount_uniques(versus_data)*2*3)
     #Ylim
@@ -227,7 +244,7 @@ def plot_metric_box(metric_frame, metric, title, s_path, versus):
 
     # Clean up and group by ccMan strategy
     metric_frame = group_cc_strat(metric_frame)
-    x_label = sanitize_versus(metric_frame, vs=versus)
+    x_label = sanitize_versus(vs=versus, metric_bucket=metric_frame)
 
     light_palette = ['#90a5e0', '#90a5e0', '#c27a7c']
     dark_palette = ['#465782','#465782', '#7a4e4f']
@@ -379,12 +396,18 @@ def overlay_means(metric_bucket, palette, vs, vs_data):
             plt.plot([left, right], [ca_mean, ca_mean], color=palette[1], linestyle='--', linewidth=1)
 
 
-def sanitize_versus(metric_bucket, vs):
+def sanitize_versus(vs, metric_bucket=None, metric_val=None):
     if(vs == 'embbUdpIPI'):
-        metric_bucket['versus'] = round(1024*8/(metric_bucket['versus'])) # packet_size*bits in a bye/rate
+        if metric_bucket is not None:
+            metric_bucket['versus'] = round(1024*8/(metric_bucket['versus'])) # packet_size*bits in a bye/rate
+        else:
+            metric_val = round(1024*8/(metric_val))
         return 'eMBB sources rate [Mbit/s]'  
     if(vs == 'urllcUdpIPI'):
-        metric_bucket['versus'] = round(1024*8/(metric_bucket['versus'])) # packet_size*bits in a bye/rate
+        if metric_bucket is not None:
+            metric_bucket['versus'] = round(1024*8/(metric_bucket['versus'])) # packet_size*bits in a bye/rate
+        else:
+            metric_val = round(1024*8/(metric_val))
         return 'URLLC sources rate [Mbit/s]'
     if(vs == 'ccRatio'):
         return 'Ratio of bw allocated to CC0'
@@ -683,15 +706,12 @@ def pkt_loss_app(trace_dl, trace_ul):
 
     return loss
 
-
-# Small,  support functions
-
+# Small, support functions
 def check_constant(bucket):
     return bucket[1:] == bucket[:-1]
 
 def count_amount_uniques(bucket):
     return len(set(bucket))
-
 
 def compute_means(metric_bucket):
     # Save original data
@@ -704,11 +724,11 @@ def compute_means(metric_bucket):
 # Actual metrics computation
 # Try plot
 print('CA using f0=28GHz, f1=10Ghz; non CA using f0=28GhzL: vs eMBB rates')
-ca_params = {'f0': 28e9, 'f1':10e9, 'mode': 2}
+ca_params = {'f0': 28e9, 'f1':10e9,'mode': 2}
 no_ca_params = {'f0': 28e9, 'mode': 1}
 
 print('Computing stats')
-plot_all_metrics(param_ca=ca_params, param_no_ca=no_ca_params, versus='embbUdpIPI', fewer_images=True) #
+plot_forall_static(param_ca=ca_params, param_no_ca=no_ca_params, versus='embbUdpIPI', fewer_images=True, static='urllcUdpIPI') #
 
 print('CA using f0=28GHz, f1=10Ghz; non CA using f0=28GhzL: vs URLLC rates')
 ca_params = {'f0': 28e9, 'f1':10e9, 'mode': 2}
