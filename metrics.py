@@ -15,8 +15,10 @@ def plot_forall_static(static, param_ca, param_no_ca, versus, fewer_images=False
     loaded_params = campaign.db.get_all_values_of_all_params()
     # For now, just one..
     static_values = loaded_params[static]
+    counter = 0
     for val in static_values:
-        print(f"{val/size(static_values)} % done!")
+        counter = counter + 1
+        print(f"{counter/len(static_values)} % done!")
         # Restrict params
         param_ca[static] = val
         param_no_ca[static] = val
