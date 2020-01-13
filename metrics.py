@@ -16,19 +16,25 @@ def plot_forall_static(static, param_ca, param_no_ca, versus, fewer_images=False
     # For now, just one..
     static_values = loaded_params[static]
     for val in static_values:
-        # Use lower level functions to plot
-        fig = plot_all_metrics(param_no_ca=param_no_ca, param_ca=param_ca, versus=versus,
-                            fewer_images=fewer_images)
-
+        # Restrict params
+        param_ca[static] = val
+        param_no_ca[static] = val
+        # Ugly, but lazy
         metric_bucket_dummy = {'versus':val}
         static_formatted = sanitize_versus(vs=static, metric_bucket=metric_bucket_dummy)
-        fig.suptitle(f"System performance, for {static_formatted} = {metric_bucket_dummy['versus']}", fontsize=16)
-        plt.show()
+        val_formatted = metric_bucket_dummy['versus']
+        # Save the plot
+        out_dir = f"./slicing-plots/versus_{versus}/{val_formatted}/"
+        os.makedirs(out_dir, exist_ok=True)
+        # Use lower level functions to plot
+        fig = plot_all_metrics(param_no_ca=param_no_ca, param_ca=param_ca, versus=versus,
+                            fewer_images=fewer_images, top_path=out_dir)
+
+        fig.suptitle(f"System performance vs for {static_formatted} = {val_formatted}", fontsize=16)
+        plt.savefig(out_dir + "System_performance.png")
         plt.close('fig')
 
-        
-
-def plot_all_metrics(param_ca, param_no_ca, versus=None, fewer_images=False):
+def plot_all_metrics(param_ca, param_no_ca, versus=None, fewer_images=False, top_path=None):
 
     fig, ax = plt.subplots(constrained_layout=True, nrows=2, ncols=3)
     #with sns.axes_style("darkgrid"):
@@ -78,12 +84,12 @@ def plot_all_metrics(param_ca, param_no_ca, versus=None, fewer_images=False):
             trace_rx_pckt = load_results(trace_name=trace_str_rx_pckt)
             sub_path = 'no_spec_params'
 
-        throughput_app_det(trace_dl, prot, versus, s_path=sub_path)
+        #throughput_app_det(trace_dl, prot, versus, s_path=top_path)
         # Plot generics
         plot_distr_bins(metric_frame=sinr_overall(trace_rx_pckt), metric='SINR(dB)', 
-                    title='Distribution of the SINR of all users, for all simulation runs', s_path=sub_path)
+                    title='Distribution of the SINR of all users, for all simulation runs', s_path=top_path)
         m_title = 'Band allocation \n (percentage of total system bw)'
-        plot_metric_box(band_allocation(trace_rx_pckt, versus=versus), s_path=sub_path, 
+        plot_metric_box(band_allocation(trace_rx_pckt, versus=versus), s_path=top_path, 
                     metric='Band allocation', title=m_title, versus=versus)
         # If specified, try to aggregate the plots into as less images as possibile, in order
         # to allow an easier comparison between the various results
@@ -169,7 +175,7 @@ def plot_lines_versus(metric_bucket, info, s_path, versus, fig=None, ax=None):
     plot_title = f"{info['metric']} {info['prot']} vs. {versus}"
 
     if dummy_ax is None:
-        fig.set_size_inches(count_amount_uniques(versus_data)*2.5, 7.5)    
+        fig.set_size_inches(count_amount_uniques(versus_data)*2, 8)    
         fig.suptitle(plot_title + '\n', fontsize=12)
         # Save, create dir if doesn't exist 
         out_dir = f"./slicing-plots/{s_path}/"
@@ -177,7 +183,7 @@ def plot_lines_versus(metric_bucket, info, s_path, versus, fig=None, ax=None):
         plt.savefig(out_dir + filename)
         plt.close('fig')
     else:
-        fig.set_size_inches(count_amount_uniques(versus_data)*2*3, 6)
+        fig.set_size_inches(count_amount_uniques(versus_data)*2*3, 10)
         ax.grid(color='#b3b3b3')
         ax.set_facecolor('#f5f5fa')
         ax.title.set_text(plot_title + '\n')
@@ -188,7 +194,7 @@ def plot_lines_versus(metric_bucket, info, s_path, versus, fig=None, ax=None):
     #Ylim
     #g.set(ylim=(0, None))      
 
-def plot_line(metric_frame, metric, title, s_path, overlays=None):
+def plot_line(metric_frame, metric, title, s_path, fname, overlays=None):
 
     fig, ax = plt.subplots(constrained_layout=True)
     sns.set_style('whitegrid', {'axes.facecolor': '#EAEAF2'})
@@ -212,11 +218,11 @@ def plot_line(metric_frame, metric, title, s_path, overlays=None):
 
     ax.legend(loc='best')
 
-    out_dir = f"./slicing-plots/{s_path}"
-    # os.makedirs(out_dir, exist_ok=True)
+    out_dir = s_path
+    os.makedirs(out_dir, exist_ok=True)
     fig.set_size_inches(8, 6)
 
-    plt.savefig(out_dir)
+    plt.savefig(out_dir + fname)
     plt.close(fig)
 
 def plot_distr_bins(metric_frame, metric, title, s_path):
@@ -232,7 +238,7 @@ def plot_distr_bins(metric_frame, metric, title, s_path):
     fig.set_size_inches(8, 6)
 
     # Save, create dir if doesn't exist       
-    out_dir = f"./slicing-plots/{s_path}/detailed/"
+    out_dir = f"{s_path}detailed/"
     os.makedirs(out_dir, exist_ok=True)
     plt.savefig(out_dir + metric)
 
@@ -265,14 +271,14 @@ def plot_metric_box(metric_frame, metric, title, s_path, versus):
     
     # Title, labels ecc.
     fig.set_size_inches(6, 8.5)
-    filename = f"{metric}_CA_vs_nonCA.png"
+    filename = f"{metric}.png"
     plt.ylabel(f"{metric} \n", fontsize=12)
     plt.xlabel(f"{x_label}", fontsize=12)
     #ax.set_xlabel('')
     plt.title(title + '\n')
 
     # Save, create dir if doesn't exist       
-    out_dir = f"./slicing-plots/{s_path}/"
+    out_dir = s_path
     os.makedirs(out_dir, exist_ok=True)
     plt.savefig(out_dir + filename)
 
@@ -396,18 +402,12 @@ def overlay_means(metric_bucket, palette, vs, vs_data):
             plt.plot([left, right], [ca_mean, ca_mean], color=palette[1], linestyle='--', linewidth=1)
 
 
-def sanitize_versus(vs, metric_bucket=None, metric_val=None):
+def sanitize_versus(vs, metric_bucket):
     if(vs == 'embbUdpIPI'):
-        if metric_bucket is not None:
-            metric_bucket['versus'] = round(1024*8/(metric_bucket['versus'])) # packet_size*bits in a bye/rate
-        else:
-            metric_val = round(1024*8/(metric_val))
+        metric_bucket['versus'] = round(1024*8/(metric_bucket['versus']), 1) # packet_size*bits in a bye/rate
         return 'eMBB sources rate [Mbit/s]'  
     if(vs == 'urllcUdpIPI'):
-        if metric_bucket is not None:
-            metric_bucket['versus'] = round(1024*8/(metric_bucket['versus'])) # packet_size*bits in a bye/rate
-        else:
-            metric_val = round(1024*8/(metric_val))
+        metric_bucket['versus'] = round(1024*8/(metric_bucket['versus']), 1) # packet_size*bits in a bye/rate
         return 'URLLC sources rate [Mbit/s]'
     if(vs == 'ccRatio'):
         return 'Ratio of bw allocated to CC0'
@@ -611,7 +611,8 @@ def throughput_app_det(trace_data, bearer_type, vs, s_path):
         packets_rx.drop(columns=['pkt_size', 'seq_num', 'node_id'], inplace=True)
 
         temp_title = 'Throughput of whole system vs time [s]'
-        temp_path =  s_path + '/detailed/' + bearer_type + '_' + vs + '_' + str(vs_value)
+        temp_path =  s_path + 'detailed/'
+        filename = f"{bearer_type}_{vs}_{vs_value}"
 
         # Overlay mean throughput and appEnd 
         overlays = {
@@ -619,7 +620,8 @@ def throughput_app_det(trace_data, bearer_type, vs, s_path):
             'y': [temp_frame['value'].min()]
         }
 
-        plot_line(packets_rx, 'Throughput [Mbit/s]', temp_title , temp_path, overlays)
+        plot_line(metric_frame=packets_rx, metric='Throughput [Mbit/s]', title=temp_title, 
+                    s_path=temp_path, fname=filename, overlays=overlays)
 
     return out
 
@@ -735,4 +737,4 @@ ca_params = {'f0': 28e9, 'f1':10e9, 'mode': 2}
 no_ca_params = {'f0': 28e9, 'mode': 1}
 
 print('Computing stats')
-plot_all_metrics(param_ca=ca_params, param_no_ca=no_ca_params, versus='urllcUdpIPI')
+plot_forall_static(param_ca=ca_params, param_no_ca=no_ca_params, versus='urllcUdpIPI', fewer_images=True, static='embbUdpIPI')
