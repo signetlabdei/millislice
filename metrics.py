@@ -16,6 +16,7 @@ def plot_forall_static(static, param_ca, param_no_ca, versus, fewer_images=False
     # For now, just one..
     static_values = loaded_params[static]
     for val in static_values:
+        print(f"{val/size(static_values)} % done!")
         # Restrict params
         param_ca[static] = val
         param_no_ca[static] = val
