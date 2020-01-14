@@ -6,10 +6,12 @@ import matplotlib.pyplot as plt
 from statistics import mean
 import seaborn as sns
 import pandas as pd
+# from pympler import tracker
 
 # Functions
 
 def plot_forall_static(static, param_ca, param_no_ca, versus, fewer_images=False):
+    # tr = tracker.SummaryTracker()
     # Get list of values of params that are supposed to be static
     campaign = sem.CampaignManager.load('./slicing-res')
     loaded_params = campaign.db.get_all_values_of_all_params()
@@ -33,17 +35,23 @@ def plot_forall_static(static, param_ca, param_no_ca, versus, fewer_images=False
                             fewer_images=fewer_images, top_path=out_dir)
 
         fig.suptitle(f"System performance vs for {static_formatted} = {val_formatted}", fontsize=16)
-        plt.savefig(out_dir + "System_performance.png")
+        plt.savefig(f"{out_dir}System_performance.png" )
         plt.close('fig')
+        del fig
         print(f"{counter/len(static_values)*100} % done!")
+        #tr.print_diff()
 
 def plot_all_metrics(param_ca, param_no_ca, versus=None, fewer_images=False, top_path=None):
 
     fig, ax = plt.subplots(constrained_layout=True, nrows=2, ncols=3)
+    campaign = sem.CampaignManager.load('./slicing-res')
+    trace_str_rx_pckt = 'test_RxPacketTrace.txt' # Always same name
 
     for prot in ['URLLC', 'eMBB']:
-        print(f"{prot} stats")
-        # Load the desired datasets
+        thr = []
+        delay = []
+        loss = []
+
         # Select proper trace file
         if prot == 'URLLC':
             trace_str_dl = 'test_urllc-dl-app-trace.txt'
@@ -54,71 +62,47 @@ def plot_all_metrics(param_ca, param_no_ca, versus=None, fewer_images=False, top
             trace_str_ul = 'test_eMBB-ul-app-trace.txt'
             sub_col = 1
 
-        trace_str_rx_pckt = 'test_RxPacketTrace.txt' # Always same name
+        for param in param_ca, param_no_ca:
+            print(f"{prot} stats, params {param}")
+            # Load the desired datasets
+            # Load results, specify params if given on input
+            # Get the required files IDs
+            if param is not None:
+                res_data = campaign.db.get_results(param)
+            else:
+                res_data = campaign.db.get_results()
+            for res_istance in res_data:
+                res_id = res_istance['meta']['id']
+                # Load all the desired traces
+                dl_path = campaign.db.get_result_files(res_id)[trace_str_dl]
+                ul_path = campaign.db.get_result_files(res_id)[trace_str_ul]
+                # Save both results and relative params
+                dl_df = pd.read_csv(filepath_or_buffer=dl_path, header=0, delimiter='\t', low_memory=True)
+                ul_df = pd.read_csv(filepath_or_buffer=ul_path, header=0, delimiter='\t', low_memory=True)
 
-        # Load results, specify params if given on input
-        trace_no_ca_dl = load_results(trace_name=trace_str_dl, param=param_no_ca)
-        trace_no_ca_ul = load_results(trace_name=trace_str_ul, param=param_no_ca)
-        trace_no_ca_rx_pckt = load_results(trace_name=trace_str_rx_pckt, param=param_no_ca)
-        trace_ca_dl = load_results(trace_name=trace_str_dl, param=param_ca)
-        trace_ca_ul = load_results(trace_name=trace_str_ul, param=param_ca)
-        trace_ca_rx_pckt = load_results(trace_name=trace_str_rx_pckt, param=param_ca)
-        trace_dl = trace_no_ca_dl + trace_ca_dl
-        trace_ul = trace_no_ca_ul + trace_ca_ul
-        trace_rx_pckt = trace_no_ca_rx_pckt + trace_ca_rx_pckt
-        # throughput_app_det(trace_dl, prot, versus, s_path=top_path)
-        # Plot generics
-        # plot_distr_bins(metric_frame=sinr_overall(trace_rx_pckt), metric='SINR(dB)', 
-        #            title='Distribution of the SINR of all users, for all simulation runs', s_path=top_path)
-        m_title = 'Band allocation \n (percentage of total system bw)'
-        band_res = band_allocation(trace_rx_pckt, versus=versus)
-        del trace_rx_pckt
-        del trace_no_ca_rx_pckt
-        del trace_ca_rx_pckt
+                # Keep just some of the params
 
-        plot_metric_box(band_res, s_path=top_path, metric='Band allocation', 
-                            title=m_title, versus=versus)
-        # If specified, try to aggregate the plots into as less images as possibile, in order
-        # to allow an easier comparison between the various results
-        if not fewer_images:
-            fig = None
-            ax = np.empty([2,3], dtype=object)
-        # Specific metric plots
-        info = {'prot':prot, 'metric':'Packet loss', 'unit':''}
-        loss_res = pkt_loss_app(trace_dl, trace_ul)
-        plot_lines_versus(loss_res, s_path=top_path, 
-                            info=info, versus=versus, fig=fig, ax=ax[sub_col, 0])
-        del loss_res
+                # Improve data structure, keep just relevant data
+                ul_df = sanitize_dataframe(ul_df, res_istance['params']['maxStart']*1e9) # sec to ns ns in the traces
+                dl_df = sanitize_dataframe(dl_df, res_istance['params']['maxStart']*1e9) # sec to ns ns in the traces
 
-        info = {'prot':prot, 'metric':'Throughput', 'unit':'[Mbit/s]'}
-        thr_res = throughput_app(trace_dl, bearer_type=prot)
-        plot_lines_versus(metric_bucket=thr_res, info=info, s_path=top_path, versus=versus, fig=fig, ax=ax[sub_col, 1])
-        del thr_res
+                # Compute metrics here
+                info = {'prot':prot, 'metric':'Packet loss', 'unit':''}
+                loss.append({'mean': pkt_loss_app(dl_df, ul_df), 'params': res_istance['params']})
 
-        info = {'prot':prot, 'metric':'Delay', 'unit':'[ms]'}
-        del_res = delay_app(trace_dl)
-        plot_lines_versus(metric_bucket=del_res, info=info, s_path=top_path, versus=versus, fig=fig, ax=ax[sub_col, 2])
-        del del_res
-        
-        print('---------')
+                info = {'prot':prot, 'metric':'Throughput', 'unit':'[Mbit/s]'}
+                thr.append({'mean':throughput_app(dl_df, bearer_type=prot, params=res_istance['params']), 
+                            'params': res_istance['params']})
 
-        del trace_dl
-        del trace_ul
+                info = {'prot':prot, 'metric':'Delay', 'unit':'[ms]'}
+                delay.append({'mean':delay_app(dl_df), 'params': res_istance['params']})
+                
+        # Plot the various metrics        
+        plot_lines_versus(metric_bucket=delay, info=info, s_path=top_path, versus=versus, fig=fig, ax=ax[sub_col, 2])
+        plot_lines_versus(metric_bucket=thr, info=info, s_path=top_path, versus=versus, fig=fig, ax=ax[sub_col, 1])
+        plot_lines_versus(loss, s_path=top_path, info=info, versus=versus, fig=fig, ax=ax[sub_col, 0])
 
-    if fewer_images:
-        return fig
-
-def print_dict(param_dict):
-    out = ''
-    for key in param_dict.keys():
-        out += f"{key}_"
-        if isinstance(param_dict[key], float):
-            temp = '{:.2e}'.format(param_dict[key])
-            out += f"{temp}_"
-        else:
-            out += f"{param_dict[key]}_"
-
-    return out
+    return fig
 
 def group_cc_strat(metric_frame):
     metric_frame['mode'] =  metric_frame['mode'].replace(1, 'no CA, ')
@@ -155,10 +139,10 @@ def plot_lines_versus(metric_bucket, info, s_path, versus, fig=None, ax=None):
         'versus': versus_data,
         'ccMan': ccman_data
     }
+    metric_frame = pd.DataFrame(data=frame)
 
-    metric_frame = group_cc_strat(pd.DataFrame(data=frame))
+    metric_frame = group_cc_strat(metric_frame)
     filename = f"{info['prot']}_{info['metric']}_vs{versus}.png"
-
     temp = sanitize_versus(metric_bucket=metric_frame, vs=versus)
     if temp is not None:
         versus = temp
@@ -172,7 +156,7 @@ def plot_lines_versus(metric_bucket, info, s_path, versus, fig=None, ax=None):
 
     if dummy_ax is None:
         fig.set_size_inches(count_amount_uniques(versus_data)*2, 8)    
-        fig.suptitle(plot_title + '\n', fontsize=12)
+        fig.suptitle(f"{plot_tile} \n", fontsize=12)
         # Save, create dir if doesn't exist 
         out_dir = f"./slicing-plots/{s_path}/"
         os.makedirs(out_dir, exist_ok=True)
@@ -182,14 +166,15 @@ def plot_lines_versus(metric_bucket, info, s_path, versus, fig=None, ax=None):
         fig.set_size_inches(count_amount_uniques(versus_data)*2*3, 10)
         ax.grid(color='#b3b3b3')
         ax.set_facecolor('#f5f5fa')
-        ax.title.set_text(plot_title + '\n')
+        ax.title.set_text(f"{plot_title} \n")
         for spine in ax.spines.values():
             spine.set_edgecolor('#b3b3b3')
-        # fig.set_figheight(7)
-        # fig.set_figwidth(count_amount_uniques(versus_data)*2*3)
+
+    del dummy_ax
+    del g
     #Ylim
     #g.set(ylim=(0, None)) 
-
+'''
 def plot_line(metric_frame, metric, title, s_path, fname, overlays=None):
 
     fig, ax = plt.subplots(constrained_layout=True)
@@ -220,7 +205,7 @@ def plot_line(metric_frame, metric, title, s_path, fname, overlays=None):
 
     plt.savefig(out_dir + fname)
     plt.close('fig')
-
+'''
 def plot_distr_bins(metric_frame, metric, title, s_path):
     # Make sure figure is clean
     fig, ax = plt.subplots(constrained_layout=True)
@@ -236,7 +221,7 @@ def plot_distr_bins(metric_frame, metric, title, s_path):
     # Save, create dir if doesn't exist       
     out_dir = f"{s_path}detailed/"
     os.makedirs(out_dir, exist_ok=True)
-    plt.savefig(out_dir + metric)
+    plt.savefig(f"{out_dir}{metric}")
 
     plt.close('fig')
 
@@ -271,7 +256,7 @@ def plot_metric_box(metric_frame, metric, title, s_path, versus):
     plt.ylabel(f"{metric} \n", fontsize=12)
     plt.xlabel(f"{x_label}", fontsize=12)
     #ax.set_xlabel('')
-    plt.title(title + '\n')
+    plt.title(f"{title} \n")
 
     # Save, create dir if doesn't exist       
     out_dir = s_path
@@ -306,8 +291,8 @@ def plot_metrics_generic(metric_bucket, metric, prot, s_path, unit, vs=None):
     }
 
     metric_frame = pd.DataFrame(data=frame)
-    metric_frame['mode'] =  metric_frame['mode'].replace(1, 'no CA')
-    metric_frame['mode'] =  metric_frame['mode'].replace(2, 'CA')
+    metric_frame['mode'].replace(1, 'no CA',inplace=True)
+    metric_frame['mode'].replace(2, 'CA', inplace=True)
     
     # Colors
     # fig, (box_ax, viol_ax) = plt.subplots(2, 1, constrained_layout=True, sharex=True, sharey=True)
@@ -460,32 +445,11 @@ def load_results(trace_name, param=None):
         originated such outputs.
     """
 
-    # Get the required files IDs
-    campaign = sem.CampaignManager.load('./slicing-res')
-    if param is not None:
-        res_data = campaign.db.get_results(param)
-    else:
-        res_data = campaign.db.get_results()
+
 
     # Get list containing data of the trace for the various param combination
     # and combination of params that generated it
     res_bucket = []
-    for res_istance in res_data:
-        res_id = res_istance['meta']['id']
-        res_path = campaign.db.get_result_files(res_id)[trace_name]
-        # Save both results and relative params
-        new_df = pd.read_csv(filepath_or_buffer=res_path, header=0, delimiter='\t', low_memory=True)
-        # Improve data structure, keep just relevant data
-        new_df = sanitize_dataframe(new_df, res_istance['params']['maxStart']*1e9) # sec to ns ns in the traces
-
-        if len(new_df) != 0:
-            res_bucket.append({
-            'results': new_df,
-            'params': res_istance['params']
-            })
-        else:
-            print('Empty trace found!')
-            print('Path of the resource: '+ res_path)
     
     return res_bucket
 
@@ -620,7 +584,7 @@ def throughput_app_det(trace_data, bearer_type, vs, s_path):
 
     return out
 
-def throughput_app(trace_data, bearer_type):
+def throughput_app(trace_data, bearer_type, params):
     """ 
     Computes the average throughput @ APP layer
     If parameters combination are provided, then only the simulations for
@@ -629,25 +593,16 @@ def throughput_app(trace_data, bearer_type):
     Args:
         bearer_type (str): either urrlc or embb
     """
-    print('--Computing per-user throughput--')
 
-    ris = []
-    for item in trace_data:
-        g = (len(item['results'].index)*1024*8)/((item['params']['appEnd'] -
-                                            item['params']['maxStart'])*1e6)  # computing overall throughput
-        # computing per user throughput
-        if bearer_type == 'URLLC':
-            single_g = g/(item['params']['numUrllcUes'])
-        else:
-            single_g = g/(item['params']['numEmbbUes'])
+    g = (len(trace_data.index)*1024*8)/((params['appEnd'] -
+                                        params['maxStart'])*1e6)  # computing overall throughput
+    # computing per user throughput
+    if bearer_type == 'URLLC':
+        single_g = g/(params['numUrllcUes'])
+    else:
+        single_g = g/(params['numEmbbUes'])
 
-        ris.append({
-            'mean': single_g,
-            'params': item['params']
-        })
-
-    return ris
-
+    return single_g
 
 def delay_app(trace_data):
     """ 
@@ -658,25 +613,13 @@ def delay_app(trace_data):
     Args:
         bearer_type (str): either urrlc or embb
     """
-    print('--Computing average packet delay--')
-
-    delay = []
-    for item in trace_data:
-        # get time of rx
-        time_rx = item['results']['rx_time']
-        # get time of tx
-        time_tx = item['results']['tx_time']
-        # packet delay
-        pck_delay = (time_rx - time_tx)/1e6
-        delay.append({
-            # latency = mean of packet delay
-            'mean': pck_delay.mean(),
-            'var': pck_delay.std(),  # Output both latency and jitter
-            'params': item['params']
-        })
-
-    return delay
-
+    time_rx = trace_data['rx_time']
+    # get time of tx
+    time_tx = trace_data['tx_time']
+    # packet delay
+    #'var': pck_delay.std(),  # Output both latency and jitter
+    pck_delay = (time_rx - time_tx)/1e6
+    return pck_delay.mean()
 
 def pkt_loss_app(trace_dl, trace_ul):
     """ 
@@ -687,21 +630,12 @@ def pkt_loss_app(trace_dl, trace_ul):
     Args:
         bearer_type (str): either urrlc or embb
     """
-    print('--Computing average packet loss--')
-
-    loss = []
-    for index in range(len(trace_dl)):   # Amount of sim same for ul and dl
-        sent = len(trace_ul[index]['results'].index)
-        # Overall lost packets
-        dropped = sent - len(trace_dl[index]['results'].index)
-        # Percentage of packets lost
-        dropped = dropped/len(trace_ul[index]['results'].index)
-        loss.append({
-            'mean': dropped,
-            'params': trace_dl[index]['params']
-        })
-
-    return loss
+    loss = 0
+    sent = len(trace_ul.index)
+    # Overall lost packets
+    dropped = sent - len(trace_dl.index)
+    
+    return dropped/len(trace_ul.index)
 
 # Small, support functions
 def check_constant(bucket):
