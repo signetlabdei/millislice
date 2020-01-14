@@ -41,8 +41,6 @@ def plot_forall_static(static, param_ca, param_no_ca, versus, fewer_images=False
 def plot_all_metrics(param_ca, param_no_ca, versus=None, fewer_images=False, top_path=None):
 
     fig, ax = plt.subplots(constrained_layout=True, nrows=2, ncols=3)
-    #with sns.axes_style("darkgrid"):
-       # ax = fig.add_subplot(1, 2, 1)
 
     for prot in ['URLLC', 'eMBB']:
         print(f"{prot} stats")
@@ -60,36 +58,24 @@ def plot_all_metrics(param_ca, param_no_ca, versus=None, fewer_images=False, top
         trace_str_rx_pckt = 'test_RxPacketTrace.txt' # Always same name
 
         # Load results, specify params if given on input
-        if param_no_ca is not None:
-            trace_no_ca_dl = load_results(trace_name=trace_str_dl, param=param_no_ca)
-            trace_no_ca_ul = load_results(trace_name=trace_str_ul, param=param_no_ca)
-            trace_no_ca_rx_pckt = load_results(trace_name=trace_str_rx_pckt, param=param_no_ca)
-            # Subfoloder name
-            if param_ca is not None and param_ca is not param_no_ca:
-                trace_ca_dl = load_results(trace_name=trace_str_dl, param=param_ca)
-                trace_ca_ul = load_results(trace_name=trace_str_ul, param=param_ca)
-                trace_ca_rx_pckt = load_results(trace_name=trace_str_rx_pckt, param=param_ca)
-                # Combine the traces lists:
-                trace_dl = trace_no_ca_dl + trace_ca_dl
-                trace_ul = trace_no_ca_ul + trace_ca_ul
-                trace_rx_pckt = trace_no_ca_rx_pckt + trace_ca_rx_pckt
-            else:
-                trace_dl = trace_no_ca_dl 
-                trace_ul = trace_no_ca_ul 
-                trace_rx_pckt = trace_no_ca_rx_pckt   
-
-        else:
-            trace_dl = load_results(trace_name=trace_str_dl)
-            trace_ul = load_results(trace_name=trace_str_ul)
-            trace_rx_pckt = load_results(trace_name=trace_str_rx_pckt)
-
+        trace_no_ca_dl = load_results(trace_name=trace_str_dl, param=param_no_ca)
+        trace_no_ca_ul = load_results(trace_name=trace_str_ul, param=param_no_ca)
+        trace_no_ca_rx_pckt = load_results(trace_name=trace_str_rx_pckt, param=param_no_ca)
+        trace_ca_dl = load_results(trace_name=trace_str_dl, param=param_ca)
+        trace_ca_ul = load_results(trace_name=trace_str_ul, param=param_ca)
+        trace_ca_rx_pckt = load_results(trace_name=trace_str_rx_pckt, param=param_ca)
+        trace_dl = trace_no_ca_dl + trace_ca_dl
+        trace_ul = trace_no_ca_ul + trace_ca_ul
+        trace_rx_pckt = trace_no_ca_rx_pckt + trace_ca_rx_pckt
         # throughput_app_det(trace_dl, prot, versus, s_path=top_path)
         # Plot generics
         # plot_distr_bins(metric_frame=sinr_overall(trace_rx_pckt), metric='SINR(dB)', 
         #            title='Distribution of the SINR of all users, for all simulation runs', s_path=top_path)
         m_title = 'Band allocation \n (percentage of total system bw)'
         band_res = band_allocation(trace_rx_pckt, versus=versus)
-
+        del trace_rx_pckt
+        del trace_no_ca_rx_pckt
+        del trace_ca_rx_pckt
 
         plot_metric_box(band_res, s_path=top_path, metric='Band allocation', 
                             title=m_title, versus=versus)
@@ -100,7 +86,7 @@ def plot_all_metrics(param_ca, param_no_ca, versus=None, fewer_images=False, top
             ax = np.empty([2,3], dtype=object)
         # Specific metric plots
         info = {'prot':prot, 'metric':'Packet loss', 'unit':''}
-        loss_res = metric_bucket=pkt_loss_app(trace_dl, trace_ul)
+        loss_res = pkt_loss_app(trace_dl, trace_ul)
         plot_lines_versus(loss_res, s_path=top_path, 
                             info=info, versus=versus, fig=fig, ax=ax[sub_col, 0])
         del loss_res
@@ -116,6 +102,9 @@ def plot_all_metrics(param_ca, param_no_ca, versus=None, fewer_images=False, top
         del del_res
         
         print('---------')
+
+        del trace_dl
+        del trace_ul
 
     if fewer_images:
         return fig
@@ -231,7 +220,7 @@ def plot_line(metric_frame, metric, title, s_path, fname, overlays=None):
     fig.set_size_inches(8, 6)
 
     plt.savefig(out_dir + fname)
-    plt.close(fig)
+    plt.close('fig')
 
 def plot_distr_bins(metric_frame, metric, title, s_path):
     # Make sure figure is clean
@@ -250,7 +239,7 @@ def plot_distr_bins(metric_frame, metric, title, s_path):
     os.makedirs(out_dir, exist_ok=True)
     plt.savefig(out_dir + metric)
 
-    plt.close(fig)
+    plt.close('fig')
 
 def plot_metric_box(metric_frame, metric, title, s_path, versus):
     # Make sure figure is clean
@@ -473,7 +462,6 @@ def load_results(trace_name, param=None):
     """
 
     # Get the required files IDs
-    print("Loading SEM campaign")
     campaign = sem.CampaignManager.load('./slicing-res')
     if param is not None:
         res_data = campaign.db.get_results(param)
@@ -483,7 +471,6 @@ def load_results(trace_name, param=None):
     # Get list containing data of the trace for the various param combination
     # and combination of params that generated it
     res_bucket = []
-    print("Loading actual tracedata")
     for res_istance in res_data:
         res_id = res_istance['meta']['id']
         res_path = campaign.db.get_result_files(res_id)[trace_name]
@@ -500,7 +487,7 @@ def load_results(trace_name, param=None):
         else:
             print('Empty trace found!')
             print('Path of the resource: '+ res_path)
-
+    
     return res_bucket
 
 def sanitize_dataframe(dataframe, treshold):
@@ -512,8 +499,9 @@ def sanitize_dataframe(dataframe, treshold):
     else:
         dataframe = dataframe[dataframe['time'] > treshold/1e9] # Need secs here
 
-    # Go from IPI to source gen datarate
-    # dataframe = dataframe[]
+    # Remove unused cols
+    if 'TBler' in dataframe.columns:
+        dataframe.drop(columns=['TBler', 'corrupt', 'mcs', 'rv' , '1stSym', 'DL/UL' , 'time', 'tbSize'], inplace=True)
 
     return dataframe
 
@@ -739,7 +727,6 @@ no_ca_params = {'f0': 28e9, 'mode': 1}
 
 print('Computing stats')
 plot_forall_static(param_ca=ca_params, param_no_ca=no_ca_params, versus='embbUdpIPI', fewer_images=True, static='urllcUdpIPI') 
-tracker.print_diff()
 
 print('CA using f0=28GHz, f1=10Ghz; non CA using f0=28GhzL: vs URLLC rates')
 ca_params = {'f0': 28e9, 'f1':10e9, 'mode': 2}
