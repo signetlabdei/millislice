@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 from statistics import mean
 import seaborn as sns
 import pandas as pd
-from pympler.tracker import summary
 
 # Functions
 
