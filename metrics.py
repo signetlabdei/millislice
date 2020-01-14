@@ -34,7 +34,7 @@ def plot_forall_static(static, param_ca, param_no_ca, versus, fewer_images=False
         fig = plot_all_metrics(param_no_ca=param_no_ca, param_ca=param_ca, versus=versus,
                             fewer_images=fewer_images, top_path=out_dir)
 
-        fig.suptitle(f"System performance vs for {static_formatted} = {val_formatted}", fontsize=16)
+        fig.suptitle(f"System performance for {static_formatted} = {val_formatted}", fontsize=16)
         plt.savefig(f"{out_dir}System_performance.png" )
         plt.close('fig')
         del fig
@@ -87,19 +87,19 @@ def plot_all_metrics(param_ca, param_no_ca, versus=None, fewer_images=False, top
                 dl_df = sanitize_dataframe(dl_df, res_istance['params']['maxStart']*1e9) # sec to ns ns in the traces
 
                 # Compute metrics here
-                info = {'prot':prot, 'metric':'Packet loss', 'unit':''}
                 loss.append({'mean': pkt_loss_app(dl_df, ul_df), 'params': res_istance['params']})
 
-                info = {'prot':prot, 'metric':'Throughput', 'unit':'[Mbit/s]'}
                 thr.append({'mean':throughput_app(dl_df, bearer_type=prot, params=res_istance['params']), 
                             'params': res_istance['params']})
 
-                info = {'prot':prot, 'metric':'Delay', 'unit':'[ms]'}
                 delay.append({'mean':delay_app(dl_df), 'params': res_istance['params']})
                 
-        # Plot the various metrics        
+        # Plot the various metrics 
+        info = {'prot':prot, 'metric':'Delay', 'unit':'[ms]'}       
         plot_lines_versus(metric_bucket=delay, info=info, s_path=top_path, versus=versus, fig=fig, ax=ax[sub_col, 2])
+        info = {'prot':prot, 'metric':'Throughput', 'unit':'[Mbit/s]'}
         plot_lines_versus(metric_bucket=thr, info=info, s_path=top_path, versus=versus, fig=fig, ax=ax[sub_col, 1])
+        info = {'prot':prot, 'metric':'Packet loss', 'unit':''}
         plot_lines_versus(loss, s_path=top_path, info=info, versus=versus, fig=fig, ax=ax[sub_col, 0])
 
     return fig
