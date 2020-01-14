@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from statistics import mean
 import seaborn as sns
 import pandas as pd
+from pympler.tracker import summary
 
 # Functions
 
@@ -18,7 +19,6 @@ def plot_forall_static(static, param_ca, param_no_ca, versus, fewer_images=False
     counter = 0
     for val in static_values:
         counter = counter + 1
-        print(f"{counter/len(static_values)} % done!")
         # Restrict params
         param_ca[static] = val
         param_no_ca[static] = val
@@ -36,6 +36,7 @@ def plot_forall_static(static, param_ca, param_no_ca, versus, fewer_images=False
         fig.suptitle(f"System performance vs for {static_formatted} = {val_formatted}", fontsize=16)
         plt.savefig(out_dir + "System_performance.png")
         plt.close('fig')
+        print(f"{counter/len(static_values)*100} % done!")
 
 def plot_all_metrics(param_ca, param_no_ca, versus=None, fewer_images=False, top_path=None):
 
@@ -57,8 +58,6 @@ def plot_all_metrics(param_ca, param_no_ca, versus=None, fewer_images=False, top
             sub_col = 1
 
         trace_str_rx_pckt = 'test_RxPacketTrace.txt' # Always same name
-        
-        sub_path = ''
 
         # Load results, specify params if given on input
         if param_no_ca is not None:
@@ -66,7 +65,6 @@ def plot_all_metrics(param_ca, param_no_ca, versus=None, fewer_images=False, top
             trace_no_ca_ul = load_results(trace_name=trace_str_ul, param=param_no_ca)
             trace_no_ca_rx_pckt = load_results(trace_name=trace_str_rx_pckt, param=param_no_ca)
             # Subfoloder name
-            sub_path += print_dict(param_no_ca)
             if param_ca is not None and param_ca is not param_no_ca:
                 trace_ca_dl = load_results(trace_name=trace_str_dl, param=param_ca)
                 trace_ca_ul = load_results(trace_name=trace_str_ul, param=param_ca)
@@ -75,7 +73,6 @@ def plot_all_metrics(param_ca, param_no_ca, versus=None, fewer_images=False, top
                 trace_dl = trace_no_ca_dl + trace_ca_dl
                 trace_ul = trace_no_ca_ul + trace_ca_ul
                 trace_rx_pckt = trace_no_ca_rx_pckt + trace_ca_rx_pckt
-                sub_path += 'versus_' + print_dict(param_ca)
             else:
                 trace_dl = trace_no_ca_dl 
                 trace_ul = trace_no_ca_ul 
@@ -85,15 +82,15 @@ def plot_all_metrics(param_ca, param_no_ca, versus=None, fewer_images=False, top
             trace_dl = load_results(trace_name=trace_str_dl)
             trace_ul = load_results(trace_name=trace_str_ul)
             trace_rx_pckt = load_results(trace_name=trace_str_rx_pckt)
-            sub_path = 'no_spec_params'
 
-        #throughput_app_det(trace_dl, prot, versus, s_path=top_path)
+        # throughput_app_det(trace_dl, prot, versus, s_path=top_path)
         # Plot generics
-        plot_distr_bins(metric_frame=sinr_overall(trace_rx_pckt), metric='SINR(dB)', 
-                    title='Distribution of the SINR of all users, for all simulation runs', s_path=top_path)
+        # plot_distr_bins(metric_frame=sinr_overall(trace_rx_pckt), metric='SINR(dB)', 
+        #            title='Distribution of the SINR of all users, for all simulation runs', s_path=top_path)
         m_title = 'Band allocation \n (percentage of total system bw)'
-        plot_metric_box(band_allocation(trace_rx_pckt, versus=versus), s_path=top_path, 
-                    metric='Band allocation', title=m_title, versus=versus)
+        band_res = band_allocation(trace_rx_pckt, versus=versus)
+        plot_metric_box(band_res, s_path=top_path, metric='Band allocation', 
+                            title=m_title, versus=versus)
         # If specified, try to aggregate the plots into as less images as possibile, in order
         # to allow an easier comparison between the various results
         if not fewer_images:
@@ -101,14 +98,20 @@ def plot_all_metrics(param_ca, param_no_ca, versus=None, fewer_images=False, top
             ax = np.empty([2,3], dtype=object)
         # Specific metric plots
         info = {'prot':prot, 'metric':'Packet loss', 'unit':''}
-        plot_lines_versus(metric_bucket=pkt_loss_app(trace_dl, trace_ul), s_path=sub_path, 
+        loss_res = metric_bucket=pkt_loss_app(trace_dl, trace_ul)
+        plot_lines_versus(loss_res, s_path=top_path, 
                             info=info, versus=versus, fig=fig, ax=ax[sub_col, 0])
+        del loss_res
+
         info = {'prot':prot, 'metric':'Throughput', 'unit':'[Mbit/s]'}
-        plot_lines_versus(metric_bucket=throughput_app(trace_dl, bearer_type=prot), 
-                            info=info, s_path=sub_path, versus=versus, fig=fig, ax=ax[sub_col, 1])
+        thr_res = throughput_app(trace_dl, bearer_type=prot)
+        plot_lines_versus(metric_bucket=thr_res, info=info, s_path=top_path, versus=versus, fig=fig, ax=ax[sub_col, 1])
+        del thr_res
+
         info = {'prot':prot, 'metric':'Delay', 'unit':'[ms]'}
-        plot_lines_versus(metric_bucket=delay_app(trace_dl), 
-                            info=info, s_path=sub_path, versus=versus, fig=fig, ax=ax[sub_col, 2])
+        del_res = delay_app(trace_dl)
+        plot_lines_versus(metric_bucket=del_res, info=info, s_path=top_path, versus=versus, fig=fig, ax=ax[sub_col, 2])
+        del del_res
         
         print('---------')
 
@@ -143,7 +146,7 @@ def plot_lines_versus(metric_bucket, info, s_path, versus, fig=None, ax=None):
     dummy_ax = ax
     if ax is None:
         fig, ax = plt.subplots(constrained_layout=True)
-    sns.set_style('whitegrid', {'axes.facecolor': '#EAEAF2'})
+        sns.set_style('whitegrid', {'axes.facecolor': '#EAEAF2'})
 
     metric_data = []
     mode_data = []
@@ -183,7 +186,7 @@ def plot_lines_versus(metric_bucket, info, s_path, versus, fig=None, ax=None):
         # Save, create dir if doesn't exist 
         out_dir = f"./slicing-plots/{s_path}/"
         os.makedirs(out_dir, exist_ok=True)
-        plt.savefig(out_dir + filename)
+        plt.savefig(f"{out_dir}{filename}")
         plt.close('fig')
     else:
         fig.set_size_inches(count_amount_uniques(versus_data)*2*3, 10)
@@ -195,7 +198,7 @@ def plot_lines_versus(metric_bucket, info, s_path, versus, fig=None, ax=None):
         # fig.set_figheight(7)
         # fig.set_figwidth(count_amount_uniques(versus_data)*2*3)
     #Ylim
-    #g.set(ylim=(0, None))      
+    #g.set(ylim=(0, None)) 
 
 def plot_line(metric_frame, metric, title, s_path, fname, overlays=None):
 
@@ -379,7 +382,7 @@ def plot_metrics_generic(metric_bucket, metric, prot, s_path, unit, vs=None):
     plt.savefig(out_dir + filename)
 
     plt.close('fig')
-
+'''
 def overlay_means(metric_bucket, palette, vs, vs_data):
 
    # Overlay mean value
@@ -403,7 +406,7 @@ def overlay_means(metric_bucket, palette, vs, vs_data):
             right = left + width
             plt.plot([left, right], [no_ca_mean, no_ca_mean], color=palette[0], linestyle='--', linewidth=1)
             plt.plot([left, right], [ca_mean, ca_mean], color=palette[1], linestyle='--', linewidth=1)
-
+'''
 
 def sanitize_versus(vs, metric_bucket):
     if(vs == 'embbUdpIPI'):
@@ -485,13 +488,11 @@ def load_results(trace_name, param=None):
         # Improve data structure, keep just relevant data
         new_df = sanitize_dataframe(new_df, res_istance['params']['maxStart']*1e9) # sec to ns ns in the traces
 
-        new_entry = {
+        if len(new_df) != 0:
+            res_bucket.append({
             'results': new_df,
             'params': res_istance['params']
-        }
-
-        if len(new_df) != 0:
-            res_bucket.append(new_entry)
+            })
         else:
             print('Empty trace found!')
             print('Path of the resource: '+ res_path)
@@ -733,7 +734,8 @@ ca_params = {'f0': 28e9, 'f1':10e9,'mode': 2}
 no_ca_params = {'f0': 28e9, 'mode': 1}
 
 print('Computing stats')
-plot_forall_static(param_ca=ca_params, param_no_ca=no_ca_params, versus='embbUdpIPI', fewer_images=True, static='urllcUdpIPI') #
+plot_forall_static(param_ca=ca_params, param_no_ca=no_ca_params, versus='embbUdpIPI', fewer_images=True, static='urllcUdpIPI') 
+tracker.print_diff()
 
 print('CA using f0=28GHz, f1=10Ghz; non CA using f0=28GhzL: vs URLLC rates')
 ca_params = {'f0': 28e9, 'f1':10e9, 'mode': 2}
