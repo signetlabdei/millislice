@@ -88,6 +88,8 @@ def plot_all_metrics(param_ca, param_no_ca, versus=None, fewer_images=False, top
         #            title='Distribution of the SINR of all users, for all simulation runs', s_path=top_path)
         m_title = 'Band allocation \n (percentage of total system bw)'
         band_res = band_allocation(trace_rx_pckt, versus=versus)
+
+
         plot_metric_box(band_res, s_path=top_path, metric='Band allocation', 
                             title=m_title, versus=versus)
         # If specified, try to aggregate the plots into as less images as possibile, in order
@@ -470,6 +472,7 @@ def load_results(trace_name, param=None):
     """
 
     # Get the required files IDs
+    print("Loading SEM campaign")
     campaign = sem.CampaignManager.load('./slicing-res')
     if param is not None:
         res_data = campaign.db.get_results(param)
@@ -479,6 +482,7 @@ def load_results(trace_name, param=None):
     # Get list containing data of the trace for the various param combination
     # and combination of params that generated it
     res_bucket = []
+    print("Loading actual tracedata")
     for res_istance in res_data:
         res_id = res_istance['meta']['id']
         res_path = campaign.db.get_result_files(res_id)[trace_name]
