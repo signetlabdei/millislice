@@ -46,6 +46,7 @@ def plot_all_metrics(param_ca, param_no_ca, versus=None, fewer_images=False, top
     fig, ax = plt.subplots(constrained_layout=True, nrows=2, ncols=3)
     campaign = sem.CampaignManager.load('./slicing-res')
     trace_str_rx = 'test_RxPacketTrace.txt' # Always same name
+    trace_err = 'stderr'
     band = pd.DataFrame()
 
     for prot in ['URLLC', 'eMBB']:
@@ -65,6 +66,7 @@ def plot_all_metrics(param_ca, param_no_ca, versus=None, fewer_images=False, top
 
         for param in param_ca, param_no_ca:
             print(f"\t {prot} stats, params {param}")
+            err_amount = 0
             # Load the desired datasets
             # Load results, specify params if given on input
             # Get the required files IDs
@@ -78,10 +80,19 @@ def plot_all_metrics(param_ca, param_no_ca, versus=None, fewer_images=False, top
                 dl_path = campaign.db.get_result_files(res_id)[trace_str_dl]
                 ul_path = campaign.db.get_result_files(res_id)[trace_str_ul]
                 rx_path = campaign.db.get_result_files(res_id)[trace_str_rx]
+                err_path = campaign.db.get_result_files(res_id)[trace_err]
+
                 # Save both results and relative params
                 dl_df = pd.read_csv(filepath_or_buffer=dl_path, header=0, delimiter='\t', low_memory=True)
                 ul_df = pd.read_csv(filepath_or_buffer=ul_path, header=0, delimiter='\t', low_memory=True)
                 rx_df = pd.read_csv(filepath_or_buffer=rx_path, header=0, delimiter='\t', low_memory=True)
+                # Did ns3 crash/output some error?
+                with open(err_path, 'r') as file:
+                    errors = file.read()
+                if len(errors) != 0:
+                    # Skip usch trace
+                    err_amount = err_amount + 1
+                    continue # Check other traces
 
                 # Improve data structure, keep just relevant data
                 ul_df = sanitize_dataframe(ul_df, res_istance['params']['maxStart']*1e9) # sec to ns ns in the traces
@@ -97,6 +108,12 @@ def plot_all_metrics(param_ca, param_no_ca, versus=None, fewer_images=False, top
                 delay.append({'mean':delay_app(dl_df), 'params': res_istance['params']})
 
                 band = band.append(band_allocation(rx_df, versus, res_istance['params']))
+            
+            # If no valid trace loaded, raise an error
+            if err_amount >> 0:
+                print(f"\t---{err_amount} faulty traces found, out of {len(res_data)}---")
+            if err_amount >= len(res_data):
+                print('Unusable traces, perform other simulations!')
 
                 
         # Plot the various metrics 
@@ -657,15 +674,22 @@ def compute_means(metric_bucket):
 # Actual metrics computation
 # Try plot
 print('CA using f0=28GHz, f1=10Ghz; non CA using f0=28GhzL: vs eMBB rates')
-ca_params = {'f0': 28e9, 'f1':10e9,'mode': 2}
-no_ca_params = {'f0': 28e9, 'mode': 1}
+ca_params = {'f0': 28e9, 'f1':10e9,'mode': 2, 'ccRatio': 0.5}
+no_ca_params = {'f0': 28e9, 'mode': 1, 'ccRatio': 0.5}
 
 print('Computing stats')
 plot_forall_static(param_ca=ca_params, param_no_ca=no_ca_params, versus='embbUdpIPI', fewer_images=True, static='urllcUdpIPI') 
 
 print('CA using f0=28GHz, f1=10Ghz; non CA using f0=28GhzL: vs URLLC rates')
-ca_params = {'f0': 28e9, 'f1':10e9, 'mode': 2}
-no_ca_params = {'f0': 28e9, 'mode': 1}
+ca_params = {'f0': 28e9, 'f1':10e9, 'mode': 2, 'ccRatio': 0.5}
+no_ca_params = {'f0': 28e9, 'mode': 1, 'ccRatio': 0.5}
 
 print('Computing stats')
 plot_forall_static(param_ca=ca_params, param_no_ca=no_ca_params, versus='urllcUdpIPI', fewer_images=True, static='embbUdpIPI')
+
+print('CA using f0=28GHz, f1=10Ghz; non CA using f0=28GhzL: vs ccRatio')
+ca_params = {'f0': 28e9, 'f1':10e9, 'mode': 2, 'embbUdpIPI': 59}
+no_ca_params = {'f0': 28e9, 'mode': 1, 'embbUdpIPI': 59}
+
+print('Computing stats')
+plot_forall_static(param_ca=ca_params, param_no_ca=no_ca_params, versus='ccRatio', fewer_images=True, static='urllcUdpIPI')
