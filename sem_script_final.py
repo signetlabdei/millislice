@@ -12,7 +12,7 @@ campaign = sem.CampaignManager.new(
 # Obtain IPIs from rates
 # eMMB
 embb_packet_size = 1024
-embb_rate_grid = list(range(100, 180, 20))
+embb_rate_grid = list(range(140, 160, 20))
 embb_IPI_grid = []
 for rate in embb_rate_grid:
     # Mbit/s to IPI in microseconds
@@ -20,7 +20,7 @@ for rate in embb_rate_grid:
     embb_IPI_grid.append(int(round(temp_IPI)))
 # URLLC
 urllc_packet_size = 1024
-urllc_rate_grid = list(np.arange(0.5, 2.5, 0.5))
+urllc_rate_grid = list(np.arange(1.0, 2.0, 0.5))
 urllc_IPI_grid = []
 for rate in urllc_rate_grid:
     temp_IPI = urllc_packet_size*8/(rate)
@@ -28,7 +28,6 @@ for rate in urllc_rate_grid:
 
 # URLLC tresholds
 urllc_tres_grid = list(range(1, 2, 1))
-
 
 # Set amount of simulation time
 sim_duration = 7
@@ -40,7 +39,7 @@ params_grid = {
     'maxStart': 0.4,
     'bsrTimer': 1.0,
     'bw': 5e8,
-    'ccRatio': 0.5,
+    'ccRatio': [0.5, 0.6, 0.7],
     'condition': 'a',
     'ccMan': 0,
     'embbOn': True,
