@@ -673,6 +673,7 @@ def compute_means(metric_bucket):
 
 # Actual metrics computation
 # Try plot
+'''
 print('CA using f0=28GHz, f1=10Ghz; non CA using f0=28GhzL: vs eMBB rates')
 ca_params = {'f0': 28e9, 'f1':10e9,'mode': 2, 'ccRatio': 0.5}
 no_ca_params = {'f0': 28e9, 'mode': 1, 'ccRatio': 0.5}
@@ -686,7 +687,7 @@ no_ca_params = {'f0': 28e9, 'mode': 1, 'ccRatio': 0.5}
 
 print('Computing stats')
 plot_forall_static(param_ca=ca_params, param_no_ca=no_ca_params, versus='urllcUdpIPI', fewer_images=True, static='embbUdpIPI')
-
+'''
 print('CA using f0=28GHz, f1=10Ghz; non CA using f0=28GhzL: vs ccRatio')
 ca_params = {'f0': 28e9, 'f1':10e9, 'mode': 2, 'embbUdpIPI': 59}
 no_ca_params = {'f0': 28e9, 'mode': 1, 'embbUdpIPI': 59}
