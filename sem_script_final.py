@@ -40,7 +40,7 @@ params_grid = {
     'maxStart': 0.4,
     'bsrTimer': 1.0,
     'bw': 5e8,
-    'ccRatio': 0.5
+    'ccRatio': 0.5,
     'condition': 'a',
     'ccMan': 0,
     'embbOn': True,
@@ -51,9 +51,9 @@ params_grid = {
     'fileSize': 512000,
     'lambdaUrllc': 0.2,
     'mode': [1, 2],  # Test both without/with CA slicing
-    'numEmbbUes': [5, 10, 15]
+    'numEmbbUes': [5, 10, 15],
     'numEnbs': 1,
-    'numUrllcUes': [5, 10, 15]
+    'numUrllcUes': [5, 10, 15],
     'rho': 200,
     'reorderingTimer': 1.0,
     'runSet': list(range(runs)),
