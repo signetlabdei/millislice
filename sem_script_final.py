@@ -12,15 +12,16 @@ campaign = sem.CampaignManager.new(
 # Obtain IPIs from rates
 # eMMB
 embb_packet_size = 1024
-embb_rate_grid = list(range(140, 160, 20))
+embb_rate_grid = list(range(100, 120, 20))
 embb_IPI_grid = []
 for rate in embb_rate_grid:
     # Mbit/s to IPI in microseconds
     temp_IPI = embb_packet_size*8/(rate)
     embb_IPI_grid.append(int(round(temp_IPI)))
+
 # URLLC
 urllc_packet_size = 1024
-urllc_rate_grid = list(np.arange(1.0, 2.0, 0.5))
+urllc_rate_grid = list(np.arange(1.0, 1.5, 0.5))
 urllc_IPI_grid = []
 for rate in urllc_rate_grid:
     temp_IPI = urllc_packet_size*8/(rate)
@@ -39,7 +40,7 @@ params_grid = {
     'maxStart': 0.4,
     'bsrTimer': 1.0,
     'bw': 5e8,
-    'ccRatio': [0.5, 0.6, 0.7],
+    'ccRatio': 0.5
     'condition': 'a',
     'ccMan': 0,
     'embbOn': True,
@@ -50,9 +51,9 @@ params_grid = {
     'fileSize': 512000,
     'lambdaUrllc': 0.2,
     'mode': [1, 2],  # Test both without/with CA slicing
-    'numEmbbUes': 10,
+    'numEmbbUes': [5, 10, 15]
     'numEnbs': 1,
-    'numUrllcUes': 10,
+    'numUrllcUes': [5, 10, 15]
     'rho': 200,
     'reorderingTimer': 1.0,
     'runSet': list(range(runs)),
@@ -72,7 +73,7 @@ params_grid = {
 }
 
 # Temporarily limit number of max cores used
-sem.parallelrunner.MAX_PARALLEL_PROCESSES=4
+sem.parallelrunner.MAX_PARALLEL_PROCESSES=19
 
 campaign.run_missing_simulations(sem.list_param_combinations(params_grid))
 # Get missing results for CA, Slcing CC Manager
