@@ -423,6 +423,10 @@ def sanitize_versus(vs, metric_bucket):
         return 'URLLC sources rate [Mbit/s]'
     if(vs == 'ccRatio'):
         return 'Ratio of bw allocated to CC0'
+    if(vs == 'numEmbbUes'):
+        return '# of eMBB users'
+    if(vs == 'numUrllcUes'):
+        return '# of URLLC users'
 
 def find_elements(bucket, param, value):
     out = []
