@@ -620,7 +620,7 @@ def throughput_app(trace_data, bearer_type, params):
         bearer_type (str): either urrlc or embb
     """
 
-    full_regime_data = trace_data[trace_data['rx_time'] < params['appEnd']]
+    full_regime_data = trace_data[trace_data['rx_time'] < params['appEnd']*1e9]
     g = (len(full_regime_data.index)*1024*8)/((params['appEnd'] -
                                         params['maxStart'])*1e6)  # computing overall throughput
     del full_regime_data
