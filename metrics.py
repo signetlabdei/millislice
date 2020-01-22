@@ -183,6 +183,9 @@ def plot_lines_versus(metric_bucket, info, s_path, versus, fig=None, ax=None):
     ax.set_xlabel(f"{versus}", fontsize=12)
     plot_title = f"{info['metric']} {info['prot']} vs. {versus}"
 
+    if info['metric'] == 'Throughput':
+        g.set(ylim=(0, None)) 
+
     if dummy_ax is None:
         fig.set_size_inches(count_amount_uniques(versus_data)*2, 8)    
         fig.suptitle(f"{plot_tile} \n", fontsize=12)
@@ -613,8 +616,10 @@ def throughput_app(trace_data, bearer_type, params):
         bearer_type (str): either urrlc or embb
     """
 
-    g = (len(trace_data.index)*1024*8)/((params['appEnd'] -
+    full_regime_data = trace_data[trace_data['rx_time'] < params['appEnd']]
+    g = (len(full_regime_data.index)*1024*8)/((params['appEnd'] -
                                         params['maxStart'])*1e6)  # computing overall throughput
+    del full_regime_data
     # computing per user throughput
     if bearer_type == 'URLLC':
         single_g = g/(params['numUrllcUes'])
