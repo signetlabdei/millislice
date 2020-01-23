@@ -184,7 +184,8 @@ def plot_lines_versus(metric_bucket, info, s_path, versus, fig=None, ax=None):
     plot_title = f"{info['metric']} {info['prot']} vs. {versus}"
 
     if info['metric'] == 'Throughput':
-        g.set(ylim=(0, None)) 
+        _, top = ylim()
+        g.set(ylim=(0, top*1.1)) 
 
     if dummy_ax is None:
         fig.set_size_inches(count_amount_uniques(versus_data)*2, 8)    
