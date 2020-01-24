@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
 	double reorderingTimer = 1.0; 
 	int runSet = 1;
 	int mode = 1;		   // mode 1 = 1 CC, no isolation; mode 2 = 2 CC, complete isolation
-	ccMan = 1;			// ccMan = 0 uses SplitDrb CC manager, 1 uses Slicing one
+	ccMan = 1;			// ccMan = 0 uses SplitDrb CC manager, 1 uses Slicing one and 2 NoOpComponent
 	int urllcTres = 2;
 						   		
 	int scheduler = 1;	 // the MAC scheduler
@@ -193,8 +193,11 @@ int main(int argc, char *argv[])
 			Config::SetDefault("ns3::MmWaveHelper::EnbComponentCarrierManager", StringValue("ns3::MmWaveSlicingDrbComponentCarrierManager"));
 			// Set the URLLC tres
 			Config::SetDefault("ns3::MmWaveSlicingDrbComponentCarrierManager::urllcTres", UintegerValue (urllcTres*1024));
-
 		}	
+		else if(ccMan == 2)
+		{
+			Config::SetDefault("ns3::MmWaveHelper::EnbComponentCarrierManager", StringValue("ns3::MmWaveNoOpComponentCarrierManager"));
+		}
 	}
 	else
 	{

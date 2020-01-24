@@ -42,7 +42,7 @@ params_grid = {
     'bw': 5e8,
     'ccRatio': 0.5,
     'condition': 'a',
-    'ccMan': 0,
+    'ccMan': 2,
     'embbOn': True,
     'embbUdpIPI': embb_IPI_grid,
     'f0': 28e9,  # eMBB's CC
