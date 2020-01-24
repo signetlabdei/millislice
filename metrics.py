@@ -3,9 +3,11 @@ import copy
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-from statistics import mean
 import seaborn as sns
 import pandas as pd
+import tikzplotlib # Save figures as PGFplots
+
+#from statistics import mean
 # from pympler import tracker
 
 # Functions
@@ -36,8 +38,8 @@ def plot_forall_static(static, param_ca, param_no_ca, versus, fewer_images=False
 
         fig.suptitle(f"System performance for {static_formatted} = {val_formatted}", fontsize=16)
         plt.savefig(f"{out_dir}System_performance.png" )
+        tikzplotlib.save(f"{out_dir}System_performance.tex")
         plt.close('fig')
-        del fig
         print(f"{counter/len(static_values)*100:.0f} % done!")
         #tr.print_diff()
 
@@ -184,7 +186,7 @@ def plot_lines_versus(metric_bucket, info, s_path, versus, fig=None, ax=None):
     plot_title = f"{info['metric']} {info['prot']} vs. {versus}"
 
     if info['metric'] == 'Throughput':
-        _, top = ylim()
+        _, top = ax.get_ylim()
         g.set(ylim=(0, top*1.1)) 
 
     if dummy_ax is None:
