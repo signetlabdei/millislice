@@ -36,16 +36,20 @@ def plot_forall_static(static, param_ca, param_no_ca, versus, fewer_images=False
         fig = plot_all_metrics(param_no_ca=param_no_ca, param_ca=param_ca, versus=versus,
                             fewer_images=fewer_images, top_path=out_dir)
 
-        fig.suptitle(f"System performance for {static_formatted} = {val_formatted}", fontsize=16)
-        plt.savefig(f"{out_dir}System_performance.png" )
-        tikzplotlib.save(f"{out_dir}System_performance.tex")
-        plt.close('fig')
-        print(f"{counter/len(static_values)*100:.0f} % done!")
+        if fewer_images:
+            fig.suptitle(f"System performance for {static_formatted} = {val_formatted}", fontsize=16)
+            plt.savefig(f"{out_dir}System_performance.png" )
+            tikzplotlib.save(f"{out_dir}System_performance.tex")
+            plt.close('fig')
+
         #tr.print_diff()
+        print(f"{counter/len(static_values)*100:.0f} % done!")
 
 def plot_all_metrics(param_ca, param_no_ca, versus=None, fewer_images=False, top_path=None):
 
-    fig, ax = plt.subplots(constrained_layout=True, nrows=2, ncols=3)
+    if fewer_images:
+        fig, ax = plt.subplots(constrained_layout=True, nrows=2, ncols=3)        
+    
     campaign = sem.CampaignManager.load('./slicing-res')
     trace_str_rx = 'test_RxPacketTrace.txt' # Always same name
     trace_err = 'stderr'
@@ -119,18 +123,35 @@ def plot_all_metrics(param_ca, param_no_ca, versus=None, fewer_images=False, top
 
                 
         # Plot the various metrics 
-        info = {'prot':prot, 'metric':'Delay', 'unit':'[ms]'}       
-        plot_lines_versus(metric_bucket=delay, info=info, s_path=top_path, versus=versus, fig=fig, ax=ax[sub_col, 2])
-        info = {'prot':prot, 'metric':'Throughput', 'unit':'[Mbit/s]'}
-        plot_lines_versus(metric_bucket=thr, info=info, s_path=top_path, versus=versus, fig=fig, ax=ax[sub_col, 1])
-        info = {'prot':prot, 'metric':'Packet loss', 'unit':''}
-        plot_lines_versus(loss, s_path=top_path, info=info, versus=versus, fig=fig, ax=ax[sub_col, 0])
+        if fewer_images:
+            info = {'prot':prot, 'metric':'Delay', 'unit':'[ms]'}       
+            plot_lines_versus(metric_bucket=delay, info=info, s_path=top_path, versus=versus, fig=fig, ax=ax[sub_col, 2])
+            info = {'prot':prot, 'metric':'Throughput', 'unit':'[Mbit/s]'}
+            plot_lines_versus(metric_bucket=thr, info=info, s_path=top_path, versus=versus, fig=fig, ax=ax[sub_col, 1])
+            info = {'prot':prot, 'metric':'Packet loss', 'unit':''}
+            plot_lines_versus(loss, s_path=top_path, info=info, versus=versus, fig=fig, ax=ax[sub_col, 0])
+        else:
+            info = {'prot':prot, 'metric':'Delay', 'unit':'[ms]', 'path':top_path}       
+            plot_lines_versus(metric_bucket=delay, info=info, s_path=top_path, versus=versus)
+            info = {'prot':prot, 'metric':'Throughput', 'unit':'[Mbit/s]', 'path':top_path}
+            plot_lines_versus(metric_bucket=thr, info=info, s_path=top_path, versus=versus)
+            info = {'prot':prot, 'metric':'Packet loss', 'unit':'', 'path':top_path}
+            plot_lines_versus(loss, s_path=top_path, info=info, versus=versus)
 
     # Band allocation plot here
     m_title = 'Band allocation \n (percentage of total system bw)'
     plot_metric_box(band, s_path=top_path, metric='Band allocation', title=m_title, versus=versus)
 
-    return fig
+    if fewer_images:
+        return fig
+    else:
+        return None
+
+def save_fig(fig, info):
+    plt.title(f"{info['prot']} average {info['metric']} ", fontsize=12)
+    plt.savefig(f"{info['path']}{info['metric']}_{info['prot']}.png" )
+    tikzplotlib.save(f"{info['path']}{info['metric']}_{info['prot']}.tex")
+    plt.close('fig')
 
 def group_cc_strat(metric_frame):
     metric_frame['mode'] =  metric_frame['mode'].replace(1, 'no CA, ')
@@ -190,13 +211,10 @@ def plot_lines_versus(metric_bucket, info, s_path, versus, fig=None, ax=None):
         g.set(ylim=(0, top*1.1)) 
 
     if dummy_ax is None:
-        fig.set_size_inches(count_amount_uniques(versus_data)*2, 8)    
-        fig.suptitle(f"{plot_tile} \n", fontsize=12)
+        fig.set_size_inches(count_amount_uniques(versus_data)*2, 5)    
+        save_fig(fig, info)
+        plt.close(fig)
         # Save, create dir if doesn't exist 
-        out_dir = f"./slicing-plots/{s_path}/"
-        os.makedirs(out_dir, exist_ok=True)
-        plt.savefig(f"{out_dir}{filename}")
-        plt.close('fig')
     else:
         fig.set_size_inches(count_amount_uniques(versus_data)*2*3, 10)
         ax.grid(color='#b3b3b3')
@@ -205,7 +223,6 @@ def plot_lines_versus(metric_bucket, info, s_path, versus, fig=None, ax=None):
         for spine in ax.spines.values():
             spine.set_edgecolor('#b3b3b3')
 
-    ax.ticklabel_format(useOffset=False)
     del dummy_ax
     del g
     #Ylim
@@ -298,7 +315,8 @@ def plot_metric_box(metric_frame, metric, title, s_path, versus):
     # Save, create dir if doesn't exist       
     out_dir = s_path
     os.makedirs(out_dir, exist_ok=True)
-    plt.savefig(out_dir + filename)
+    plt.savefig(f"{out_dir}{filename}")
+    tikzplotlib.save(f"{out_dir}{metric}.tex")
 
     plt.close(fig)
 
@@ -430,9 +448,9 @@ def sanitize_versus(vs, metric_bucket):
     if(vs == 'ccRatio'):
         return 'Ratio of bw allocated to CC0'
     if(vs == 'numEmbbUes'):
-        return '# of eMBB users'
+        return 'amount of eMBB users'
     if(vs == 'numUrllcUes'):
-        return '# of URLLC users'
+        return 'amount of URLLC users'
 
 def find_elements(bucket, param, value):
     out = []
@@ -712,11 +730,11 @@ ca_params = {'f0': 28e9, 'f1':10e9, 'mode': 2, 'embbUdpIPI': 82, 'urllcUdpIPI': 
 no_ca_params = {'f0': 28e9, 'mode': 1, 'embbUdpIPI': 82, 'urllcUdpIPI': 8192, 'ccRatio': 0.5}
 
 print('Computing stats')
-plot_forall_static(param_ca=ca_params, param_no_ca=no_ca_params, versus='numEmbbUes', fewer_images=True, static='numUrllcUes')
+plot_forall_static(param_ca=ca_params, param_no_ca=no_ca_params, versus='numEmbbUes', fewer_images=False, static='numUrllcUes')
 
 print('CA using f0=28GHz, f1=10Ghz; non CA using f0=28GhzL: vs numUrllcUes')
 ca_params = {'f0': 28e9, 'f1':10e9, 'mode': 2, 'embbUdpIPI': 82, 'urllcUdpIPI': 8192, 'ccRatio': 0.5}
 no_ca_params = {'f0': 28e9, 'mode': 1, 'embbUdpIPI': 82, 'urllcUdpIPI': 8192, 'ccRatio': 0.5}
 
 print('Computing stats')
-plot_forall_static(param_ca=ca_params, param_no_ca=no_ca_params, versus='numUrllcUes', fewer_images=True, static='numEmbbUes')
+plot_forall_static(param_ca=ca_params, param_no_ca=no_ca_params, versus='numUrllcUes', fewer_images=False, static='numEmbbUes')
