@@ -158,8 +158,9 @@ def plot_all_metrics(param_ca, param_no_ca, versus=None, fewer_images=False, top
     m_title = 'Band allocation \n (percentage of total system bw)'
     plot_metric_box(band, s_path=top_path, metric='Band allocation', title=m_title, versus=versus)
     # Thr vs delay
+    '''
     plot_scatter(delay=delay_urllc, thr=thr_embb, versus=versus, s_path=top_path)
-
+    '''
     if fewer_images:
         return fig
     else:
