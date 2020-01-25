@@ -14,7 +14,7 @@ import tikzplotlib # Save figures as PGFplots
 
 def plot_forall_static(static, param_ca, param_no_ca, versus, fewer_images=False):
     # tr = tracker.SummaryTracker()
-    # Get list of values of params that are supposed to be static
+    # Get list of values of params that are suppoSsed to be static
     campaign = sem.CampaignManager.load('./slicing-res')
     loaded_params = campaign.db.get_all_values_of_all_params()
     # For now, just one..
@@ -54,6 +54,9 @@ def plot_all_metrics(param_ca, param_no_ca, versus=None, fewer_images=False, top
     trace_str_rx = 'test_RxPacketTrace.txt' # Always same name
     trace_err = 'stderr'
     band = pd.DataFrame()
+    #d = {'embb_thr' : [0], 'urllc_loss' : [0]}
+    thr_embb = pd.DataFrame(columns=['thr', 'ccMan', 'mode', 'runSet', versus])
+    delay_urllc = pd.DataFrame(columns=['delay', 'ccMan', 'mode', 'runSet', versus])
 
     for prot in ['URLLC', 'eMBB']:
         thr = []
@@ -105,21 +108,32 @@ def plot_all_metrics(param_ca, param_no_ca, versus=None, fewer_images=False, top
                 dl_df = sanitize_dataframe(dl_df, res_istance['params']['maxStart']*1e9) # sec to ns ns in the traces
                 rx_df = sanitize_dataframe(rx_df, res_istance['params']['maxStart']*1e9) # sec to ns ns in the traces
 
+                params = res_istance['params']
                 # Compute metrics here
-                loss.append({'mean': pkt_loss_app(dl_df, ul_df), 'params': res_istance['params']})
+                run_loss = pkt_loss_app(dl_df, ul_df)
+                loss.append({'mean': run_loss, 'params': params})
 
-                thr.append({'mean':throughput_app(dl_df, bearer_type=prot, params=res_istance['params']), 
-                            'params': res_istance['params']})
+                run_thr = throughput_app(dl_df, bearer_type=prot, params=params)
+                thr.append({'mean':run_thr, 'params': params})
+                if prot == 'eMBB':
+                    thr_embb.loc[len(thr_embb)] = {'thr':run_thr, 'ccMan':params['ccMan'],
+                     'mode':params['mode'], 'runSet':params['runSet'], versus:params[versus]}
 
-                delay.append({'mean':delay_app(dl_df), 'params': res_istance['params']})
+                run_delay = delay_app(dl_df)
+                delay.append({'mean':run_delay, 'params': params})
+                if prot == 'URLLC':
+                    delay_urllc.loc[len(delay_urllc)] = {'delay':run_delay, 'ccMan':params['ccMan'],
+                     'mode':params['mode'], 'runSet':params['runSet'], versus:params[versus]}
 
                 band = band.append(band_allocation(rx_df, versus, res_istance['params']))
+
             
             # If no valid trace loaded, raise an error
             if err_amount >> 0:
                 print(f"\t---{err_amount} faulty traces found, out of {len(res_data)}---")
             if err_amount >= len(res_data):
                 print('Unusable traces, perform other simulations!')
+
 
                 
         # Plot the various metrics 
@@ -138,9 +152,13 @@ def plot_all_metrics(param_ca, param_no_ca, versus=None, fewer_images=False, top
             info = {'prot':prot, 'metric':'Packet loss', 'unit':'', 'path':top_path}
             plot_lines_versus(loss, s_path=top_path, info=info, versus=versus)
 
+
+            
     # Band allocation plot here
     m_title = 'Band allocation \n (percentage of total system bw)'
     plot_metric_box(band, s_path=top_path, metric='Band allocation', title=m_title, versus=versus)
+    # Thr vs delay
+    plot_scatter(delay=delay_urllc, thr=thr_embb, versus=versus, s_path=top_path)
 
     if fewer_images:
         return fig
@@ -163,6 +181,36 @@ def group_cc_strat(metric_frame):
     metric_frame['CC strategy'] =  metric_frame['CC strategy'].replace('no CA, SplitDrb', 'no CA')
 
     return metric_frame
+
+def plot_scatter(delay, thr, versus, s_path):
+
+    delay = group_cc_strat(delay)
+    delay.drop(['ccMan', 'mode'], axis=1, inplace=True)
+    delay.sort_values(by=['CC strategy', versus, 'runSet'], inplace=True)
+    thr = group_cc_strat(thr)
+    thr.drop(['ccMan', 'mode'], axis=1, inplace=True)
+    thr.sort_values(by=['CC strategy', versus, 'runSet'], inplace=True)
+
+    delay['runSet'] = thr['thr']
+    delay.rename(columns = {'runSet':'thr'}, inplace = True)
+
+    fig, ax = plt.subplots(constrained_layout=True)
+    sns.set_style('whitegrid', {'axes.facecolor': '#EAEAF2'})
+
+    g = sns.scatterplot(data=delay, x='thr', y='delay', hue='CC strategy')
+
+    # Set graphical properties, title and filename
+    ax.set_xlabel(f"eMBB throughput")
+    ax.set_ylabel(f"URLLC delay", fontsize=12)
+    plot_title = f"Throughput eMBB vs delay URLLC"
+
+
+    fig.set_size_inches(7, 5)    
+    plt.title(plot_title, fontsize=12)
+    plt.savefig(f"{s_path}{plot_title}.png" )
+    #tikzplotlib.save(f"{s_path}{plot_title}.tex")
+    plt.close(fig)
+
 
 def plot_lines_versus(metric_bucket, info, s_path, versus, fig=None, ax=None):
 
