@@ -177,7 +177,7 @@ def group_cc_strat(metric_frame):
     metric_frame['mode'] =  metric_frame['mode'].replace(2, 'CA, ')
     metric_frame['ccMan'] =  metric_frame['ccMan'].replace(0, 'SplitDrb')
     metric_frame['ccMan'] =  metric_frame['ccMan'].replace(1, 'SlicingDrb')
-    metric_frame['ccMan'] =  metric_frame['ccMan'].replace(1, 'VanillaCA')
+    metric_frame['ccMan'] =  metric_frame['ccMan'].replace(2, 'VanillaCA')
 
     metric_frame['CC strategy'] = metric_frame['mode'] + metric_frame['ccMan']
     metric_frame['CC strategy'] =  metric_frame['CC strategy'].replace('no CA, SplitDrb', 'no CA')
@@ -247,7 +247,7 @@ def plot_lines_versus(metric_bucket, info, s_path, versus, fig=None, ax=None):
     if temp is not None:
         versus = temp
 
-    h_ord = ['no CA', 'CA, SplitDrb', 'CA, SlicingDrb'] 
+    h_ord = ['no CA', 'CA, VanillaCA', 'CA, SplitDrb', 'CA, SlicingDrb'] 
     g = sns.lineplot(data=metric_frame, x='versus', y='metric', err_style='bars', 
                         hue='CC strategy', hue_order=h_ord, ax=ax)
 
@@ -340,7 +340,7 @@ def plot_metric_box(metric_frame, metric, title, s_path, versus):
 
     # Plot sum as background
     metric_frame['band_alloc_cc1'] = metric_frame['band_alloc_cc1'] + metric_frame['band_alloc_cc0']
-    h_ord = ['no CA', 'CA, SplitDrb', 'CA, SlicingDrb'] 
+    h_ord = ['no CA', 'CA, VanillaCA', 'CA, SplitDrb', 'CA, SlicingDrb'] 
     sns.barplot(x='versus', y='band_alloc_cc1', hue='CC strategy', hue_order=h_ord, 
                 data=metric_frame, palette=sns.color_palette('pastel'))
     # Plot cc0 on foreground
