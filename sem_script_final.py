@@ -12,7 +12,7 @@ campaign = sem.CampaignManager.new(
 # Obtain IPIs from rates
 # eMMB
 embb_packet_size = 1024
-embb_rate_grid = list(range(100, 120, 20))
+embb_rate_grid = list(range(100, 180, 20))
 embb_IPI_grid = []
 for rate in embb_rate_grid:
     # Mbit/s to IPI in microseconds
@@ -42,7 +42,7 @@ params_grid = {
     'bw': 5e8,
     'ccRatio': 0.5,
     'condition': 'a',
-    'ccMan': 2,
+    'ccMan': 0, # SplitDrb CC Manager
     'embbOn': True,
     'embbUdpIPI': embb_IPI_grid,
     'f0': 28e9,  # eMBB's CC
@@ -76,7 +76,10 @@ params_grid = {
 sem.parallelrunner.MAX_PARALLEL_PROCESSES=19
 
 campaign.run_missing_simulations(sem.list_param_combinations(params_grid))
-# Get missing results for CA, Slcing CC Manager
+# Get missing results for CA, Slicing CC Manager
 params_grid.update(mode=2, ccMan=1)
+campaign.run_missing_simulations(sem.list_param_combinations(params_grid))
+# Get missing results for CA, NoOp CC Manager
+params_grid.update(mode=2, ccMan=2)
 campaign.run_missing_simulations(sem.list_param_combinations(params_grid))
 
