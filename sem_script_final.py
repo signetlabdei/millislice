@@ -51,9 +51,9 @@ params_grid = {
     'fileSize': 512000,
     'lambdaUrllc': 0.2,
     'mode': [1, 2],  # Test both without/with CA slicing
-    'numEmbbUes': [5, 10, 15],
+    'numEmbbUes': 10,
     'numEnbs': 1,
-    'numUrllcUes': [5, 10, 15],
+    'numUrllcUes': 10,
     'rho': 200,
     'reorderingTimer': 1.0,
     'runSet': list(range(runs)),
