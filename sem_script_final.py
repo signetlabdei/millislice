@@ -74,7 +74,6 @@ params_grid = {
 
 # Temporarily limit number of max cores used
 sem.parallelrunner.MAX_PARALLEL_PROCESSES=19
-
 campaign.run_missing_simulations(sem.list_param_combinations(params_grid))
 # Get missing results for CA, Slicing CC Manager
 params_grid.update(mode=2, ccMan=1)
