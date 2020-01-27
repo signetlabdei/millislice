@@ -39,7 +39,7 @@ def plot_forall_static(static, param_ca, param_no_ca, versus, fewer_images=False
         if fewer_images:
             fig.suptitle(f"System performance for {static_formatted} = {val_formatted}", fontsize=16)
             plt.savefig(f"{out_dir}System_performance.png" )
-            #tikzplotlib.save(f"{out_dir}System_performance.tex")
+            tikzplotlib.save(f"{out_dir}System_performance.tex")
             plt.close('fig')
 
         #tr.print_diff()
@@ -169,7 +169,7 @@ def plot_all_metrics(param_ca, param_no_ca, versus=None, fewer_images=False, top
 def save_fig(fig, info):
     plt.title(f"{info['prot']} average {info['metric']} ", fontsize=12)
     plt.savefig(f"{info['path']}{info['metric']}_{info['prot']}.png" )
-    #tikzplotlib.save(f"{info['path']}{info['metric']}_{info['prot']}.tex")
+    tikzplotlib.save(f"{info['path']}{info['metric']}_{info['prot']}.tex")
     plt.close('fig')
 
 def group_cc_strat(metric_frame):
@@ -382,7 +382,7 @@ def plot_metric_box(metric_frame, metric, title, s_path, versus):
     out_dir = s_path
     os.makedirs(out_dir, exist_ok=True)
     plt.savefig(f"{out_dir}{filename}")
-    #tikzplotlib.save(f"{out_dir}{metric}.tex")
+    tikzplotlib.save(f"{out_dir}{metric}.tex")
 
     plt.close(fig)
 
@@ -790,7 +790,7 @@ no_ca_params = {'f0': 28e9, 'mode': 1, 'embbUdpIPI': 59}
 
 print('Computing stats')
 plot_forall_static(param_ca=ca_params, param_no_ca=no_ca_params, versus='ccRatio', fewer_images=True, static='urllcUdpIPI')
-
+'''
 print('CA using f0=28GHz, f1=10Ghz; non CA using f0=28GhzL: vs numEmbbUes')
 ca_params = {'f0': 28e9, 'f1':10e9, 'mode': 2, 'embbUdpIPI': 82, 'urllcUdpIPI': 8192, 'ccRatio': 0.5}
 no_ca_params = {'f0': 28e9, 'mode': 1, 'embbUdpIPI': 82, 'urllcUdpIPI': 8192, 'ccRatio': 0.5, 'ccMan':0}
@@ -804,4 +804,3 @@ no_ca_params = {'f0': 28e9, 'mode': 1, 'embbUdpIPI': 82, 'urllcUdpIPI': 8192, 'c
 
 print('Computing stats')
 plot_forall_static(param_ca=ca_params, param_no_ca=no_ca_params, versus='numUrllcUes', fewer_images=True, static='numEmbbUes')
-'''
