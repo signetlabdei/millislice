@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
-#import tikzplotlib # Save figures as PGFplots
+import tikzplotlib # Save figures as PGFplots
 
 #from statistics import mean
 # from pympler import tracker
@@ -116,7 +116,7 @@ def plot_all_metrics(param_ca, param_no_ca, versus=None, fewer_images=False, top
                 run_thr = throughput_app(dl_df, bearer_type=prot, params=params)
                 thr.append({'mean':run_thr, 'params': params})
                 if prot == 'eMBB':
-                    thr_embb.loc[len(thr_embb)] = {'thr':run_thr, 'ccMan':params['ccMan'],
+                    thr_embb.loc[len(thr_embb)] = {'thr':run_thr*params['numEmbbUes'], 'ccMan':params['ccMan'],
                      'mode':params['mode'], 'runSet':params['runSet'], versus:params[versus]}
 
                 run_delay = delay_app(dl_df)
@@ -183,6 +183,7 @@ def group_cc_strat(metric_frame):
     metric_frame['CC strategy'] =  metric_frame['CC strategy'].replace('no CA, SplitDrb', 'no CA')
     metric_frame['CC strategy'] =  metric_frame['CC strategy'].replace('CA, placeholder', 'CA')
 
+    print(set(metric_frame['CC strategy']))
     return metric_frame
 
 def plot_scatter(delay, thr, versus, s_path):
@@ -249,7 +250,11 @@ def plot_lines_versus(metric_bucket, info, s_path, versus, fig=None, ax=None):
     if temp is not None:
         versus = temp
 
-    h_ord = ['no CA', 'CA', 'CA, SplitDrb', 'CA, SlicingDrb'] 
+    if len(set(metric_frame['CC strategy'])) == 4:
+         h_ord = ['no CA', 'CA', 'CA, SplitDrb', 'CA, SlicingDrb']
+    else:
+        h_ord = ['no CA', 'CA, SplitDrb', 'CA, SlicingDrb']
+    
     g = sns.lineplot(data=metric_frame, x='versus', y='metric', err_style='bars', 
                         hue='CC strategy', hue_order=h_ord, ax=ax)
 
@@ -342,7 +347,13 @@ def plot_metric_box(metric_frame, metric, title, s_path, versus):
 
     # Plot sum as background
     metric_frame['band_alloc_cc1'] = metric_frame['band_alloc_cc1'] + metric_frame['band_alloc_cc0']
-    h_ord = ['no CA', 'CA', 'CA, SplitDrb', 'CA, SlicingDrb'] 
+
+    if len(set(metric_frame['CC strategy'])) == 4:
+         h_ord = ['no CA', 'CA', 'CA, SplitDrb', 'CA, SlicingDrb']
+    else:
+        h_ord = ['no CA', 'CA, SplitDrb', 'CA, SlicingDrb']
+
+
     sns.barplot(x='versus', y='band_alloc_cc1', hue='CC strategy', hue_order=h_ord, 
                 data=metric_frame, palette=sns.color_palette('pastel'))
     # Plot cc0 on foreground
@@ -761,7 +772,7 @@ ca_params = {'f0': 28e9, 'f1':10e9,'mode': 2, 'ccRatio': 0.5,'numEmbbUes':10, 'n
 no_ca_params = {'f0': 28e9, 'mode': 1, 'ccRatio': 0.5, 'ccMan':0, 'numEmbbUes':10, 'numUrllcUes':10}
 
 print('Computing stats')
-plot_forall_static(param_ca=ca_params, param_no_ca=no_ca_params, versus='embbUdpIPI', fewer_images=True, static='urllcUdpIPI') 
+plot_forall_static(param_ca=ca_params, param_no_ca=no_ca_params, versus='embbUdpIPI', fewer_images=False, static='urllcUdpIPI') 
 '''
 print('CA using f0=28GHz, f1=10Ghz; non CA using f0=28GhzL: vs URLLC rates')
 ca_params = {'f0': 28e9, 'f1':10e9, 'mode': 2, 'ccRatio': 0.5, 'numEmbbUes':10, 'numUrllcUes':10 }
