@@ -34,8 +34,7 @@ def plot_forall_static(static, param_ca, param_no_ca, versus, fewer_images=False
         out_dir = f"./slicing-plots/versus_{versus}/{val_formatted}/"
         os.makedirs(out_dir, exist_ok=True)
         # Use lower level functions to plot
-        matplotlib.rcParams['mathtext.fontset'] = 'cm'
-        matplotlib.rcParams['font.family'] = 'STIXGeneral'
+
         fig = plot_all_metrics(param_no_ca=param_no_ca, param_ca=param_ca, versus=versus,
                             fewer_images=fewer_images, top_path=out_dir)
 
@@ -127,9 +126,8 @@ def plot_all_metrics(param_ca, param_no_ca, versus=None, fewer_images=False, top
                 if prot == 'URLLC':
                     delay_urllc.loc[len(delay_urllc)] = {'delay':run_delay, 'ccMan':params['ccMan'],
                      'mode':params['mode'], 'runSet':params['runSet'], versus:params[versus]}
-                '''
+                
                 band = band.append(band_allocation(rx_df, versus, res_istance['params']))
-                '''
             
             # If no valid trace loaded, raise an error
             if err_amount >> 0:
@@ -140,7 +138,6 @@ def plot_all_metrics(param_ca, param_no_ca, versus=None, fewer_images=False, top
 
                 
         # Plot the various metrics 
-        '''
         if fewer_images:
             info = {'prot':prot, 'metric':'Delay', 'unit':'[ms]'}       
             plot_lines_versus(metric_bucket=delay, info=info, s_path=top_path, versus=versus, fig=fig, ax=ax[sub_col, 2])
@@ -155,14 +152,10 @@ def plot_all_metrics(param_ca, param_no_ca, versus=None, fewer_images=False, top
             plot_lines_versus(metric_bucket=thr, info=info, s_path=top_path, versus=versus)
             info = {'prot':prot, 'metric':'Packet loss', 'unit':'', 'path':top_path}
             plot_lines_versus(loss, s_path=top_path, info=info, versus=versus)
-        '''
-
             
     # Band allocation plot here
-    '''
     m_title = 'Band allocation \n (percentage of total system bw)'
     plot_metric_box(band, s_path=top_path, metric='Band allocation', title=m_title, versus=versus)
-    '''
     # Thr vs delay
     plot_scatter(delay=delay_urllc, thr=thr_embb, versus=versus, s_path=top_path)
     
@@ -172,9 +165,10 @@ def plot_all_metrics(param_ca, param_no_ca, versus=None, fewer_images=False, top
         return None
 
 def save_fig(fig, info):
-    plt.title(f"{info['prot']} average {info['metric']} ", fontsize=12)
-    plt.savefig(f"{info['path']}{info['metric']}_{info['prot']}.png" )
-    tikzplotlib.save(f"{info['path']}{info['metric']}_{info['prot']}.tex")
+    #plt.title(f"{info['prot']} average {info['metric']} ", fontsize=12)
+    plt.savefig(f"{info['path']}{info['metric']}_{info['prot']}.png")
+    plt.savefig(f"{info['path']}{info['metric']}_{info['prot']}.svg", format='svg')
+    #tikzplotlib.save(f"{info['path']}{info['metric']}_{info['prot']}.tex")
     plt.close('fig')
 
 def group_cc_strat(metric_frame):
@@ -205,6 +199,8 @@ def plot_scatter(delay, thr, versus, s_path):
     means = delay.groupby(['CC strategy', 'versus'],as_index=False).mean()
     means = means[means['CC strategy'] != 'CA']
 
+    matplotlib.rcParams['mathtext.fontset'] = 'cm'
+    matplotlib.rcParams['font.family'] = 'STIXGeneral'
     fig, ax = plt.subplots(constrained_layout=True)
     '''
     means_dummy = copy.deepcopy(means)
@@ -225,8 +221,7 @@ def plot_scatter(delay, thr, versus, s_path):
     ax = sns.scatterplot(data=means, x='thr', y='delay', hue='CC strategy', size='versus', sizes=(80, 200))
 
     # Set graphical properties, title and filename
-    ax.set_xlabel(f"{out_str}", fontsize=13)
-    ax.set_ylabel(f"URLLC delay [ms]", fontsize=13)
+
     plot_title = f"Throughput eMBB vs delay URLLC"
     handles, labels = ax.get_legend_handles_labels()
 
@@ -236,8 +231,11 @@ def plot_scatter(delay, thr, versus, s_path):
 
     fig.set_size_inches(6.5, 2.3)    
     #plt.title(plot_title, fontsize=12)
-    plt.setp(ax.get_xticklabels(), fontsize=13)
-    plt.setp(ax.get_yticklabels(), fontsize=13)
+    ax.set_xlabel(f"{out_str}", fontsize=14)
+    ax.set_ylabel(f"URLLC delay [ms]", fontsize=14)
+    plt.setp(ax.get_xticklabels(), fontsize=14)
+    plt.setp(ax.get_yticklabels(), fontsize=14)
+
     plt.savefig(f"{s_path}{plot_title}.svg", format='svg')
     plt.savefig(f"{s_path}{plot_title}.png")
     #tikzplotlib.save(f"{s_path}{plot_title}.tex")
@@ -246,6 +244,9 @@ def plot_scatter(delay, thr, versus, s_path):
 
 def plot_lines_versus(metric_bucket, info, s_path, versus, fig=None, ax=None):
 
+    sns.set_style('whitegrid', {'axes.facecolor': '#EAEAF2'})
+    matplotlib.rcParams['mathtext.fontset'] = 'cm'
+    matplotlib.rcParams['font.family'] = 'STIXGeneral'
     dummy_ax = ax
     if ax is None:
         fig, ax = plt.subplots(constrained_layout=True)
@@ -269,8 +270,8 @@ def plot_lines_versus(metric_bucket, info, s_path, versus, fig=None, ax=None):
         'ccMan': ccman_data
     }
 
-    metric_frame = pd.DataFrame(data=frame)
 
+    metric_frame = pd.DataFrame(data=frame)
     metric_frame = group_cc_strat(metric_frame)
     filename = f"{info['prot']}_{info['metric']}_vs{versus}.png"
     temp = sanitize_versus(metric_bucket=metric_frame, vs=versus)
@@ -286,8 +287,10 @@ def plot_lines_versus(metric_bucket, info, s_path, versus, fig=None, ax=None):
                         hue='CC strategy', hue_order=h_ord, ax=ax)
 
     # Set graphical properties, title and filename
-    ax.set_ylabel(f"{info['metric']} {info['unit']} \n", fontsize=12)
-    ax.set_xlabel(f"{versus}", fontsize=12)
+    ax.set_ylabel(f"{info['metric']} {info['unit']}", fontsize=14)
+    ax.set_xlabel(f"{versus}", fontsize=14)
+    plt.setp(ax.get_xticklabels(), fontsize=14)
+    plt.setp(ax.get_yticklabels(), fontsize=14)
     plot_title = f"{info['metric']} {info['prot']} vs. {versus}"
 
     if info['metric'] == 'Throughput':
@@ -295,7 +298,7 @@ def plot_lines_versus(metric_bucket, info, s_path, versus, fig=None, ax=None):
         g.set(ylim=(0, top*1.1)) 
 
     if dummy_ax is None:
-        fig.set_size_inches(count_amount_uniques(versus_data)*2, 3)    
+        fig.set_size_inches(count_amount_uniques(versus_data)*1.8, 2.3)    
         save_fig(fig, info)
         plt.close(fig)
         # Save, create dir if doesn't exist 
@@ -391,23 +394,27 @@ def plot_metric_box(metric_frame, metric, title, s_path, versus):
         labels[dummy] = 'CC1 - ' +  labels[dummy] 
         labels[3 + dummy] = 'CC0 - ' +  labels[3 + dummy]
     ax_bckg.legend(handles=handles[1:], labels=labels[1:], ncol=2, loc='best')
+    matplotlib.rcParams['mathtext.fontset'] = 'cm'
+    matplotlib.rcParams['font.family'] = 'STIXGeneral'
 
     # ax_bckg.legend(handles=handles[3:], labels=labels[3:])
     
     # Title, labels ecc.
-    fig.set_size_inches(6, 7)
-    filename = f"{metric}.png"
-    plt.ylabel(f"{metric} \n", fontsize=12)
-    plt.xlabel(f"{x_label}", fontsize=12)
+    plt.setp(ax.get_xticklabels(), fontsize=14)
+    plt.setp(ax.get_yticklabels(), fontsize=14)
+    fig.set_size_inches(5, 5)
+    filename = f"{metric}"
+    plt.ylabel(f"{metric}", fontsize=14)
+    plt.xlabel(f"{x_label}", fontsize=14)
     #ax.set_xlabel('')
     plt.title(f"{title} \n")
 
     # Save, create dir if doesn't exist       
     out_dir = s_path
     os.makedirs(out_dir, exist_ok=True)
-    plt.savefig(f"{out_dir}{filename}")
-    tikzplotlib.save(f"{out_dir}{metric}.tex")
-
+    plt.savefig(f"{out_dir}{filename}.png")
+    plt.savefig(f"{out_dir}{filename}.svg", format='svg')
+    #tikzplotlib.save(f"{out_dir}{metric}.tex")
     plt.close(fig)
 
 def plot_metrics_generic(metric_bucket, metric, prot, s_path, unit, vs=None):
@@ -795,36 +802,36 @@ def compute_means(metric_bucket):
 # Try plot
 
 print('CA using f0=28GHz, f1=10Ghz; non CA using f0=28GhzL: vs eMBB rates')
-ca_params = {'f0': 28e9, 'f1':10e9,'mode': 2, 'ccRatio': 0.5,'numEmbbUes':10, 'numUrllcUes':10 }
-no_ca_params = {'f0': 28e9, 'mode': 1, 'ccRatio': 0.5, 'ccMan':0, 'numEmbbUes':10, 'numUrllcUes':10}
+ca_params = {'f0': 28e9, 'f1':10e9,'mode': 2, 'ccRatio': 0.5,'numEmbbUes':10, 'numUrllcUes':10, 'urllcUdpIPI':8192}
+no_ca_params = {'f0': 28e9, 'mode': 1, 'ccRatio': 0.5, 'ccMan':0, 'numEmbbUes':10, 'numUrllcUes':10, 'urllcUdpIPI':8192}
 
 print('Computing stats')
 plot_forall_static(param_ca=ca_params, param_no_ca=no_ca_params, versus='embbUdpIPI', fewer_images=False, static='urllcUdpIPI') 
-'''
+
 print('CA using f0=28GHz, f1=10Ghz; non CA using f0=28GhzL: vs URLLC rates')
-ca_params = {'f0': 28e9, 'f1':10e9, 'mode': 2, 'ccRatio': 0.5, 'numEmbbUes':10, 'numUrllcUes':10 }
-no_ca_params = {'f0': 28e9, 'mode': 1, 'ccRatio': 0.5, 'ccMan': 2, 'numEmbbUes':10, 'numUrllcUes':10 }
+ca_params = {'f0': 28e9, 'f1':10e9, 'mode': 2, 'ccRatio': 0.5, 'numEmbbUes':10, 'numUrllcUes':10, 'embbUdpIPI':59}
+no_ca_params = {'f0': 28e9, 'mode': 1, 'ccRatio': 0.5, 'ccMan': 2, 'numEmbbUes':10, 'numUrllcUes':10, 'embbUdpIPI':59}
 
 print('Computing stats')
-plot_forall_static(paramz_ca=ca_params, param_no_ca=no_ca_params, versus='urllcUdpIPI', fewer_images=True, static='embbUdpIPI')
+plot_forall_static(param_ca=ca_params, param_no_ca=no_ca_params, versus='urllcUdpIPI', fewer_images=False, static='embbUdpIPI')
 
 print('CA using f0=28GHz, f1=10Ghz; non CA using f0=28GhzL: vs ccRatio')
 ca_params = {'f0': 28e9, 'f1':10e9, 'mode': 2, 'embbUdpIPI': 59}
 no_ca_params = {'f0': 28e9, 'mode': 1, 'embbUdpIPI': 59}
 
 print('Computing stats')
-plot_forall_static(param_ca=ca_params, param_no_ca=no_ca_params, versus='ccRatio', fewer_images=True, static='urllcUdpIPI')
-'''
+plot_forall_static(param_ca=ca_params, param_no_ca=no_ca_params, versus='ccRatio', fewer_images=False, static='urllcUdpIPI')
+
 print('CA using f0=28GHz, f1=10Ghz; non CA using f0=28GhzL: vs numEmbbUes')
-ca_params = {'f0': 28e9, 'f1':10e9, 'mode': 2, 'embbUdpIPI': 82, 'urllcUdpIPI': 8192, 'ccRatio': 0.5}
-no_ca_params = {'f0': 28e9, 'mode': 1, 'embbUdpIPI': 82, 'urllcUdpIPI': 8192, 'ccRatio': 0.5, 'ccMan':0}
+ca_params = {'f0': 28e9, 'f1':10e9, 'mode': 2, 'embbUdpIPI': 82, 'urllcUdpIPI': 8192, 'ccRatio': 0.5, 'numUrllcUes':10}
+no_ca_params = {'f0': 28e9, 'mode': 1, 'embbUdpIPI': 82, 'urllcUdpIPI': 8192, 'ccRatio': 0.5, 'ccMan':0, 'numUrllcUes':10}
 
 print('Computing stats')
 plot_forall_static(param_ca=ca_params, param_no_ca=no_ca_params, versus='numEmbbUes', fewer_images=False, static='numUrllcUes')
 
 print('CA using f0=28GHz, f1=10Ghz; non CA using f0=28GhzL: vs numUrllcUes')
-ca_params = {'f0': 28e9, 'f1':10e9, 'mode': 2, 'embbUdpIPI': 82, 'urllcUdpIPI': 8192, 'ccRatio': 0.5}
-no_ca_params = {'f0': 28e9, 'mode': 1, 'embbUdpIPI': 82, 'urllcUdpIPI': 8192, 'ccRatio': 0.5, 'ccMan':0}
+ca_params = {'f0': 28e9, 'f1':10e9, 'mode': 2, 'embbUdpIPI': 82, 'urllcUdpIPI': 8192, 'ccRatio': 0.5, 'numEmbbUes':10}
+no_ca_params = {'f0': 28e9, 'mode': 1, 'embbUdpIPI': 82, 'urllcUdpIPI': 8192, 'ccRatio': 0.5, 'ccMan':0, 'numEmbbUes':10}
 
 print('Computing stats')
 plot_forall_static(param_ca=ca_params, param_no_ca=no_ca_params, versus='numUrllcUes', fewer_images=False, static='numEmbbUes')
