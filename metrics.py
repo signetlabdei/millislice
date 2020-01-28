@@ -124,9 +124,9 @@ def plot_all_metrics(param_ca, param_no_ca, versus=None, fewer_images=False, top
                 if prot == 'URLLC':
                     delay_urllc.loc[len(delay_urllc)] = {'delay':run_delay, 'ccMan':params['ccMan'],
                      'mode':params['mode'], 'runSet':params['runSet'], versus:params[versus]}
-
+                '''
                 band = band.append(band_allocation(rx_df, versus, res_istance['params']))
-
+                '''
             
             # If no valid trace loaded, raise an error
             if err_amount >> 0:
@@ -137,6 +137,7 @@ def plot_all_metrics(param_ca, param_no_ca, versus=None, fewer_images=False, top
 
                 
         # Plot the various metrics 
+        '''
         if fewer_images:
             info = {'prot':prot, 'metric':'Delay', 'unit':'[ms]'}       
             plot_lines_versus(metric_bucket=delay, info=info, s_path=top_path, versus=versus, fig=fig, ax=ax[sub_col, 2])
@@ -151,14 +152,15 @@ def plot_all_metrics(param_ca, param_no_ca, versus=None, fewer_images=False, top
             plot_lines_versus(metric_bucket=thr, info=info, s_path=top_path, versus=versus)
             info = {'prot':prot, 'metric':'Packet loss', 'unit':'', 'path':top_path}
             plot_lines_versus(loss, s_path=top_path, info=info, versus=versus)
-
+        '''
 
             
     # Band allocation plot here
+    '''
     m_title = 'Band allocation \n (percentage of total system bw)'
     plot_metric_box(band, s_path=top_path, metric='Band allocation', title=m_title, versus=versus)
+    '''
     # Thr vs delay
-    
     plot_scatter(delay=delay_urllc, thr=thr_embb, versus=versus, s_path=top_path)
     
     if fewer_images:
@@ -197,12 +199,25 @@ def plot_scatter(delay, thr, versus, s_path):
     delay['runSet'] = thr['thr']
     delay.rename(columns = {'runSet':'thr', versus:'versus'}, inplace = True)
     out_str = sanitize_versus(versus, delay)
-    test = delay.groupby(['CC strategy', 'versus'],as_index=False).mean()    
+    means = delay.groupby(['CC strategy', 'versus'],as_index=False).mean()
+    means = means[means['CC strategy'] != 'CA']
 
     fig, ax = plt.subplots(constrained_layout=True)
-    sns.set_style('whitegrid', {'axes.facecolor': '#EAEAF2'})
+    means_dummy = copy.deepcopy(means)
+    # Colors columns
+    means_dummy['CC strategy'] = means_dummy['CC strategy'].replace('no CA', '#4C72B0')
+    means_dummy['CC strategy'] = means_dummy['CC strategy'].replace('CA, SplitDrb', '#DD8452')
+    means_dummy['CC strategy'] = means_dummy['CC strategy'].replace('CA, SlicingDrb', '#55A868')
+    # Size column
+    means_dummy['versus'] = np.interp(means_dummy['versus'], (min(means_dummy['versus']),
+                                         max(means_dummy['versus'])), (30, 125))
 
-    ax = sns.scatterplot(data=test, x='thr', y='delay', hue='CC strategy', size='versus', sizes=(100, 200))
+    sns.set_style('whitegrid', {'axes.facecolor': '#EAEAF2'})
+    plt.scatter(x=means['thr'], y=means['delay'], c=means_dummy['CC strategy'], s=means_dummy['versus'])
+
+
+    # Not supported by tikzplotlib
+    #ax = sns.scatterplot(data=test, x='thr', y='delay', hue='CC strategy', size='versus', sizes=(100, 200))
 
     # Set graphical properties, title and filename
     ax.set_xlabel(f"{out_str}", fontsize=12)
@@ -210,13 +225,13 @@ def plot_scatter(delay, thr, versus, s_path):
     plot_title = f"Throughput eMBB vs delay URLLC"
     handles, labels = ax.get_legend_handles_labels()
 
-    max = len(set(test['CC strategy'])) + 1
-    ax.legend(handles=handles[:max], labels=labels[:max], loc='best')
+    #max = len(set(scatter['CC strategy'])) + 1
+    #ax.legend(handles=means[:max], labels=labels[:max], loc='best')
 
     fig.set_size_inches(7, 3)    
     plt.title(plot_title, fontsize=12)
     plt.savefig(f"{s_path}{plot_title}.png" )
-    #tikzplotlib.save(f"{s_path}{plot_title}.tex")
+    tikzplotlib.save(f"{s_path}{plot_title}.tex")
     plt.close(fig)
 
 
@@ -769,14 +784,14 @@ def compute_means(metric_bucket):
 
 # Actual metrics computation
 # Try plot
-'''
+
 print('CA using f0=28GHz, f1=10Ghz; non CA using f0=28GhzL: vs eMBB rates')
 ca_params = {'f0': 28e9, 'f1':10e9,'mode': 2, 'ccRatio': 0.5,'numEmbbUes':10, 'numUrllcUes':10 }
 no_ca_params = {'f0': 28e9, 'mode': 1, 'ccRatio': 0.5, 'ccMan':0, 'numEmbbUes':10, 'numUrllcUes':10}
 
 print('Computing stats')
 plot_forall_static(param_ca=ca_params, param_no_ca=no_ca_params, versus='embbUdpIPI', fewer_images=False, static='urllcUdpIPI') 
-
+'''
 print('CA using f0=28GHz, f1=10Ghz; non CA using f0=28GhzL: vs URLLC rates')
 ca_params = {'f0': 28e9, 'f1':10e9, 'mode': 2, 'ccRatio': 0.5, 'numEmbbUes':10, 'numUrllcUes':10 }
 no_ca_params = {'f0': 28e9, 'mode': 1, 'ccRatio': 0.5, 'ccMan': 2, 'numEmbbUes':10, 'numUrllcUes':10 }
