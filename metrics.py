@@ -367,6 +367,8 @@ def plot_distr_bins(metric_frame, metric, title, s_path):
 
 def plot_metric_box(metric_frame, metric, title, s_path, versus):
     # Make sure figure is clean
+    matplotlib.rcParams['mathtext.fontset'] = 'cm'
+    matplotlib.rcParams['font.family'] = 'STIXGeneral'
     fig, ax = plt.subplots(constrained_layout=True)
 
     # Clean up and group by ccMan strategy
@@ -394,20 +396,19 @@ def plot_metric_box(metric_frame, metric, title, s_path, versus):
         labels[dummy] = 'CC1 - ' +  labels[dummy] 
         labels[3 + dummy] = 'CC0 - ' +  labels[3 + dummy]
     ax_bckg.legend(handles=handles[1:], labels=labels[1:], ncol=2, loc='best')
-    matplotlib.rcParams['mathtext.fontset'] = 'cm'
-    matplotlib.rcParams['font.family'] = 'STIXGeneral'
+
 
     # ax_bckg.legend(handles=handles[3:], labels=labels[3:])
     
     # Title, labels ecc.
     plt.setp(ax.get_xticklabels(), fontsize=14)
     plt.setp(ax.get_yticklabels(), fontsize=14)
-    fig.set_size_inches(5, 5)
+    fig.set_size_inches(6, 5)
     filename = f"{metric}"
     plt.ylabel(f"{metric}", fontsize=14)
     plt.xlabel(f"{x_label}", fontsize=14)
     #ax.set_xlabel('')
-    plt.title(f"{title} \n")
+    #plt.title(f"{title} \n")
 
     # Save, create dir if doesn't exist       
     out_dir = s_path
