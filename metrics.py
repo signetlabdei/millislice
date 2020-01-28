@@ -3,6 +3,7 @@ import copy
 import os
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib
 import seaborn as sns
 import pandas as pd
 import tikzplotlib # Save figures as PGFplots
@@ -33,6 +34,8 @@ def plot_forall_static(static, param_ca, param_no_ca, versus, fewer_images=False
         out_dir = f"./slicing-plots/versus_{versus}/{val_formatted}/"
         os.makedirs(out_dir, exist_ok=True)
         # Use lower level functions to plot
+        matplotlib.rcParams['mathtext.fontset'] = 'cm'
+        matplotlib.rcParams['font.family'] = 'STIXGeneral'
         fig = plot_all_metrics(param_no_ca=param_no_ca, param_ca=param_ca, versus=versus,
                             fewer_images=fewer_images, top_path=out_dir)
 
@@ -203,6 +206,7 @@ def plot_scatter(delay, thr, versus, s_path):
     means = means[means['CC strategy'] != 'CA']
 
     fig, ax = plt.subplots(constrained_layout=True)
+    '''
     means_dummy = copy.deepcopy(means)
     # Colors columns
     means_dummy['CC strategy'] = means_dummy['CC strategy'].replace('no CA', '#4C72B0')
@@ -210,28 +214,33 @@ def plot_scatter(delay, thr, versus, s_path):
     means_dummy['CC strategy'] = means_dummy['CC strategy'].replace('CA, SlicingDrb', '#55A868')
     # Size column
     means_dummy['versus'] = np.interp(means_dummy['versus'], (min(means_dummy['versus']),
-                                         max(means_dummy['versus'])), (30, 125))
-
-    sns.set_style('whitegrid', {'axes.facecolor': '#EAEAF2'})
+                                         max(means_dummy['versus'])), (30, 110))
     plt.scatter(x=means['thr'], y=means['delay'], c=means_dummy['CC strategy'], s=means_dummy['versus'])
+    '''
+    sns.set_style('whitegrid', {'axes.facecolor': '#EAEAF2'})
+   
 
 
     # Not supported by tikzplotlib
-    #ax = sns.scatterplot(data=test, x='thr', y='delay', hue='CC strategy', size='versus', sizes=(100, 200))
+    ax = sns.scatterplot(data=means, x='thr', y='delay', hue='CC strategy', size='versus', sizes=(80, 200))
 
     # Set graphical properties, title and filename
-    ax.set_xlabel(f"{out_str}", fontsize=12)
-    ax.set_ylabel(f"URLLC delay [ms]", fontsize=12)
+    ax.set_xlabel(f"{out_str}", fontsize=13)
+    ax.set_ylabel(f"URLLC delay [ms]", fontsize=13)
     plot_title = f"Throughput eMBB vs delay URLLC"
     handles, labels = ax.get_legend_handles_labels()
 
-    #max = len(set(scatter['CC strategy'])) + 1
-    #ax.legend(handles=means[:max], labels=labels[:max], loc='best')
+    max = len(set(means['CC strategy'])) + 1
+    plt.legend(prop={'family': 'cmr10'})
+    ax.legend(handles=handles[:max], labels=labels[:max], loc='best')
 
-    fig.set_size_inches(7, 3)    
-    plt.title(plot_title, fontsize=12)
-    plt.savefig(f"{s_path}{plot_title}.png" )
-    tikzplotlib.save(f"{s_path}{plot_title}.tex")
+    fig.set_size_inches(6.5, 2.3)    
+    #plt.title(plot_title, fontsize=12)
+    plt.setp(ax.get_xticklabels(), fontsize=13)
+    plt.setp(ax.get_yticklabels(), fontsize=13)
+    plt.savefig(f"{s_path}{plot_title}.svg", format='svg')
+    plt.savefig(f"{s_path}{plot_title}.png")
+    #tikzplotlib.save(f"{s_path}{plot_title}.tex")
     plt.close(fig)
 
 
