@@ -242,8 +242,8 @@ def plot_scatter(delay, thr, versus, s_path):
 
     fig.set_size_inches(6.5, 2.3)    
     #plt.title(plot_title, fontsize=12)
-    ax.set_xlabel(f"{out_str}", fontsize=14)
-    ax.set_ylabel(f"URLLC delay [ms]", fontsize=14)
+    ax.set_xlabel(f"Overall eMBB throughput [Mibt/s]", fontsize=14)
+    ax.set_ylabel(f"URLLC average delay [ms]", fontsize=14)
     plt.setp(ax.get_xticklabels(), fontsize=14)
     plt.setp(ax.get_yticklabels(), fontsize=14)
 
