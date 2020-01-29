@@ -13,39 +13,49 @@ import tikzplotlib # Save figures as PGFplots
 
 # Functions
 
-def plot_forall_static(static, param_ca, param_no_ca, versus, fewer_images=False):
+def plot_forall_static(param_ca, param_no_ca, versus, fewer_images=False, static=None):
     # tr = tracker.SummaryTracker()
     # Get list of values of params that are suppoSsed to be static
     campaign = sem.CampaignManager.load('./slicing-res')
     loaded_params = campaign.db.get_all_values_of_all_params()
     # For now, just one..
-    static_values = loaded_params[static]
-    counter = 0
-    for val in static_values:
-        counter = counter + 1
-        # Restrict params
-        param_ca[static] = val
-        param_no_ca[static] = val
-        # Ugly, but lazy
-        metric_bucket_dummy = {'versus':val}
-        static_formatted = sanitize_versus(vs=static, metric_bucket=metric_bucket_dummy)
-        val_formatted = metric_bucket_dummy['versus']
-        # Save the plot
-        out_dir = f"./slicing-plots/versus_{versus}/{val_formatted}/"
-        os.makedirs(out_dir, exist_ok=True)
-        # Use lower level functions to plot
+    if(static is not None):
+        static_values = loaded_params[static]
+        counter = 0
+        for val in static_values:
+            counter = counter + 1
+            # Restrict params
+            param_ca[static] = val
+            param_no_ca[static] = val
+            # Ugly, but lazy
+            metric_bucket_dummy = {'versus':val}
+            static_formatted = sanitize_versus(vs=static, metric_bucket=metric_bucket_dummy)
+            val_formatted = metric_bucket_dummy['versus']
+            # Save the plot
+            out_dir = f"./slicing-plots/versus_{versus}/{val_formatted}/"
+            os.makedirs(out_dir, exist_ok=True)
+            # Use lower level functions to plot
 
-        fig = plot_all_metrics(param_no_ca=param_no_ca, param_ca=param_ca, versus=versus,
-                            fewer_images=fewer_images, top_path=out_dir)
+            plot_all_metrics(param_no_ca=param_no_ca, param_ca=param_ca, versus=versus,
+                                fewer_images=fewer_images, top_path=out_dir)
 
-        if fewer_images:
-            fig.suptitle(f"System performance for {static_formatted} = {val_formatted}", fontsize=16)
-            plt.savefig(f"{out_dir}System_performance.png" )
-            tikzplotlib.save(f"{out_dir}System_performance.tex")
-            plt.close('fig')
+            if fewer_images:
+                fig.suptitle(f"System performance for {static_formatted} = {val_formatted}", fontsize=16)
+                plt.savefig(f"{out_dir}System_performance.png" )
+                tikzplotlib.save(f"{out_dir}System_performance.tex")
+                plt.close('fig')
 
-        #tr.print_diff()
-        print(f"{counter/len(static_values)*100:.0f} % done!")
+            #tr.print_diff()
+            print(f"{counter/len(static_values)*100:.0f} % done!")
+    else:
+            # Save the plot
+            out_dir = f"./slicing-plots/versus_{versus}/fixed/"
+            os.makedirs(out_dir, exist_ok=True)
+            # Use lower level functions to plot
+
+            plot_all_metrics(param_no_ca=param_no_ca, param_ca=param_ca, versus=versus,
+                                fewer_images=fewer_images, top_path=out_dir)
+
 
 def plot_all_metrics(param_ca, param_no_ca, versus=None, fewer_images=False, top_path=None):
 
@@ -87,47 +97,48 @@ def plot_all_metrics(param_ca, param_no_ca, versus=None, fewer_images=False, top
                 res_data = campaign.db.get_results()
             for res_istance in res_data:
                 res_id = res_istance['meta']['id']
-                # Load all the desired traces
-                dl_path = campaign.db.get_result_files(res_id)[trace_str_dl]
-                ul_path = campaign.db.get_result_files(res_id)[trace_str_ul]
-                rx_path = campaign.db.get_result_files(res_id)[trace_str_rx]
-                err_path = campaign.db.get_result_files(res_id)[trace_err]
+                if(res_istance['params']['ccMan'] != 2): # skip vanilla ca...too rushed
+                    # Load all the desired traces
+                    dl_path = campaign.db.get_result_files(res_id)[trace_str_dl]
+                    ul_path = campaign.db.get_result_files(res_id)[trace_str_ul]
+                    rx_path = campaign.db.get_result_files(res_id)[trace_str_rx]
+                    err_path = campaign.db.get_result_files(res_id)[trace_err]
 
-                # Save both results and relative params
-                dl_df = pd.read_csv(filepath_or_buffer=dl_path, header=0, delimiter='\t', low_memory=False)
-                ul_df = pd.read_csv(filepath_or_buffer=ul_path, header=0, delimiter='\t', low_memory=False)
-                rx_df = pd.read_csv(filepath_or_buffer=rx_path, header=0, delimiter='\t', low_memory=False)
-                # Did ns3 crash/output some error?
-                with open(err_path, 'r') as file:
-                    errors = file.read()
-                if len(errors) != 0:
-                    # Skip usch trace
-                    err_amount = err_amount + 1
-                    continue # Check other traces
+                    # Save both results and relative params
+                    dl_df = pd.read_csv(filepath_or_buffer=dl_path, header=0, delimiter='\t', low_memory=False)
+                    ul_df = pd.read_csv(filepath_or_buffer=ul_path, header=0, delimiter='\t', low_memory=False)
+                    rx_df = pd.read_csv(filepath_or_buffer=rx_path, header=0, delimiter='\t', low_memory=False)
+                    # Did ns3 crash/output some error?
+                    with open(err_path, 'r') as file:
+                        errors = file.read()
+                    if len(errors) != 0:
+                        # Skip usch trace
+                        err_amount = err_amount + 1
+                        continue # Check other traces
 
-                # Improve data structure, keep just relevant data
-                ul_df = sanitize_dataframe(ul_df, res_istance['params']['maxStart']*1e9) # sec to ns ns in the traces
-                dl_df = sanitize_dataframe(dl_df, res_istance['params']['maxStart']*1e9) # sec to ns ns in the traces
-                rx_df = sanitize_dataframe(rx_df, res_istance['params']['maxStart']*1e9) # sec to ns ns in the traces
+                    # Improve data structure, keep just relevant data
+                    ul_df = sanitize_dataframe(ul_df, res_istance['params']['maxStart']*1e9) # sec to ns ns in the traces
+                    dl_df = sanitize_dataframe(dl_df, res_istance['params']['maxStart']*1e9) # sec to ns ns in the traces
+                    rx_df = sanitize_dataframe(rx_df, res_istance['params']['maxStart']*1e9) # sec to ns ns in the traces
 
-                params = res_istance['params']
-                # Compute metrics here
-                run_loss = pkt_loss_app(dl_df, ul_df)
-                loss.append({'mean': run_loss, 'params': params})
+                    params = res_istance['params']
+                    # Compute metrics here
+                    run_loss = pkt_loss_app(dl_df, ul_df)
+                    loss.append({'mean': run_loss, 'params': params})
 
-                run_thr = throughput_app(dl_df, bearer_type=prot, params=params)
-                thr.append({'mean':run_thr, 'params': params})
-                if prot == 'eMBB':
-                    thr_embb.loc[len(thr_embb)] = {'thr':run_thr*params['numEmbbUes'], 'ccMan':params['ccMan'],
-                     'mode':params['mode'], 'runSet':params['runSet'], versus:params[versus]}
+                    run_thr = throughput_app(dl_df, bearer_type=prot, params=params)
+                    thr.append({'mean':run_thr, 'params': params})
+                    if prot == 'eMBB':
+                        thr_embb.loc[len(thr_embb)] = {'thr':run_thr*params['numEmbbUes'], 'ccMan':params['ccMan'],
+                        'mode':params['mode'], 'runSet':params['runSet'], versus:params[versus]}
 
-                run_delay = delay_app(dl_df)
-                delay.append({'mean':run_delay, 'params': params})
-                if prot == 'URLLC':
-                    delay_urllc.loc[len(delay_urllc)] = {'delay':run_delay, 'ccMan':params['ccMan'],
-                     'mode':params['mode'], 'runSet':params['runSet'], versus:params[versus]}
-                
-                band = band.append(band_allocation(rx_df, versus, res_istance['params']))
+                    run_delay = delay_app(dl_df)
+                    delay.append({'mean':run_delay, 'params': params})
+                    if prot == 'URLLC':
+                        delay_urllc.loc[len(delay_urllc)] = {'delay':run_delay, 'ccMan':params['ccMan'],
+                        'mode':params['mode'], 'runSet':params['runSet'], versus:params[versus]}
+                    
+                    band = band.append(band_allocation(rx_df, versus, res_istance['params']))
             
             # If no valid trace loaded, raise an error
             if err_amount >> 0:
@@ -801,38 +812,38 @@ def compute_means(metric_bucket):
 
 # Actual metrics computation
 # Try plot
-
+'''
 print('CA using f0=28GHz, f1=10Ghz; non CA using f0=28GhzL: vs eMBB rates')
 ca_params = {'f0': 28e9, 'f1':10e9,'mode': 2, 'ccRatio': 0.5,'numEmbbUes':10, 'numUrllcUes':10, 'urllcUdpIPI':8192}
 no_ca_params = {'f0': 28e9, 'mode': 1, 'ccRatio': 0.5, 'ccMan':0, 'numEmbbUes':10, 'numUrllcUes':10, 'urllcUdpIPI':8192}
 
 print('Computing stats')
 plot_forall_static(param_ca=ca_params, param_no_ca=no_ca_params, versus='embbUdpIPI', fewer_images=False, static='urllcUdpIPI') 
-
+'''
 print('CA using f0=28GHz, f1=10Ghz; non CA using f0=28GhzL: vs URLLC rates')
 ca_params = {'f0': 28e9, 'f1':10e9, 'mode': 2, 'ccRatio': 0.5, 'numEmbbUes':10, 'numUrllcUes':10, 'embbUdpIPI':59}
-no_ca_params = {'f0': 28e9, 'mode': 1, 'ccRatio': 0.5, 'ccMan': 2, 'numEmbbUes':10, 'numUrllcUes':10, 'embbUdpIPI':59}
+no_ca_params = {'f0': 28e9, 'mode': 1, 'ccRatio': 0.5, 'ccMan': 0, 'numEmbbUes':10, 'numUrllcUes':10, 'embbUdpIPI':59}
 
 print('Computing stats')
-plot_forall_static(param_ca=ca_params, param_no_ca=no_ca_params, versus='urllcUdpIPI', fewer_images=False, static='embbUdpIPI')
-
+plot_forall_static(param_ca=ca_params, param_no_ca=no_ca_params, versus='urllcUdpIPI', fewer_images=False)
+'''
 print('CA using f0=28GHz, f1=10Ghz; non CA using f0=28GhzL: vs ccRatio')
 ca_params = {'f0': 28e9, 'f1':10e9, 'mode': 2, 'embbUdpIPI': 59}
 no_ca_params = {'f0': 28e9, 'mode': 1, 'embbUdpIPI': 59}
 
 print('Computing stats')
 plot_forall_static(param_ca=ca_params, param_no_ca=no_ca_params, versus='ccRatio', fewer_images=False, static='urllcUdpIPI')
-
+'''
 print('CA using f0=28GHz, f1=10Ghz; non CA using f0=28GhzL: vs numEmbbUes')
 ca_params = {'f0': 28e9, 'f1':10e9, 'mode': 2, 'embbUdpIPI': 82, 'urllcUdpIPI': 8192, 'ccRatio': 0.5, 'numUrllcUes':10}
 no_ca_params = {'f0': 28e9, 'mode': 1, 'embbUdpIPI': 82, 'urllcUdpIPI': 8192, 'ccRatio': 0.5, 'ccMan':0, 'numUrllcUes':10}
 
 print('Computing stats')
-plot_forall_static(param_ca=ca_params, param_no_ca=no_ca_params, versus='numEmbbUes', fewer_images=False, static='numUrllcUes')
+plot_forall_static(param_ca=ca_params, param_no_ca=no_ca_params, versus='numEmbbUes', fewer_images=False)
 
 print('CA using f0=28GHz, f1=10Ghz; non CA using f0=28GhzL: vs numUrllcUes')
 ca_params = {'f0': 28e9, 'f1':10e9, 'mode': 2, 'embbUdpIPI': 82, 'urllcUdpIPI': 8192, 'ccRatio': 0.5, 'numEmbbUes':10}
 no_ca_params = {'f0': 28e9, 'mode': 1, 'embbUdpIPI': 82, 'urllcUdpIPI': 8192, 'ccRatio': 0.5, 'ccMan':0, 'numEmbbUes':10}
 
 print('Computing stats')
-plot_forall_static(param_ca=ca_params, param_no_ca=no_ca_params, versus='numUrllcUes', fewer_images=False, static='numEmbbUes')
+plot_forall_static(param_ca=ca_params, param_no_ca=no_ca_params, versus='numUrllcUes', fewer_images=False)
