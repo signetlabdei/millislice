@@ -826,14 +826,14 @@ no_ca_params = {'f0': 28e9, 'mode': 1, 'ccRatio': 0.5, 'ccMan': 0, 'numEmbbUes':
 
 print('Computing stats')
 plot_forall_static(param_ca=ca_params, param_no_ca=no_ca_params, versus='urllcUdpIPI', fewer_images=False)
-
+'''
 print('CA using f0=28GHz, f1=10Ghz; non CA using f0=28GhzL: vs ccRatio')
-ca_params = {'f0': 28e9, 'f1':10e9, 'mode': 2, 'embbUdpIPI': 59}
-no_ca_params = {'f0': 28e9, 'mode': 1, 'embbUdpIPI': 59}
+ca_params = {'f0': 28e9, 'f1':10e9, 'mode': 2, 'embbUdpIPI': 59, 'urllcUdpIPI': 8192, 'numEmbbUes':10, 'numUrllcUes':10}
+no_ca_params = {'f0': 28e9, 'mode': 1, 'embbUdpIPI': 59, 'ccMan':0, 'urllcUdpIPI': 8192, 'numEmbbUes':10, 'numUrllcUes':10}
 
 print('Computing stats')
-plot_forall_static(param_ca=ca_params, param_no_ca=no_ca_params, versus='ccRatio', fewer_images=False, static='urllcUdpIPI')
-'''
+plot_forall_static(param_ca=ca_params, param_no_ca=no_ca_params, versus='ccRatio', fewer_images=False)
+
 print('CA using f0=28GHz, f1=10Ghz; non CA using f0=28GhzL: vs numEmbbUes')
 ca_params = {'f0': 28e9, 'f1':10e9, 'mode': 2, 'embbUdpIPI': 82, 'urllcUdpIPI': 8192, 'ccRatio': 0.5, 'numUrllcUes':15}
 no_ca_params = {'f0': 28e9, 'mode': 1, 'embbUdpIPI': 82, 'urllcUdpIPI': 8192, 'ccRatio': 0.5, 'ccMan':0, 'numUrllcUes':15}
