@@ -177,7 +177,7 @@ def plot_all_metrics(param_ca, param_no_ca, versus=None, fewer_images=False, top
 
 def save_fig(fig, info):
     #plt.title(f"{info['prot']} average {info['metric']} ", fontsize=12)
-    plt.savefig(f"{info['path']}{info['metric']}_{info['prot']}.png")
+    #plt.savefig(f"{info['path']}{info['metric']}_{info['prot']}.png")
     plt.savefig(f"{info['path']}{info['metric']}_{info['prot']}.svg", format='svg')
     #tikzplotlib.save(f"{info['path']}{info['metric']}_{info['prot']}.tex")
     plt.close('fig')
@@ -243,12 +243,12 @@ def plot_scatter(delay, thr, versus, s_path):
     fig.set_size_inches(6.5, 2.3)    
     #plt.title(plot_title, fontsize=12)
     ax.set_xlabel(f"Overall eMBB throughput [Mibt/s]", fontsize=14)
-    ax.set_ylabel(f"URLLC average delay [ms]", fontsize=14)
+    ax.set_ylabel(f"URLLC average \n delay [ms]", fontsize=14)
     plt.setp(ax.get_xticklabels(), fontsize=14)
     plt.setp(ax.get_yticklabels(), fontsize=14)
 
     plt.savefig(f"{s_path}{plot_title}.svg", format='svg')
-    plt.savefig(f"{s_path}{plot_title}.png")
+    #plt.savefig(f"{s_path}{plot_title}.png")
     #tikzplotlib.save(f"{s_path}{plot_title}.tex")
     plt.close(fig)
 
@@ -819,14 +819,14 @@ no_ca_params = {'f0': 28e9, 'mode': 1, 'ccRatio': 0.5, 'ccMan':0, 'numEmbbUes':1
 
 print('Computing stats')
 plot_forall_static(param_ca=ca_params, param_no_ca=no_ca_params, versus='embbUdpIPI', fewer_images=False, static='urllcUdpIPI') 
-'''
+
 print('CA using f0=28GHz, f1=10Ghz; non CA using f0=28GhzL: vs URLLC rates')
 ca_params = {'f0': 28e9, 'f1':10e9, 'mode': 2, 'ccRatio': 0.5, 'numEmbbUes':10, 'numUrllcUes':10, 'embbUdpIPI':59}
 no_ca_params = {'f0': 28e9, 'mode': 1, 'ccRatio': 0.5, 'ccMan': 0, 'numEmbbUes':10, 'numUrllcUes':10, 'embbUdpIPI':59}
 
 print('Computing stats')
 plot_forall_static(param_ca=ca_params, param_no_ca=no_ca_params, versus='urllcUdpIPI', fewer_images=False)
-'''
+
 print('CA using f0=28GHz, f1=10Ghz; non CA using f0=28GhzL: vs ccRatio')
 ca_params = {'f0': 28e9, 'f1':10e9, 'mode': 2, 'embbUdpIPI': 59}
 no_ca_params = {'f0': 28e9, 'mode': 1, 'embbUdpIPI': 59}
@@ -835,15 +835,15 @@ print('Computing stats')
 plot_forall_static(param_ca=ca_params, param_no_ca=no_ca_params, versus='ccRatio', fewer_images=False, static='urllcUdpIPI')
 '''
 print('CA using f0=28GHz, f1=10Ghz; non CA using f0=28GhzL: vs numEmbbUes')
-ca_params = {'f0': 28e9, 'f1':10e9, 'mode': 2, 'embbUdpIPI': 82, 'urllcUdpIPI': 8192, 'ccRatio': 0.5, 'numUrllcUes':10}
-no_ca_params = {'f0': 28e9, 'mode': 1, 'embbUdpIPI': 82, 'urllcUdpIPI': 8192, 'ccRatio': 0.5, 'ccMan':0, 'numUrllcUes':10}
+ca_params = {'f0': 28e9, 'f1':10e9, 'mode': 2, 'embbUdpIPI': 82, 'urllcUdpIPI': 8192, 'ccRatio': 0.5, 'numUrllcUes':15}
+no_ca_params = {'f0': 28e9, 'mode': 1, 'embbUdpIPI': 82, 'urllcUdpIPI': 8192, 'ccRatio': 0.5, 'ccMan':0, 'numUrllcUes':15}
 
 print('Computing stats')
 plot_forall_static(param_ca=ca_params, param_no_ca=no_ca_params, versus='numEmbbUes', fewer_images=False)
 
 print('CA using f0=28GHz, f1=10Ghz; non CA using f0=28GhzL: vs numUrllcUes')
-ca_params = {'f0': 28e9, 'f1':10e9, 'mode': 2, 'embbUdpIPI': 82, 'urllcUdpIPI': 8192, 'ccRatio': 0.5, 'numEmbbUes':10}
-no_ca_params = {'f0': 28e9, 'mode': 1, 'embbUdpIPI': 82, 'urllcUdpIPI': 8192, 'ccRatio': 0.5, 'ccMan':0, 'numEmbbUes':10}
+ca_params = {'f0': 28e9, 'f1':10e9, 'mode': 2, 'embbUdpIPI': 82, 'urllcUdpIPI': 8192, 'ccRatio': 0.5, 'numEmbbUes':15}
+no_ca_params = {'f0': 28e9, 'mode': 1, 'embbUdpIPI': 82, 'urllcUdpIPI': 8192, 'ccRatio': 0.5, 'ccMan':0, 'numEmbbUes':15}
 
 print('Computing stats')
 plot_forall_static(param_ca=ca_params, param_no_ca=no_ca_params, versus='numUrllcUes', fewer_images=False)
