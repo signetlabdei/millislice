@@ -186,7 +186,7 @@ def group_cc_strat(metric_frame):
     metric_frame['mode'] =  metric_frame['mode'].replace(1, 'no CA, ')
     metric_frame['mode'] =  metric_frame['mode'].replace(2, 'CA, ')
     metric_frame['ccMan'] =  metric_frame['ccMan'].replace(0, 'SplitDrb')
-    metric_frame['ccMan'] =  metric_frame['ccMan'].replace(1, 'SlicingDrb')
+    metric_frame['ccMan'] =  metric_frame['ccMan'].replace(1, 'RoGeR')
     metric_frame['ccMan'] =  metric_frame['ccMan'].replace(2, 'placeholder')
 
     metric_frame['CC strategy'] = metric_frame['mode'] + metric_frame['ccMan']
@@ -224,12 +224,13 @@ def plot_scatter(delay, thr, versus, s_path):
                                          max(means_dummy['versus'])), (30, 110))
     plt.scatter(x=means['thr'], y=means['delay'], c=means_dummy['CC strategy'], s=means_dummy['versus'])
     '''
-    sns.set_style('whitegrid', {'axes.facecolor': '#EAEAF2'})
+    #sns.set_style('whitegrid', {'axes.facecolor': '#EAEAF2'})
    
 
 
     # Not supported by tikzplotlib
-    ax = sns.scatterplot(data=means, x='thr', y='delay', hue='CC strategy', size='versus', sizes=(80, 200))
+    ax = sns.scatterplot(data=means, x='thr', y='delay', hue='CC strategy', size='versus', 
+                        sizes=(80, 250))
 
     # Set graphical properties, title and filename
 
@@ -255,13 +256,12 @@ def plot_scatter(delay, thr, versus, s_path):
 
 def plot_lines_versus(metric_bucket, info, s_path, versus, fig=None, ax=None):
 
-    sns.set_style('whitegrid', {'axes.facecolor': '#EAEAF2'})
+    sns.set_style("whitegrid")
     matplotlib.rcParams['mathtext.fontset'] = 'cm'
     matplotlib.rcParams['font.family'] = 'STIXGeneral'
     dummy_ax = ax
     if ax is None:
         fig, ax = plt.subplots(constrained_layout=True)
-        sns.set_style('whitegrid', {'axes.facecolor': '#EAEAF2'})
 
     metric_data = []
     mode_data = []
@@ -290,12 +290,12 @@ def plot_lines_versus(metric_bucket, info, s_path, versus, fig=None, ax=None):
         versus = temp
 
     if len(set(metric_frame['CC strategy'])) == 4:
-         h_ord = ['no CA', 'CA', 'CA, SplitDrb', 'CA, SlicingDrb']
+         h_ord = ['no CA', 'CA', 'CA, SplitDrb', 'CA, RoGeR']
     else:
-        h_ord = ['no CA', 'CA, SplitDrb', 'CA, SlicingDrb']
+        h_ord = ['no CA', 'CA, SplitDrb', 'CA, RoGeR']
     
     g = sns.lineplot(data=metric_frame, x='versus', y='metric', err_style='bars', 
-                        hue='CC strategy', hue_order=h_ord, ax=ax)
+                        hue='CC strategy', hue_order=h_ord, ax=ax, style='CC strategy', markers=["o", "v", "s"])
 
     # Set graphical properties, title and filename
     ax.set_ylabel(f"{info['metric']} {info['unit']}", fontsize=14)
@@ -360,7 +360,7 @@ def plot_line(metric_frame, metric, title, s_path, fname, overlays=None):
 def plot_distr_bins(metric_frame, metric, title, s_path):
     # Make sure figure is clean
     fig, ax = plt.subplots(constrained_layout=True)
-    sns.set_style('whitegrid', {'axes.facecolor': '#EAEAF2'})
+    sns.set_style("whitegrid")
 
     sns.distplot(metric_frame, kde=False, norm_hist=True)
 
@@ -386,15 +386,15 @@ def plot_metric_box(metric_frame, metric, title, s_path, versus):
     metric_frame = group_cc_strat(metric_frame)
     x_label = sanitize_versus(vs=versus, metric_bucket=metric_frame)
 
-    sns.set_style('whitegrid', {'axes.facecolor': '#EAEAF2'})
+    sns.set_style("whitegrid")
 
     # Plot sum as background
     metric_frame['band_alloc_cc1'] = metric_frame['band_alloc_cc1'] + metric_frame['band_alloc_cc0']
 
     if len(set(metric_frame['CC strategy'])) == 4:
-         h_ord = ['no CA', 'CA', 'CA, SplitDrb', 'CA, SlicingDrb']
+         h_ord = ['no CA', 'CA', 'CA, SplitDrb', 'CA, RoGeR']
     else:
-        h_ord = ['no CA', 'CA, SplitDrb', 'CA, SlicingDrb']
+        h_ord = ['no CA', 'CA, SplitDrb', 'CA, RoGeR']
 
 
     sns.barplot(x='versus', y='band_alloc_cc1', hue='CC strategy', hue_order=h_ord, 
@@ -466,7 +466,7 @@ def plot_metrics_generic(metric_bucket, metric, prot, s_path, unit, vs=None):
 
     dark_palette = ['#465782', '#7a4e4f']
     light_palette = ['#90a5e0', '#c27a7c']
-    sns.set_style('whitegrid', {'axes.facecolor': '#EAEAF2'})
+    sns.set_style("whitegrid")
 
       # Save, with the proper size
     if check_constant(versus_data):
@@ -812,7 +812,7 @@ def compute_means(metric_bucket):
 
 # Actual metrics computation
 # Try plot
-'''
+
 print('CA using f0=28GHz, f1=10Ghz; non CA using f0=28GhzL: vs eMBB rates')
 ca_params = {'f0': 28e9, 'f1':10e9,'mode': 2, 'ccRatio': 0.5,'numEmbbUes':10, 'numUrllcUes':10, 'urllcUdpIPI':8192}
 no_ca_params = {'f0': 28e9, 'mode': 1, 'ccRatio': 0.5, 'ccMan':0, 'numEmbbUes':10, 'numUrllcUes':10, 'urllcUdpIPI':8192}
@@ -826,7 +826,7 @@ no_ca_params = {'f0': 28e9, 'mode': 1, 'ccRatio': 0.5, 'ccMan': 0, 'numEmbbUes':
 
 print('Computing stats')
 plot_forall_static(param_ca=ca_params, param_no_ca=no_ca_params, versus='urllcUdpIPI', fewer_images=False)
-'''
+
 print('CA using f0=28GHz, f1=10Ghz; non CA using f0=28GhzL: vs ccRatio')
 ca_params = {'f0': 28e9, 'f1':10e9, 'mode': 2, 'embbUdpIPI': 59, 'urllcUdpIPI': 8192, 'numEmbbUes':10, 'numUrllcUes':10}
 no_ca_params = {'f0': 28e9, 'mode': 1, 'embbUdpIPI': 59, 'ccMan':0, 'urllcUdpIPI': 8192, 'numEmbbUes':10, 'numUrllcUes':10}
