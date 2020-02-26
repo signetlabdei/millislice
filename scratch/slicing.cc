@@ -191,7 +191,7 @@ int main(int argc, char *argv[])
 		else if(ccMan == 1)
 		{
 			Config::SetDefault("ns3::MmWaveHelper::EnbComponentCarrierManager", StringValue("ns3::MmWaveSlicingDrbComponentCarrierManager"));
-			// Set the URLLC tres
+			// Set the URLLC tres as number of packets*packet size
 			Config::SetDefault("ns3::MmWaveSlicingDrbComponentCarrierManager::urllcTres", UintegerValue (urllcTres*1024));
 		}	
 		else if(ccMan == 2)

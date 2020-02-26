@@ -930,8 +930,7 @@ MmWaveSlicingDrbComponentCarrierManager::BlindPriorityBSRScheduler(LteMacSapProv
     NS_LOG_LOGIC(std::to_string(qci));
     NS_LOG_LOGIC(std::to_string(m_qciCcMap.at (qci)));
     choosenCcs[m_qciCcMap.at (qci)] = LteMacSapProvider::ReportBufferStatusParameters (params); // Preferred CC
-    NS_LOG_LOGIC("Size of aggrMap:");
-    NS_LOG_LOGIC(aggrMap.size());
+
     for(auto elem : aggrMap)
     {
       uint8_t secQci =  m_rlcLcInstantiated.find(params.rnti)->second.find(elem.first)->second.qci;
@@ -948,7 +947,6 @@ MmWaveSlicingDrbComponentCarrierManager::BlindPriorityBSRScheduler(LteMacSapProv
     NS_LOG_LOGIC("BSR will be spread upon the following CCs:");
     for(auto elem : choosenCcs)
     {
-      NS_LOG_LOGIC("ChoosenCC:");
       NS_LOG_LOGIC(std::to_string(elem.first));
       elem.second.retxQueueSize = params.retxQueueSize/(choosenCcs.size());
       elem.second.txQueueSize = params.txQueueSize/(choosenCcs.size());
