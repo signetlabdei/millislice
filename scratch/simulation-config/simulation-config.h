@@ -172,7 +172,6 @@ void SimulationConfig::SetRandomWalkMobility(Ptr<Node> node, Vector position, do
   Ptr<ListPositionAllocator> positionAlloc = CreateObject<ListPositionAllocator>();
   positionAlloc->Add(position);
   MobilityHelper mobility;
-  // Not too elegant
   std::ostringstream paramUnifRv;
   paramUnifRv << "ns3::UniformRandomVariable[Min=" << vMin << "|Max=" << vMax << "]";
   mobility.SetMobilityModel("ns3::RandomWalk2dMobilityModel",

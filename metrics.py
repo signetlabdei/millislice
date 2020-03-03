@@ -8,8 +8,7 @@ import seaborn as sns
 import pandas as pd
 import tikzplotlib # Save figures as PGFplots
 
-#from statistics import mean
-# from pympler import tracker
+from statistics import mean
 
 # Functions
 
@@ -178,8 +177,8 @@ def plot_all_metrics(param_ca, param_no_ca, versus=None, fewer_images=False, top
 def save_fig(fig, info):
     #plt.title(f"{info['prot']} average {info['metric']} ", fontsize=12)
     #plt.savefig(f"{info['path']}{info['metric']}_{info['prot']}.png")
-    plt.savefig(f"{info['path']}{info['metric']}_{info['prot']}.svg", format='svg')
-    #tikzplotlib.save(f"{info['path']}{info['metric']}_{info['prot']}.tex")
+    plt.savefig(f"{info['path']}{info['metric']}_{info['prot']}.pdf", format='pdf')
+    tikzplotlib.save(f"{info['path']}{info['metric']}_{info['prot']}.tex")
     plt.close('fig')
 
 def group_cc_strat(metric_frame):
@@ -213,15 +212,15 @@ def plot_scatter(delay, thr, versus, s_path):
     matplotlib.rcParams['mathtext.fontset'] = 'cm'
     matplotlib.rcParams['font.family'] = 'STIXGeneral'
     fig, ax = plt.subplots(constrained_layout=True)
-    '''
+    sns.set_style('whitegrid')
+    
     means_dummy = copy.deepcopy(means)
     # Colors columns
     means_dummy['CC strategy'] = means_dummy['CC strategy'].replace('no CA', '#4C72B0')
     means_dummy['CC strategy'] = means_dummy['CC strategy'].replace('CA, SplitDrb', '#DD8452')
-    means_dummy['CC strategy'] = means_dummy['CC strategy'].replace('CA, SlicingDrb', '#55A868')
+    means_dummy['CC strategy'] = means_dummy['CC strategy'].replace('CA, RoGeR', '#55A868')
     # Size column
-    means_dummy['versus'] = np.interp(means_dummy['versus'], (min(means_dummy['versus']),
-                                         max(means_dummy['versus'])), (30, 110))
+    means_dummy['versus'] = np.interp(means_dummy['versus'], (min(means_dummy['versus']), max(means_dummy['versus'])), (50, 300))
     plt.scatter(x=means['thr'], y=means['delay'], c=means_dummy['CC strategy'], s=means_dummy['versus'])
     '''
     #sns.set_style('whitegrid', {'axes.facecolor': '#EAEAF2'})
@@ -231,15 +230,15 @@ def plot_scatter(delay, thr, versus, s_path):
     # Not supported by tikzplotlib
     ax = sns.scatterplot(data=means, x='thr', y='delay', hue='CC strategy', size='versus', 
                         sizes=(80, 250))
-
+    '''
     # Set graphical properties, title and filename
 
     plot_title = f"Throughput eMBB vs delay URLLC"
-    handles, labels = ax.get_legend_handles_labels()
+    #handles, labels = ax.get_legend_handles_labels()
 
-    max = len(set(means['CC strategy'])) + 1
-    plt.legend(prop={'family': 'cmr10'})
-    ax.legend(handles=handles[:max], labels=labels[:max], loc='best')
+    #max_l = len(set(means['CC strategy'])) + 1
+    #plt.legend(prop={'family': 'cmr10'})
+    #ax.legend(handles=handles[:max_l], labels=labels[:max_l], loc='best')
 
     fig.set_size_inches(6.5, 2.3)    
     #plt.title(plot_title, fontsize=12)
@@ -248,9 +247,9 @@ def plot_scatter(delay, thr, versus, s_path):
     plt.setp(ax.get_xticklabels(), fontsize=14)
     plt.setp(ax.get_yticklabels(), fontsize=14)
 
-    plt.savefig(f"{s_path}{plot_title}.svg", format='svg')
+    plt.savefig(f"{s_path}{plot_title}.pdf", format='pdf')
     #plt.savefig(f"{s_path}{plot_title}.png")
-    #tikzplotlib.save(f"{s_path}{plot_title}.tex")
+    tikzplotlib.save(f"{s_path}{plot_title}.tex")
     plt.close(fig)
 
 
@@ -425,8 +424,8 @@ def plot_metric_box(metric_frame, metric, title, s_path, versus):
     out_dir = s_path
     os.makedirs(out_dir, exist_ok=True)
     plt.savefig(f"{out_dir}{filename}.png")
-    plt.savefig(f"{out_dir}{filename}.svg", format='svg')
-    #tikzplotlib.save(f"{out_dir}{metric}.tex")
+    plt.savefig(f"{out_dir}{filename}.pdf", format='pdf')
+    tikzplotlib.save(f"{out_dir}{metric}.tex")
     plt.close(fig)
 
 def plot_metrics_generic(metric_bucket, metric, prot, s_path, unit, vs=None):
@@ -818,7 +817,7 @@ ca_params = {'f0': 28e9, 'f1':10e9,'mode': 2, 'ccRatio': 0.5,'numEmbbUes':10, 'n
 no_ca_params = {'f0': 28e9, 'mode': 1, 'ccRatio': 0.5, 'ccMan':0, 'numEmbbUes':10, 'numUrllcUes':10, 'urllcUdpIPI':8192}
 
 print('Computing stats')
-plot_forall_static(param_ca=ca_params, param_no_ca=no_ca_params, versus='embbUdpIPI', fewer_images=False, static='urllcUdpIPI') 
+plot_forall_static(param_ca=ca_params, param_no_ca=no_ca_params, versus='embbUdpIPI', fewer_images=False) 
 
 print('CA using f0=28GHz, f1=10Ghz; non CA using f0=28GhzL: vs URLLC rates')
 ca_params = {'f0': 28e9, 'f1':10e9, 'mode': 2, 'ccRatio': 0.5, 'numEmbbUes':10, 'numUrllcUes':10, 'embbUdpIPI':59}
