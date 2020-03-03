@@ -12,7 +12,7 @@ campaign = sem.CampaignManager.new(
 # Obtain IPIs from rates
 # eMMB
 embb_packet_size = 1024
-embb_rate_grid = list(range(140, 160, 20))
+embb_rate_grid = list(range(60, 120, 20))
 embb_IPI_grid = []
 for rate in embb_rate_grid:
     # Mbit/s to IPI in microseconds
@@ -21,7 +21,7 @@ for rate in embb_rate_grid:
 
 # URLLC
 urllc_packet_size = 1024
-urllc_rate_grid = list(np.arange(0.5, 2.0, 0.5))
+urllc_rate_grid = list(np.arange(1.0, 1.5, 0.5))
 urllc_IPI_grid = []
 for rate in urllc_rate_grid:
     temp_IPI = urllc_packet_size*8/(rate)
