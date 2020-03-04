@@ -811,7 +811,7 @@ def compute_means(metric_bucket):
 
 # Actual metrics computation
 # Try plot
-
+'''
 print('CA using f0=28GHz, f1=10Ghz; non CA using f0=28GhzL: vs eMBB rates')
 ca_params = {'f0': 28e9, 'f1':10e9,'mode': 2, 'ccRatio': 0.5,'numEmbbUes':10, 'numUrllcUes':10, 'urllcUdpIPI':8192}
 no_ca_params = {'f0': 28e9, 'mode': 1, 'ccRatio': 0.5, 'ccMan':0, 'numEmbbUes':10, 'numUrllcUes':10, 'urllcUdpIPI':8192}
@@ -821,11 +821,12 @@ plot_forall_static(param_ca=ca_params, param_no_ca=no_ca_params, versus='embbUdp
 no_ca_params = {'f0': 28e9, 'mode': 1, 'ccRatio': 0.5, 'ccMan': 0, 'numEmbbUes':10, 'numUrllcUes':10, 'embbUdpIPI':59}
 '''
 print('CA using f0=28GHz, f1=10Ghz; non CA using f0=28GhzL: vs URLLC rates')
-ca_params = {'f0': 28e9, 'f1':10e9, 'mode': 2, 'ccRatio': 0.5, 'numEmbbUes':10, 'numUrllcUes':10, 'embbUdpIPI':59}
+ca_params = {'f0': 28e9, 'f1':10e9, 'mode': 2, 'ccRatio': 0.5, 'numEmbbUes':10, 'numUrllcUes':10, 'embbUdpIPI':82}
+no_ca_params = {'f0': 28e9, 'f1':10e9, 'mode': 1, 'ccRatio': 0.5, 'numEmbbUes':10, 'numUrllcUes':10, 'embbUdpIPI':82}
 
 print('Computing stats')
 plot_forall_static(param_ca=ca_params, param_no_ca=no_ca_params, versus='urllcUdpIPI', fewer_images=False)
-
+'''
 print('CA using f0=28GHz, f1=10Ghz; non CA using f0=28GhzL: vs ccRatio')
 ca_params = {'f0': 28e9, 'f1':10e9, 'mode': 2, 'embbUdpIPI': 59, 'urllcUdpIPI': 8192, 'numEmbbUes':10, 'numUrllcUes':10}
 no_ca_params = {'f0': 28e9, 'mode': 1, 'embbUdpIPI': 59, 'ccMan':0, 'urllcUdpIPI': 8192, 'numEmbbUes':10, 'numUrllcUes':10}
